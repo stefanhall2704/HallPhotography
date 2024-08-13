@@ -18,9 +18,12 @@ type Document struct {
 
 type User struct {
 	gorm.Model
+	FirstName       string     `gorm:"not null"`
+	LastName        string     `gorm:"not null"`
 	Username        string     `gorm:"not null"`
 	PasswordHash    string     `gorm:"not null"`
 	Email           string     `gorm:"not null"`
+	PhoneNumber     string     `gorm:"not null"`
 	Documents       []Document `gorm:"foreignKey:OwnerID"`
 	SharedDocuments []Document `gorm:"many2many:shared_documents;"`
 }

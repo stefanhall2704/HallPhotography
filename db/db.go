@@ -10,7 +10,7 @@ import (
 )
 
 func ConnectDatabase() *gorm.DB {
-	db, err := gorm.Open(sqlite.Open("./document_storage.db"), &gorm.Config{})
+	db, err := gorm.Open(sqlite.Open("./photography.db"), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}

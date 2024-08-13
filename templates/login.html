@@ -1,3 +1,4 @@
+<body>
 <div class="login">
   <head>
     <style>
@@ -63,10 +64,42 @@ input:focus { box-shadow: inset 0 -5px 45px rgba(100,100,100,0.4), 0 1px 1px rgb
   </head>
 
 	<h1>Login</h1>
-    <form method="post">
-    	<input type="text" name="u" placeholder="Username" required="required" />
-        <input type="password" name="p" placeholder="Password" required="required" />
+    <form id="loginForm" method="POST">
+    	<input type="text" id="username" name="username" placeholder="Username" required="required" />
+        <input type="password" id="password" name="password" placeholder="Password" required="required" />
         <button type="submit" class="btn btn-primary btn-block btn-large">Login</button>
     </form>
     <i>Don't have an account? <a href="/signup" style="color: black;">Sign Up Here!</a></i>
 </div>
+
+    <script>
+    document.getElementById('loginForm').addEventListener('submit', function (event) {
+      event.preventDefault(); // Prevent default form submission
+
+      // Get input values
+      var username = document.getElementById('username').value;
+      var password = document.getElementById('password').value;
+
+      // Perform basic client-side validation
+      if (!username || !password) {
+        alert('Please enter both username and password.');
+        return;
+      }
+
+      // Send login request to server using AJAX
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', '/login/process');
+      xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+      xhr.onload = function () {
+        if (xhr.status === 200) {
+          // Redirect to home page if login is successful
+          window.location.href = "/";
+        } else {
+          // Display error message if login fails
+          alert('Login failed. Please check your username and password.');
+        }
+      };
+      xhr.send('username=' + encodeURIComponent(username) + '&password=' + encodeURIComponent(password));
+    });
+    </script>
+</body>
