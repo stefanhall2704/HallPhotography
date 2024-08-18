@@ -93,7 +93,9 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	session.Values["user"] = username
 	session.Values["userID"] = user.ID
-
+	session.Values["firstName"] = user.FirstName
+	session.Values["lastName"] = user.LastName
+	session.Values["email"] = user.Email
 	session.Options = &sessions.Options{
 		Path:     "/",
 		MaxAge:   3600,
@@ -174,12 +176,15 @@ func GoogleAuthCallbackHandler(w http.ResponseWriter, r *http.Request) {
 
 func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	session, _ := store.Get(r, "session-name")
-	delete(session.Values, "user")
+
+	session.Values = make(map[interface{}]interface{})
+
 	if err := session.Save(r, w); err != nil {
 		http.Error(w, "Error saving session", http.StatusInternalServerError)
 		return
 	}
-	http.Redirect(w, r, "/login", http.StatusFound)
+
+	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 func AuthMiddleware(next http.Handler) http.Handler {

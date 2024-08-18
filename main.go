@@ -27,7 +27,8 @@ func serverErrorHandler(w http.ResponseWriter, r *http.Request) {
 
 var store = sessions.NewCookieStore([]byte("secret"))
 
-func helloWorld(w http.ResponseWriter, r *http.Request) {
+func home(w http.ResponseWriter, r *http.Request) {
+	// Retrieve session
 	session, err := store.Get(r, "session-name")
 	if err != nil {
 		log.Printf("Error retrieving session: %v", err)
@@ -35,20 +36,59 @@ func helloWorld(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get user session values
 	userID, _ := session.Values["userID"].(uint)
 	email, _ := session.Values["email"].(string)
 	firstName, _ := session.Values["firstName"].(string)
 	lastName, _ := session.Values["lastName"].(string)
 
+	var fullName string
+	if firstName != "" && lastName != "" {
+		fullName = firstName + " " + lastName
+	}
+
+	// Create data for the template
+	data := map[string]interface{}{
+		"UserID":        userID,
+		"Email":         email,
+		"Name":          fullName,
+		"Authenticated": userID != 0, // Checks if the user is logged in
+	}
+
+	// Parse and execute the template
+	t, err := template.ParseFiles("templates/home.html")
+	if err != nil {
+		log.Printf("Error parsing template: %v", err)
+		http.Error(w, "Error loading template", http.StatusInternalServerError)
+		return
+	}
+
+	if err := t.Execute(w, data); err != nil {
+		log.Printf("Error executing template: %v", err)
+		http.Error(w, "Error rendering page", http.StatusInternalServerError)
+	}
+}
+
+func userPofile(w http.ResponseWriter, r *http.Request) {
+	session, err := store.Get(r, "session-name")
+	if err != nil {
+		log.Printf("Error retrieving session: %v", err)
+		http.Error(w, "Error retrieving session", http.StatusInternalServerError)
+		return
+	}
+
+	firstName, _ := session.Values["firstName"].(string)
+	lastName, _ := session.Values["lastName"].(string)
+	email, _ := session.Values["email"].(string)
+
 	fullName := firstName + " " + lastName
 
 	data := map[string]interface{}{
-		"UserID": userID,
-		"Email":  email,
-		"Name":   fullName,
+		"Name":  fullName,
+		"Email": email,
 	}
 
-	t, err := template.ParseFiles("templates/hello_world.html")
+	t, err := template.ParseFiles("templates/user_profile.html")
 	if err != nil {
 		log.Printf("Error parsing template: %v", err)
 		http.Error(w, "Error loading template", http.StatusInternalServerError)
@@ -105,7 +145,11 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	mux.Handle("/", logRequest(auth.AuthMiddleware(http.HandlerFunc(helloWorld))))
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		home(w, r)
+	})
+	// mux.Handle("/", logRequest(auth.AuthMiddleware(http.HandlerFunc(home))))
+	mux.Handle("/profile", logRequest(auth.AuthMiddleware(http.HandlerFunc(userPofile))))
 	mux.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
 		login(w, r)
 	})
@@ -113,7 +157,9 @@ func main() {
 		signup(w, r)
 	})
 	mux.HandleFunc("/login/process", auth.LoginHandler)
-	mux.Handle("/logout", logRequest(auth.AuthMiddleware(http.HandlerFunc(auth.LogoutHandler))))
+	// mux.Handle("/logout", logRequest(auth.AuthMiddleware(http.HandlerFunc(auth.LogoutHandler))))
+
+	mux.HandleFunc("/logout", auth.LogoutHandler)
 	mux.HandleFunc("/register/process", auth.RegisterHandler)
 
 	mux.HandleFunc(
