@@ -1,6 +1,8 @@
 <body>
 <div class="login">
   <head>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"> <!-- load bulma css -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"> <!-- load fontawesome -->
     <style>
     
 @import url(https://fonts.googleapis.com/css?family=Open+Sans);
@@ -62,14 +64,23 @@ input {
 input:focus { box-shadow: inset 0 -5px 45px rgba(100,100,100,0.4), 0 1px 1px rgba(255,255,255,0.2); }
     </style>
   </head>
+<div>
+<form id="loginForm" method="POST">
+    <input type="text" id="username" name="username" placeholder="Enter your username" required="required" />
+    <input type="password" id="password" name="password" placeholder="Enter your password" required="required" />
+    <button type="submit" class="btn btn-primary btn-block btn-large">Log In</button>
+</form>
 
-	<h1>Login</h1>
-    <form id="loginForm" method="POST">
-    	<input type="text" id="username" name="username" placeholder="Username" required="required" />
-        <input type="password" id="password" name="password" placeholder="Password" required="required" />
-        <button type="submit" class="btn btn-primary btn-block btn-large">Login</button>
-    </form>
-    <i>Don't have an account? <a href="/signup" style="color: black;">Sign Up Here!</a></i>
+<div style="text-align: center; margin-top: 10px;">
+    <p style="color: white;">Or, log in with:</p>
+    <a href="/auth/google" class="btn btn-danger"><span class="fa fa-google"></span> Continue with Google</a>
+</div>
+
+<br>
+
+<p style="text-align: center; color: white;">
+    New here? <a href="/signup" style="color: white; text-decoration: underline;">Create an account</a>
+</p>
 </div>
 
     <script>

@@ -5,8 +5,6 @@ import (
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-
-	"github.com/stefanhall2704/GoPhotography/model"
 )
 
 func ConnectDatabase() *gorm.DB {
@@ -17,9 +15,9 @@ func ConnectDatabase() *gorm.DB {
 
 	// AutoMigrate will create or migrate the User table based on your User model
 	// Now checking for error returned by AutoMigrate
-	if err := db.AutoMigrate(&model.User{}, &model.Document{}); err != nil {
-		log.Fatalf("Failed to auto-migrate User table: %v", err)
-	}
+	// if err := db.AutoMigrate(&model.User{}, &model.Document{}); err != nil {
+	// 	log.Fatalf("Failed to auto-migrate User table: %v", err)
+	// }
 
 	return db
 }
