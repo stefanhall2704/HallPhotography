@@ -7,97 +7,138 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
 
   <style>
-    body.light {
-      background-color: #f5f5f5;
-      color: #333;
-    }
+/* Font settings */
+@import url('https://fonts.googleapis.com/css2?family=Recoleta:wght@400&family=Sofia+Pro:wght@300;400&display=swap');
 
-    body.dark {
-      background-color: #1a1a1a;
-      color: #fff;
-    }
+body {
+  font-family: 'Sofia Pro', sans-serif;
+  font-weight: 300;
+}
 
-    .wrapper {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-    }
+h1, h2, h3 {
+  font-family: 'Recoleta', serif;
+  font-weight: 400;
+}
 
-    .container {
-      max-width: 400px;
-      padding: 20px;
-      text-align: center;
-      border-radius: 10px;
-    }
+h4, h5, h6, .subtitle {
+  font-family: 'Sofia Pro', sans-serif;
+  font-weight: 400;
+}
 
-    /* Light Mode Card */
-    body.light .container {
-      background-color: #ffffff;
-      box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-    }
+p {
+  font-family: 'Sofia Pro', sans-serif;
+  font-weight: 300;
+}
 
-    /* Dark Mode Card */
-    body.dark .container {
-      background-color: rgba(0, 0, 0, 0.7);
-      box-shadow: 0px 4px 10px rgba(255, 255, 255, 0.1);
-    }
+.btn {
+  font-family: 'Sofia Pro', sans-serif;
+  font-weight: 400;
+}
 
-    input {
-      width: 85%;
-      padding: 10px;
-      margin: 10px 0;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-    }
+/* Color Palette - Lollipop, Light Accent scheme */
+body.light {
+  background-color: #ffe8cc; /* Slightly darker Lollipop Yellow */
+  color: #333;
+}
 
-    .btn {
-      width: 85%;
-      padding: 10px;
-      border-radius: 5px;
-      border: none;
-      cursor: pointer;
-    }
+body.dark {
+  background-color: #1a1a1a;
+  color: #fff;
+}
 
-    .btn-primary {
-      background-color: #007bff;
-      color: white;
-    }
+.wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
 
-    .indicator {
-      margin-top: 10px;
-      display: none;
-      font-size: 14px;
-    }
+.container {
+  max-width: 400px;
+  padding: 20px;
+  text-align: center;
+  border-radius: 10px;
+}
 
-    .indicator.success {
-      color: green;
-    }
+/* Light Mode Card */
+body.light .container {
+  background-color: #fff4e6;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+}
 
-    .indicator.error {
-      color: red;
-    }
+/* Dark Mode Card */
+body.dark .container {
+  background-color: rgba(0, 0, 0, 0.7);
+  box-shadow: 0px 4px 10px rgba(255, 255, 255, 0.1);
+}
 
-    a {
-      color: inherit;
-      text-decoration: underline;
-    }
+/* Input Styles */
+input {
+  width: 85%;
+  padding: 10px;
+  margin: 10px 0;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
 
-    a:hover {
-      text-decoration: none;
-    }
+/* Button Styles */
+.btn {
+  width: 85%;
+  padding: 10px;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+  background-color: #FF6F61; /* Lollipop Color */
+  color: white;
+}
 
-    .theme-toggle {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      font-size: 24px;
-      cursor: pointer;
-    }
+.btn:hover {
+  background-color: #FF4B4B; /* Darker Lollipop for hover */
+}
 
-    .theme-toggle i {
-      transition: color 0.3s ease;
-    }
+/* Indicators */
+.indicator {
+  margin-top: 10px;
+  display: none;
+  font-size: 14px;
+}
+
+.indicator.success {
+  color: green;
+}
+
+.indicator.error {
+  color: red;
+}
+
+/* Links */
+a {
+  color: inherit;
+  text-decoration: underline;
+}
+
+a:hover {
+  text-decoration: none;
+}
+
+/* Theme Toggle */
+.theme-toggle {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.theme-toggle i {
+  transition: color 0.3s ease;
+}
+
+/* Additional styling for dark mode */
+body.dark .btn {
+  background-color: #FF6F61;
+  color: white;
+}
   </style>
 
 </head>
