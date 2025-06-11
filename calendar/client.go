@@ -17,12 +17,6 @@ import (
 	"google.golang.org/api/option"
 )
 
-// EventInfo represents a simplified version of a calendar event
-// type EventInfo struct {
-// 	Summary string
-// 	Start   string
-// 	End     string
-// }
 
 // CreateCalendarClient creates a Google Calendar client using the session tokens
 func CreateCalendarClient(r *http.Request) (*calendar.Service, error) {
@@ -88,14 +82,12 @@ func GetUpcomingEvents(r *http.Request) ([]EventInfo, error) {
 	var timeMin, timeMax time.Time
 
 	if startStr != "" {
-		// t, err := time.Parse("2006-01-02", startStr)
 		t, err := time.Parse(time.RFC3339, startStr)
 		if err == nil {
 			timeMin = t.AddDate(0, 0, 14) // Skip 2 weeks from start of visible range
 		}
 	}
 	if endStr != "" {
-		// t, err := time.Parse("2006-01-02", endStr)
 		t, err := time.Parse(time.RFC3339, endStr)
 		if err == nil {
 			timeMax = t

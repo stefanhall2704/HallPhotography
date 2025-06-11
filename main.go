@@ -337,71 +337,29 @@ func signup(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	auth.Google_auth_consent()
-
-	database := db.ConnectDatabase()
-
-	if err := database.AutoMigrate(&model.User{}); err != nil {
-		log.Fatalf("Failed to migrate database: %v", err)
-	}
-	log.Println("Database migrated successfully")
-
+	// database := db.ConnectDatabase()
+	// if err := database.AutoMigrate(&model.User{}); err != nil {
+	// 	log.Fatalf("Failed to migrate database: %v", err)
+	// }
+	// log.Println("Database migrated successfully")
 	request := mux.NewRouter()
-
-
 	request.HandleFunc("/", home).Methods("GET")
-	// request.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-	// 	home(w, r)
-	// })
-	// mux.Handle("/", logRequest(auth.AuthMiddleware(http.HandlerFunc(home))))
 	request.Handle("/profile", auth.AuthMiddleware(http.HandlerFunc(userPofile))).Methods("GET")
-	// request.Handle("/profile", logRequest(auth.AuthMiddleware(http.HandlerFunc(userPofile))))
-	// mux.Handle("/booking", logRequest(auth.AuthMiddleware(http.HandlerFunc(userPofile))))
 	request.HandleFunc("/login", login).Methods("GET")
-	// request.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
-	// 	login(w, r)
-	// })
 	request.HandleFunc("/signup", signup).Methods("GET")
-	// request.HandleFunc("/signup", func(w http.ResponseWriter, r *http.Request) {
-	// 	signup(w, r)
-	// })
 	request.HandleFunc("/login/process", auth.LoginHandler).Methods("POST")
-
-	// mux.Handle("/logout", logRequest(auth.AuthMiddleware(http.HandlerFunc(auth.LogoutHandler))))
-
 	request.HandleFunc("/logout", auth.LogoutHandler).Methods("GET")
 	request.HandleFunc("/register/process", auth.RegisterHandler).Methods("POST")
 	request.Handle("/create/minis_session", auth.AuthMiddleware(http.HandlerFunc(createMinisSession))).Methods("POST")
 	request.HandleFunc("/auth/google/callback", auth.GoogleAuthCallbackHandler).Methods("GET")
-	// request.HandleFunc(
-	// 	"/auth/google/callback",
-	// 	auth.GoogleAuthCallbackHandler,
-	// )
-
 	request.HandleFunc("/auth/google", func(w http.ResponseWriter, r *http.Request) {
 		r = r.WithContext(context.WithValue(r.Context(), "provider", "google"))
 		gothic.BeginAuthHandler(w, r)
 	}).Methods("GET")
-	// request.HandleFunc("/auth/google", func(w http.ResponseWriter, r *http.Request) {
-	// 	r = r.WithContext(context.WithValue(r.Context(), "provider", "google"))
-	// 	gothic.BeginAuthHandler(w, r)
-	// })
 	request.Handle("/calendar", auth.AuthMiddleware(http.HandlerFunc(showCalendar))).Methods("GET")
 	request.Handle("/get/minis_session", auth.AuthMiddleware(http.HandlerFunc(getMinisSessions))).Methods("GET")
 	request.Handle("/get/minis_session_days", auth.AuthMiddleware(http.HandlerFunc(getMinisSessionDays))).Methods("GET")
 	request.Handle("/get/minis", auth.AuthMiddleware(http.HandlerFunc(getMinis))).Methods("GET")
-
-
-	// mux.HandleFunc("/calendar/events", func(w http.ResponseWriter, r *http.Request) {
-	// 	events, err := calendarreader.GetUpcomingEvents(r)
-	// 	if err != nil {
-	// 		log.Printf("Calendar error: %v", err)
-	// 		http.Error(w, "Failed to get events: "+err.Error(), http.StatusInternalServerError)
-	// 		return
-	// 	}
-	// 	w.Header().Set("Content-Type", "application/json")
-	// 	json.NewEncoder(w).Encode(events)
-	// })
-
 
 	loggedHandler := middleware.LoggingMiddleware(request)
 

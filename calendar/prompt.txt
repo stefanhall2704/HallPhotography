@@ -1,1 +1,0 @@
-Now I want to basically hit this as an api to get events that I can parse through. The current goal is to get all the events within a time range from 8 am est and 6 pm est that is at least 2 weeks away from the data passed in, but the passed in data cannot be before the current date. 
