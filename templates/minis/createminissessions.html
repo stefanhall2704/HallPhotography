@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Create Minis Session</title>
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.17/main.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.17/index.global.min.js"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+
+/* Light Theme */
+body[data-theme="light"] {
+  --background-color: #fff4e6;
+  --text-color: #333333;
+  --accent-color: #FF6F61; /* Lollipop Color */
+  --navbar-background: #ffe8cc;
+  --navbar-text-color: #333333;
+  --icon-color: #333333;
+  --hero-background-color: #ffe8cc;
+  --hero-text-color: #333333;
+  --navbar-brand: #000;
+}
+
+
+body[data-theme="light"] .modal-content {
+  background-color: #fefefe;
+  color: #333333;
+  border: 1px solid #888;
+}
+
+body[data-theme="light"] .close {
+  color: #aaa;
+}
+
+body[data-theme="light"] .close:hover,
+body[data-theme="light"] .close:focus {
+  color: black;
+}
+
+body[data-theme="light"] .fc {
+  background-color: #fff;
+  color: #333333;
+}
+
+body[data-theme="light"] .fc .fc-daygrid-day-number {
+  color: #333333;
+}
+
+body[data-theme="light"] .fc .fc-daygrid-day.fc-day-today {
+  background-color: #ffe8cc !important;
+}
+
+body[data-theme="light"] .fc .fc-event {
+  background-color: #FF6F61;
+  border: none;
+  color: #fff;
+}
+/* Dark Theme */
+
+body[data-theme="dark"] .modal-content {
+  background-color: #2c2c2c;
+  color: #ffffff;
+  border: 1px solid #555;
+}
+body[data-theme="dark"] .fc {
+  background-color: #1e1e1e;
+  color: #ffffff;
+}
+
+body[data-theme="dark"] .fc .fc-daygrid-day-number {
+  color: #ffffff;
+}
+
+body[data-theme="dark"] .fc .fc-daygrid-day.fc-day-today {
+  background-color: #333 !important;
+}
+
+body[data-theme="dark"] .fc .fc-event {
+  background-color: #FF6F61;
+  border: none;
+  color: #fff;
+}
+body[data-theme="dark"] {
+  --background-color: #1C1C1C;
+  --text-color: #ffffff;
+  --accent-color: #FF6F61; /* Lollipop Color */
+  --navbar-background: #333333;
+  --navbar-text-color: #ffffff;
+  --icon-color: #ffffff;
+  --hero-background-color: rgba(0, 0, 0, 0.7);
+  --hero-text-color: #ffffff;
+  --navbar-brand: #fff;
+}
+
+.navbar-brand {
+  color: var(--navbar-brand);
+  font-family: 'Recoleta', serif;
+}
+#main_section {
+  max-width: fit-content;
+  margin-left: auto;
+  margin-right: auto;
+}
+/* General body styles */
+body {
+  background-color: var(--background-color);
+  color: var(--text-color);
+  font-family: 'Sofia Pro', sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+/* Headings styled with Recoleta */
+h1, h2, h3 {
+  font-family: 'Recoleta', serif;
+  color: var(--hero-text-color);
+}
+
+/* Navbar styling */
+.navbar {
+  background-color: var(--navbar-background);
+  color: var(--navbar-text-color);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 10px 30px;
+}
+
+.navbar-nav .nav-link {
+  color: var(--navbar-text-color);
+  font-weight: 600;
+  font-family: 'Sofia Pro', sans-serif;
+}
+
+.navbar-nav .nav-link:hover {
+  color: var(--accent-color);
+}
+
+/* Button styling */
+.navbar-nav .nav-item .btn {
+  font-size: 1rem;
+  padding: 10px 20px;
+  margin-left: 10px;
+  font-family: 'Sofia Pro', sans-serif;
+}
+
+/* Google Icon Button styling */
+.google-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--icon-color);
+  cursor: pointer;
+  padding: 5px;
+  transition: color 0.3s ease;
+}
+
+.google-btn:hover {
+  color: var(--accent-color);
+}
+
+/* Hero section styling */
+.hero {
+  background: url('your-image-url.jpg') no-repeat center center/cover;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.hero-content {
+  background-color: var(--hero-background-color);
+  padding: 40px;
+  border-radius: 8px;
+  color: var(--hero-text-color);
+}
+
+/* Primary button styling */
+.btn-primary {
+  background-color: var(--accent-color);
+  border-color: var(--accent-color);
+  font-weight: 600;
+  padding: 10px 20px;
+  font-family: 'Sofia Pro', sans-serif;
+}
+
+.btn-primary:hover {
+  background-color: #FF4B4B; /* Darker Lollipop for hover */
+}
+
+/* Theme icon */
+#theme-icon {
+  margin-left: 10px;
+  font-size: 1.5rem;
+}
+
+.navbar-nav .google-btn-container {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 10px;
+}
+#calendar {
+  max-height: 800px;
+  flex: 1 1 auto;
+  min-height: 0; /* important for shrinking inside flex */
+}
+/* Start Modal Styling */
+/* The Modal (background) */
+
+/* Modal overlay (background) */
+.modal {
+  display: none; /* Hidden by default */
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden; /* Prevent scroll on background */
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+/* Modal content box */
+.modal-content {
+  display: flex;
+  flex-direction: column;
+  height: 90vh;
+  width: 80%;
+  max-height: 90vh;
+  background-color: #fefefe;
+  margin: 5vh auto;
+  padding: 20px;
+  border: 1px solid #888;
+  box-sizing: border-box;
+  position: relative;
+}
+
+/* Inside content */
+.modal-body {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+#calendar {
+  flex: 1;
+  min-height: 0;
+}
+
+/* Footer */
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 10px;
+}
+
+/* Close button */
+.close {
+  position: absolute;
+  top: 10px;
+  right: 20px;
+  font-size: 28px;
+  color: #aaa;
+  cursor: pointer;
+}
+
+
+.close:hover,
+.close:focus {
+  color: black;
+  text-decoration: none;
+  cursor: pointer;
+}
+#store_calendar_values {
+  width: 15%;
+}
+/* End Modal Styling */
+
+body[data-theme="light"] #main_section {
+  background-color: #fff4e6;
+  border: 2px solid #FF6F61;
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 600px;
+  margin: 40px auto;
+  box-shadow: 0 0 12px rgba(255, 111, 97, 0.2);
+}
+
+body[data-theme="dark"] #main_section {
+  background-color: #1e1e1e;
+  border: 2px solid #FF6F61;
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 600px;
+  margin: 40px auto;
+  box-shadow: 0 0 12px rgba(255, 111, 97, 0.2);
+}
+
+body[data-theme="light"] #main_section h2,
+body[data-theme="light"] #main_section label {
+  color: #333333;
+}
+
+body[data-theme="dark"] #main_section h2,
+body[data-theme="dark"] #main_section label {
+  color: #ffffff;
+}
+
+body[data-theme="light"] #main_section input,
+body[data-theme="light"] #main_section textarea {
+  background-color: #fff;
+  color: #333;
+  border: 1px solid #ccc;
+}
+
+body[data-theme="dark"] #main_section input,
+body[data-theme="dark"] #main_section textarea {
+  background-color: #2c2c2c;
+  color: #fff;
+  border: 1px solid #555;
+}
+
+#main_section .btn-primary {
+  background-color: #FF6F61;
+  border: none;
+  padding: 12px 20px;
+  font-weight: bold;
+  color: white;
+  border-radius: 6px;
+  transition: background-color 0.3s ease;
+}
+
+#main_section .btn-primary:hover {
+  background-color: #e85a4f;
+}
+
+  </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg">
+      <a href="/" class="navbar-brand">Hall's Photography</a>
+      <div class="collapse navbar-collapse">
+        <ul class="navbar-nav ml-auto">
+          {{if .Authenticated}}
+            <li class="nav-item">
+              <a href="/book" class="nav-link">Book Session</a>
+            </li>
+            <li class="nav-item">
+              <a href="/profile" class="nav-link">Welcome, {{.Name}}</a>
+            </li>
+            <li class="nav-item">
+              <a href="/logout" class="btn btn-sm">Logout</a>
+            </li>
+          {{else}}
+            <li class="nav-item">
+              <a href="/login" class="btn btn-primary">Login</a>
+            </li>
+            <li class="nav-item">
+              <a href="/signup" class="btn btn-outline-primary">Sign Up</a>
+            </li>
+            <li class="nav-item google-btn-container">
+              <a href="/auth/google" class="google-btn">
+                <i class="fa fa-google"></i>
+              </a>
+            </li>
+          {{end}}
+          <li class="nav-item">
+            <button class="btn nav-link" id="toggle-theme">
+              <i id="theme-icon" class="fa fa-moon-o"></i>
+            </button>
+          </li>
+        </ul>
+      </div>
+    </nav>
+  
+ 
+<form id="minisForm">
+  <div id="main_section">
+    <h2 class="mb-4">Create Minis Session</h2>
+
+    <div class="form-group row align-items-center mb-3">
+      <label for="name" class="col-sm-3 col-form-label">Session Name</label>
+      <div class="col-sm-9">
+        <input type="text" id="name" name="name" class="form-control" required placeholder="e.g. Christmas Tree Minis" />
+      </div>
+    </div>
+
+    <div class="form-group row align-items-start mb-3">
+      <label for="description" class="col-sm-3 col-form-label">Description</label>
+      <div class="col-sm-9">
+        <textarea id="description" name="description" class="form-control" rows="3" required></textarea>
+      </div>
+    </div>
+
+    <div class="form-group row align-items-center mb-4">
+      <label for="time_intervals" class="col-sm-3 col-form-label">Time Interval</label>
+      <div class="col-sm-9">
+        <select id="time_intervals" name="time_intervals" class="form-control" required>
+          <option value="">-- Select Interval --</option>
+          <option value="10min">10 minutes</option>
+          <option value="15min">15 minutes</option>
+          <option value="20min">20 minutes</option>
+          <option value="30min">30 minutes</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="text-right">
+      <button id="myBtn" class="btn btn-primary" type="button">Select Dates</button>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div id="myModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <div class="modal-body">
+        <div id="calendar"></div>
+        <div class="form-group mt-3">
+          <label>Click dates on the calendar below to add/remove them</label>
+          <input type="hidden" id="session_days" name="session_days" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="store_calendar_values" class="btn btn-primary" type="submit">Create Minis Session</button>
+      </div>
+    </div>
+  </div>
+</form>
+
+
+  <script>
+    const selectedDates = new Set();
+    const calendarEl = document.getElementById('calendar');
+    const sessionDaysInput = document.getElementById('session_days');
+
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+      initialView: 'dayGridMonth',
+      selectable: true,
+      selectMirror: true,
+      select: function(info) {
+        const dateStr = info.startStr + "T00:00";
+        if (selectedDates.has(dateStr)) {
+          selectedDates.delete(dateStr);
+        } else {
+          selectedDates.add(dateStr);
+        }
+        updateHighlights();
+      },
+      dayMaxEvents: true,
+      events: function(info, successCallback) {
+        const eventArray = Array.from(selectedDates).map(date => ({
+          title: 'Selected',
+          start: date,
+          allDay: true
+        }));
+        successCallback(eventArray);
+      }
+    });
+
+    function updateHighlights() {
+      sessionDaysInput.value = Array.from(selectedDates).join(',');
+      calendar.refetchEvents();
+    }
+    // Get the modal
+    var modal = document.getElementById("myModal");
+
+    // Get the button that opens the modal
+    var btn = document.getElementById("myBtn");
+
+    // Get the <span> element that closes the modal
+    var span = document.getElementsByClassName("close")[0];
+
+    let calendarInitialized = false;
+    // When the user clicks on the button, open the modal
+
+    btn.onclick = function() {
+      modal.style.display = "block";
+      setTimeout(() => {
+        if (!calendarInitialized) {
+          calendar.render();
+          calendarInitialized = true;
+        } else {
+          calendar.render(); // always rerender to fix visual glitches
+        }
+      }, 50); // give the modal time to render
+    }
+
+    // When the user clicks on <span> (x), close the modal
+    span.onclick = function() {
+      modal.style.display = "none";
+    }
+
+    // When the user clicks anywhere outside of the modal, close it
+    window.onclick = function(event) {
+      if (event.target == modal) {
+        modal.style.display = "none";
+      }
+    }
+  </script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    document.getElementById('minisForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      const formData = new URLSearchParams(new FormData(this));
+
+      fetch('/create/minis_session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: formData
+      })
+      .then(res => {
+        if (res.ok) {
+          alert('Minis session created!');
+          window.location.reload(); 
+        } else {
+          res.text().then(msg => alert('Error: ' + msg));
+        }
+      });
+    });
+
+    calendar.render();
+  });
+</script>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggleButton = document.getElementById('toggle-theme');
+        const themeIcon = document.getElementById('theme-icon');
+        const body = document.body;
+
+        // Load user preference from localStorage
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+          body.setAttribute('data-theme', savedTheme);
+          themeIcon.className = savedTheme === 'light' ? 'fa fa-moon-o' : 'fa fa-sun-o';
+        } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          body.setAttribute('data-theme', 'dark');
+          themeIcon.className = 'fa fa-sun-o';
+        }
+
+        // Toggle theme manually
+        toggleButton.addEventListener('click', function() {
+          const currentTheme = body.getAttribute('data-theme');
+          const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+          body.setAttribute('data-theme', newTheme);
+          localStorage.setItem('theme', newTheme); // Save user preference
+          themeIcon.className = newTheme === 'light' ? 'fa fa-moon-o' : 'fa fa-sun-o';
+
+          if (calendarInitialized) {
+            calendar.render(); // rerender for proper theme adaptation
+          }
+        });
+      });
+    </script>
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+</body>
+</html>
+
