@@ -31,3 +31,4 @@ go.work
 .env
 token.json
 SessionBooking.png
+credentials.json
