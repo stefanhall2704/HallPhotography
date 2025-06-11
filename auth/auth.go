@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"encoding/gob"
+	"time"
 
 	"github.com/gorilla/sessions"
 	"github.com/joho/godotenv"
@@ -16,6 +18,10 @@ import (
 	"github.com/stefanhall2704/GoPhotography/db"
 	"github.com/stefanhall2704/GoPhotography/model"
 )
+
+func init() {
+	gob.Register(time.Time{})
+}
 
 var store = sessions.NewCookieStore([]byte("secret"))
 
@@ -137,7 +143,6 @@ func GoogleAuthCallbackHandler(w http.ResponseWriter, r *http.Request) {
 			Email:       user.Email,
 			PhoneNumber: "",
 		}
-
 		if err := database.Create(&dbUser).Error; err != nil {
 			log.Printf("Error creating user: %v", err)
 			http.Error(w, "Error creating user", http.StatusInternalServerError)
@@ -151,18 +156,24 @@ func GoogleAuthCallbackHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error getting session", http.StatusInternalServerError)
 		return
 	}
-	// session.Values["user"] is not actually used, but is a required session value for the session to be successful for google consent oauth
+
+	// Store user session values
 	session.Values["user"] = dbUser.Username
 	session.Values["userID"] = dbUser.ID
 	session.Values["firstName"] = dbUser.FirstName
 	session.Values["lastName"] = dbUser.LastName
 	session.Values["email"] = dbUser.Email
 
+	// ✅ Store Google OAuth tokens
+	session.Values["access_token"] = user.AccessToken
+	session.Values["refresh_token"] = user.RefreshToken
+	session.Values["token_expiry"] = user.ExpiresAt
+
 	session.Options = &sessions.Options{
 		Path:     "/",
 		MaxAge:   3600,
 		HttpOnly: true,
-		Secure:   true, // Make sure to set this to true for HTTPS
+		Secure:   true,
 	}
 
 	if err := session.Save(r, w); err != nil {
@@ -238,7 +249,7 @@ func Google_auth_consent() {
 			googleClientID,
 			googleClientSecret,
 			googleCallbackURL,
-			"email", "profile",
+			"email", "profile", "https://www.googleapis.com/auth/calendar.readonly",
 		),
 	)
 
