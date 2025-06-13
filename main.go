@@ -12,6 +12,8 @@ import (
 	"encoding/json"
 	"strings"
 	"strconv"
+	"errors"
+	"gorm.io/gorm"
 	// "encoding/json"
 
 	"github.com/gorilla/sessions"
@@ -100,7 +102,32 @@ func NewSessionLength(minutes int) (SessionLength, error) {
 	}
 }
 
-func checkForAvailableTimeSlot(timeSlot string, minisSessionId uint) bool {
+func generateMinisSlots(minisSessionId uint, minisIntervalRaw string, w http.ResponseWriter) {
+	minisIntervalString := strings.TrimSuffix(minisIntervalRaw, "min")
+	minisInterval, err := strconv.Atoi(minisIntervalString)
+	if err != nil {
+		log.Printf("Error converting:", err)
+		return
+	}
+
+	log.Printf("minisInterval: %d", minisInterval)
+	var duration string
+	database := db.ConnectDatabase()
+	if err := database.Model(&model.Minis{}).
+		Select("duration_interval").
+		Where("id = ?", minisSessionId).
+		Scan(&duration).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				http.Error(w, "Session doesn't exist", http.StatusNotFound)
+			} else {
+				http.Error(w, "Database error", http.StatusInternalServerError)
+			}
+			return
+		}
+	
+}
+
+func checkForAvailableTimeSlot(timeSlot string, minisSessionId uint, w http.ResponseWriter) bool {
 	return true
 }
 
@@ -114,6 +141,13 @@ func bookMinisSession(w http.ResponseWriter, r *http.Request) {
 
 	firstName, _ := session.Values["firstName"].(string)
 	lastName, _ := session.Values["lastName"].(string)
+	fullName := firstName + " " + lastName
+	log.Printf("Full Name: %s", fullName)
+
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "Error parsing form data", http.StatusBadRequest)
+		return
+	}
 
 	// convert userId
 	userIdStr, _ := session.Values["userID"].(string)
@@ -123,13 +157,6 @@ func bookMinisSession(w http.ResponseWriter, r *http.Request) {
   }
   userId := uint(userId64)
 
-	fullName := firstName + " " + lastName
-	log.Printf("Full Name: %s", fullName)
-
-	if err := r.ParseForm(); err != nil {
-		http.Error(w, "Error parsing form data", http.StatusBadRequest)
-		return
-	}
 	timeSlot := r.Form.Get("time_slot")
 
 	// convert minisSessionId
@@ -140,8 +167,9 @@ func bookMinisSession(w http.ResponseWriter, r *http.Request) {
   }
   minisSessionId := uint(minisSessionId64)
 
-	if checkForAvailableTimeSlot(timeSlot, minisSessionId) == false {
+	if checkForAvailableTimeSlot(timeSlot, minisSessionId, w) == false {
 		http.Error(w, "Session time slot already booked", http.StatusBadRequest)
+
 		// Show popup to user that session is booked
 		// redirect them back to the page with the sessions on there and show new time slots that are up to date
 		return
@@ -157,6 +185,16 @@ func bookMinisSession(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error creating user", http.StatusInternalServerError)
 		return
 	}
+}
+
+func getUsers(w http.ResponseWriter, r *http.Request) {
+	database := db.ConnectDatabase()
+	var users []model.User
+	if err := database.Find(&users).Error; err != nil {
+		http.Error(w, "Error fetching sessions", http.StatusInternalServerError)
+		return
+	}
+	json.NewEncoder(w).Encode(users)
 }
 
 func getMinis(w http.ResponseWriter, r *http.Request) {
@@ -189,6 +227,38 @@ func getMinisSessions(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(minis)
 }
 
+type DateTimeRange struct {
+	Start string
+	End string
+}
+
+func parseDateTimes(sessionDays string) []DateTimeRange {
+	var ranges []DateTimeRange
+	// dateTimes := "2025-06-23T00:00,10:30 - 12:00,2025-06-28T00:00,11:30 - 14:00"
+	splitDateTimes := strings.Split(sessionDays, ",")
+	
+	for i := 0; i < len(splitDateTimes); i += 2 {
+		if i+1 >= len(splitDateTimes) {
+			break // avoid out-of-bounds
+		}
+		date := splitDateTimes[i]
+		timeRange := splitDateTimes[i+1]
+		times := strings.Split(timeRange, " - ")
+		if len(times) != 2 {
+			continue // malformed range
+		}
+		startTime := times[0]
+		endTime := times[1]
+		startDateTime := strings.TrimSuffix(date, "00:00") + startTime
+		endDateTime := strings.TrimSuffix(date, "00:00") + endTime
+		ranges = append(ranges, DateTimeRange{
+			Start: startDateTime,
+			End: endDateTime,
+		})
+	}
+	return ranges
+}
+
 func createMinisSession(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		http.Error(w, "Error parsing form data", http.StatusBadRequest)
@@ -198,21 +268,28 @@ func createMinisSession(w http.ResponseWriter, r *http.Request) {
 	name := r.Form.Get("name")
 	description := r.Form.Get("description")
 	timeIntervals := r.Form.Get("time_intervals")
-	sessionDays := r.Form.Get("session_days") // format needs to be like this: 2006-01-02T15:04,2006-01-02T15:04
+	sessionDays := r.Form.Get("session_days") // format needs to be like this: 2025-06-23T00:00,10:30 - 12:00,2025-06-28T00:00,11:30 - 14:00
 
-	miniDaysSlice := strings.Split(sessionDays, ",")
+	var minisDays []DateTimeRange = parseDateTimes(sessionDays)
 	var miniDays []model.MinisDay
 
-	for _, dayStr := range miniDaysSlice {
+
+	for _, dayStr := range minisDays {
 			layout := "2006-01-02T15:04"
-			parsedTime, err := time.Parse(layout, dayStr)
+			parsedStartTime, err := time.Parse(layout, dayStr.Start)
+			if err != nil {
+				http.Error(w, "Invalid time format", http.StatusBadRequest)
+				return
+			}
+			parsedEndTime, err := time.Parse(layout, dayStr.End)
 			if err != nil {
 				http.Error(w, "Invalid time format", http.StatusBadRequest)
 				return
 			}
 
     	miniDays = append(miniDays, model.MinisDay{
-        	DayForMinis: parsedTime,
+    		Start: parsedStartTime,
+    		End: parsedEndTime,
     	})
 	}
 
@@ -337,11 +414,11 @@ func signup(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	auth.Google_auth_consent()
-	// database := db.ConnectDatabase()
-	// if err := database.AutoMigrate(&model.User{}); err != nil {
-	// 	log.Fatalf("Failed to migrate database: %v", err)
-	// }
-	// log.Println("Database migrated successfully")
+	database := db.ConnectDatabase()
+	if err := database.AutoMigrate(&model.Minis{}, &model.MinisDay{}, &model.Package{}, &model.Photo{}); err != nil {
+		log.Fatalf("Failed to auto-migrate User table: %v", err)
+	}
+	log.Println("Database migrated successfully")
 	request := mux.NewRouter()
 	request.HandleFunc("/", home).Methods("GET")
 	request.Handle("/profile", auth.AuthMiddleware(http.HandlerFunc(userPofile))).Methods("GET")
@@ -356,10 +433,11 @@ func main() {
 		r = r.WithContext(context.WithValue(r.Context(), "provider", "google"))
 		gothic.BeginAuthHandler(w, r)
 	}).Methods("GET")
-	request.Handle("/calendar", auth.AuthMiddleware(http.HandlerFunc(showCalendar))).Methods("GET")
+	request.Handle("/calendar", auth.AdminAuthMiddleware(http.HandlerFunc(showCalendar))).Methods("GET")
 	request.Handle("/get/minis_session", auth.AuthMiddleware(http.HandlerFunc(getMinisSessions))).Methods("GET")
 	request.Handle("/get/minis_session_days", auth.AuthMiddleware(http.HandlerFunc(getMinisSessionDays))).Methods("GET")
 	request.Handle("/get/minis", auth.AuthMiddleware(http.HandlerFunc(getMinis))).Methods("GET")
+	request.Handle("/get/users", auth.AuthMiddleware(http.HandlerFunc(getUsers))).Methods("GET")
 
 	loggedHandler := middleware.LoggingMiddleware(request)
 
