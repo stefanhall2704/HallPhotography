@@ -198,6 +198,35 @@ func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
+var allowedAdminIDs = map[uint]struct{}{
+	3: {},
+	1: {},
+	2: {},
+}
+
+func AdminAuthMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		session, err := store.Get(r, "session-name")
+		if err != nil {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		userID, ok := session.Values["userID"].(uint)
+		if _, hasUser := session.Values["user"]; !hasUser || !ok {
+			http.Redirect(w, r, "/login", http.StatusFound)
+			return
+		}
+
+		if _, allowed := allowedAdminIDs[userID]; !allowed {
+			http.Redirect(w, r, "/login", http.StatusFound)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		session, err := store.Get(r, "session-name")

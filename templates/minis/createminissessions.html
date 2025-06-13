@@ -436,33 +436,90 @@ body[data-theme="dark"] #main_section textarea {
 
 
   <script>
-    const selectedDates = new Set();
-    const calendarEl = document.getElementById('calendar');
-    const sessionDaysInput = document.getElementById('session_days');
+  const selectedDates = new Map();
+  let pendingDate = null;
 
-    const calendar = new FullCalendar.Calendar(calendarEl, {
-      initialView: 'dayGridMonth',
-      selectable: true,
-      selectMirror: true,
-      select: function(info) {
-        const dateStr = info.startStr + "T00:00";
-        if (selectedDates.has(dateStr)) {
-          selectedDates.delete(dateStr);
-        } else {
-          selectedDates.add(dateStr);
-        }
+  const calendarEl = document.getElementById('calendar');
+  const sessionDaysInput = document.getElementById('session_days');
+
+  function updateHighlights() {
+    sessionDaysInput.value = JSON.stringify(Object.fromEntries(selectedDates));
+    calendar.refetchEvents();
+  }
+
+  function openTimePicker(dateStr) {
+    // Remove existing picker if open
+    const existingPicker = document.getElementById('timePickerContainer');
+    if (existingPicker) {
+      existingPicker.remove();
+    }
+
+    const timeHTML = `
+      <div id="timePickerContainer" style="margin-top: 10px;">
+        <div class="form-group">
+          <label>Start Time:</label>
+          <input type="time" id="startTimeInput" class="form-control" required />
+        </div>
+        <div class="form-group">
+          <label>End Time:</label>
+          <input type="time" id="endTimeInput" class="form-control" required />
+        </div>
+        <button id="confirmTime" class="btn btn-sm btn-primary">Confirm</button>
+      </div>
+    `;
+
+    const modalBody = document.querySelector('.modal-body');
+    const timeWrapper = document.createElement('div');
+    timeWrapper.innerHTML = timeHTML;
+    modalBody.appendChild(timeWrapper);
+
+    document.getElementById('confirmTime').onclick = () => {
+      const start = document.getElementById('startTimeInput').value;
+      const end = document.getElementById('endTimeInput').value;
+      if (start && end) {
+        selectedDates.set(dateStr, `${start} - ${end}`);
         updateHighlights();
-      },
-      dayMaxEvents: true,
-      events: function(info, successCallback) {
-        const eventArray = Array.from(selectedDates).map(date => ({
-          title: 'Selected',
-          start: date,
-          allDay: true
-        }));
-        successCallback(eventArray);
+        timeWrapper.remove();
+
+        // Reset calendar size to ensure proper layout
+        setTimeout(() => calendar.updateSize(), 0);
+      } else {
+        alert('Both start and end times are required.');
       }
-    });
+    };
+  }
+
+  const calendar = new FullCalendar.Calendar(calendarEl, {
+    initialView: 'dayGridMonth',
+    selectable: true,
+    selectMirror: true,
+    select: function(info) {
+      const dateStr = info.startStr + "T00:00";
+
+      // Remove existing picker if trying to open a new one
+      const existingPicker = document.getElementById('timePickerContainer');
+      if (existingPicker) {
+        existingPicker.remove();
+        calendar.updateSize();
+      }
+
+      if (selectedDates.has(dateStr)) {
+        selectedDates.delete(dateStr);
+        updateHighlights();
+      } else {
+        openTimePicker(dateStr);
+      }
+    },
+    dayMaxEvents: true,
+    events: function(info, successCallback) {
+      const eventArray = Array.from(selectedDates.entries()).map(([date, timeRange]) => ({
+        title: timeRange,
+        start: date,
+        allDay: true
+      }));
+      successCallback(eventArray);
+    }
+  });
 
     function updateHighlights() {
       sessionDaysInput.value = Array.from(selectedDates).join(',');

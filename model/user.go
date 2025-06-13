@@ -27,7 +27,8 @@ type Minis struct {
 
 type MinisDay struct {
 	gorm.Model
-	DayForMinis time.Time
+	Start       time.Time
+	End         time.Time
 	MinisID     uint
 }
 
