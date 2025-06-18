@@ -1,0 +1,637 @@
+<!-- TODO: create this page to show the calendar and use this endpoint "/get/days" that will return json of {"2025-06-17: ["08:30 AM",...]} -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Create Minis Session</title>
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.17/main.min.css" rel="stylesheet" />
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.17/index.global.min.js"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+
+/* Light Theme */
+body[data-theme="light"] {
+  --background-color: #fff4e6;
+  --text-color: #333333;
+  --accent-color: #FF6F61; /* Lollipop Color */
+  --navbar-background: #ffe8cc;
+  --navbar-text-color: #333333;
+  --icon-color: #333333;
+  --hero-background-color: #ffe8cc;
+  --hero-text-color: #333333;
+  --navbar-brand: #000;
+
+.slot-tag {
+  display: inline-block;
+  padding: 6px 12px;
+  margin: 4px;
+  background-color: #eee;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.slot-tag.selected {
+  background-color: #007bff;
+  color: white;
+}
+.modal-body {
+  padding: 20px;
+}
+/* Contain button inside day box and shrink size */
+.calendar-button-wrapper {
+  display: flex;
+  justify-content: center;
+  padding: 2px 0;
+  width: 100%;
+}
+
+
+.fc-daygrid-event {
+  background: none !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 auto !important;
+  width: 100%;
+  text-align: center;
+}
+
+.fc-event-title {
+  display: block !important;
+  padding: 0 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 100%;
+}
+
+.calendar-session-btn {
+  background-color: var(--accent-color);
+  color: white;
+  font-size: 0.75rem;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  max-width: 90%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: inline-block;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.2s ease;
+}
+
+.calendar-session-btn:hover {
+  background-color: #FF4B4B;
+}
+
+
+
+.slot-tag {
+  display: inline-block;
+  background-color: #f1f3f5;
+  color: #212529;
+  padding: 8px 14px;
+  margin: 6px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border: 1px solid #dee2e6;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  transition: background-color 0.2s ease, color 0.2s ease;
+  cursor: default;
+}
+
+
+body[data-theme="light"] .modal-content {
+  background-color: #fefefe;
+  color: #333333;
+  border: 1px solid #888;
+}
+
+body[data-theme="light"] .close {
+  color: #aaa;
+}
+
+body[data-theme="light"] .close:hover,
+body[data-theme="light"] .close:focus {
+  color: black;
+}
+
+body[data-theme="light"] .fc {
+  background-color: #fff;
+  color: #333333;
+}
+
+.fc-event-main {
+  background: none !important;
+  padding: 0 !important;
+}
+
+body[data-theme="light"] .fc .fc-daygrid-day-number {
+  color: #333333;
+}
+
+body[data-theme="light"] .fc .fc-daygrid-day.fc-day-today {
+  background-color: #ffe8cc !important;
+}
+
+body[data-theme="dark"] .fc .fc-col-header-cell {
+  background-color: #2c2c2c;
+  color: #ffffff;
+  border-color: #444;
+}
+
+body[data-theme="light"] .fc .fc-col-header-cell {
+  background-color: #fff4e6;
+  color: #333333;
+  border-color: #ccc;
+}
+body[data-theme="dark"] .fc .fc-event,
+body[data-theme="light"] .fc .fc-event {
+  background: none !important;
+  border: none !important;
+  color: inherit !important;
+}
+/* Dark Theme */
+
+body[data-theme="dark"] .modal-content {
+  background-color: #2c2c2c;
+  color: #ffffff;
+  border: 1px solid #555;
+}
+body[data-theme="dark"] .fc {
+  background-color: #1e1e1e;
+  color: #ffffff;
+}
+
+body[data-theme="dark"] .fc .fc-daygrid-day-number {
+  color: #ffffff;
+}
+
+body[data-theme="dark"] .fc .fc-daygrid-day.fc-day-today {
+  background-color: #333 !important;
+}
+
+body[data-theme="dark"] .fc .fc-event {
+  background-color: #FF6F61;
+  border: none;
+  color: #fff;
+}
+body[data-theme="dark"] {
+  --background-color: #1C1C1C;
+  --text-color: #ffffff;
+  --accent-color: #FF6F61; /* Lollipop Color */
+  --navbar-background: #333333;
+  --navbar-text-color: #ffffff;
+  --icon-color: #ffffff;
+  --hero-background-color: rgba(0, 0, 0, 0.7);
+  --hero-text-color: #ffffff;
+  --navbar-brand: #fff;
+}
+
+.navbar-brand {
+  color: var(--navbar-brand);
+  font-family: 'Recoleta', serif;
+}
+#main_section {
+  max-width: fit-content;
+  margin-left: auto;
+  margin-right: auto;
+}
+/* General body styles */
+body {
+  background-color: var(--background-color);
+  color: var(--text-color);
+  font-family: 'Sofia Pro', sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+/* Headings styled with Recoleta */
+h1, h2, h3 {
+  font-family: 'Recoleta', serif;
+  color: var(--hero-text-color);
+}
+
+/* Navbar styling */
+.navbar {
+  background-color: var(--navbar-background);
+  color: var(--navbar-text-color);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 10px 30px;
+}
+
+.navbar-nav .nav-link {
+  color: var(--navbar-text-color);
+  font-weight: 600;
+  font-family: 'Sofia Pro', sans-serif;
+}
+
+.navbar-nav .nav-link:hover {
+  color: var(--accent-color);
+}
+
+/* Button styling */
+.navbar-nav .nav-item .btn {
+  font-size: 1rem;
+  padding: 10px 20px;
+  margin-left: 10px;
+  font-family: 'Sofia Pro', sans-serif;
+}
+
+/* Google Icon Button styling */
+.google-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--icon-color);
+  cursor: pointer;
+  padding: 5px;
+  transition: color 0.3s ease;
+}
+
+.google-btn:hover {
+  color: var(--accent-color);
+}
+
+/* Hero section styling */
+.hero {
+  background: url('your-image-url.jpg') no-repeat center center/cover;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.hero-content {
+  background-color: var(--hero-background-color);
+  padding: 40px;
+  border-radius: 8px;
+  color: var(--hero-text-color);
+}
+
+/* Primary button styling */
+.btn-primary {
+  background-color: var(--accent-color);
+  border-color: var(--accent-color);
+  font-weight: 600;
+  padding: 10px 20px;
+  font-family: 'Sofia Pro', sans-serif;
+}
+
+.btn-primary:hover {
+  background-color: #FF4B4B; /* Darker Lollipop for hover */
+}
+
+/* Theme icon */
+#theme-icon {
+  margin-left: 10px;
+  font-size: 1.5rem;
+}
+
+.navbar-nav .google-btn-container {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 10px;
+}
+#calendar {
+  height: 100%;
+  flex: 1 1 auto;
+  min-height: 0; /* important for shrinking inside flex */
+}
+
+#store_calendar_values {
+  width: 15%;
+}
+/* End Modal Styling */
+
+body[data-theme="light"] #main_section {
+  background-color: #fff4e6;
+  border: 2px solid #FF6F61;
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 600px;
+  margin: 40px auto;
+  box-shadow: 0 0 12px rgba(255, 111, 97, 0.2);
+}
+
+body[data-theme="dark"] #main_section {
+  background-color: #1e1e1e;
+  border: 2px solid #FF6F61;
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 600px;
+  margin: 40px auto;
+  box-shadow: 0 0 12px rgba(255, 111, 97, 0.2);
+}
+
+body[data-theme="light"] #main_section h2,
+body[data-theme="light"] #main_section label {
+  color: #333333;
+}
+
+body[data-theme="dark"] #main_section h2,
+body[data-theme="dark"] #main_section label {
+  color: #ffffff;
+}
+
+body[data-theme="light"] #main_section input,
+body[data-theme="light"] #main_section textarea {
+  background-color: #fff;
+  color: #333;
+  border: 1px solid #ccc;
+}
+
+body[data-theme="dark"] #main_section input,
+body[data-theme="dark"] #main_section textarea {
+  background-color: #2c2c2c;
+  color: #fff;
+  border: 1px solid #555;
+}
+
+#main_section .btn-primary {
+  background-color: #FF6F61;
+  border: none;
+  padding: 12px 20px;
+  font-weight: bold;
+  color: white;
+  border-radius: 6px;
+  transition: background-color 0.3s ease;
+}
+
+#main_section .btn-primary:hover {
+  background-color: #e85a4f;
+}
+
+  </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg">
+      <a href="/" class="navbar-brand">Hall's Photography</a>
+      <div class="collapse navbar-collapse">
+        <ul class="navbar-nav ml-auto">
+          {{if .Authenticated}}
+            <li class="nav-item">
+              <a href="/book" class="nav-link">Book Session</a>
+            </li>
+            <li class="nav-item">
+              <a href="/profile" class="nav-link">Welcome, {{.Name}}</a>
+            </li>
+            <li class="nav-item">
+              <a href="/logout" class="btn btn-sm">Logout</a>
+            </li>
+          {{else}}
+            <li class="nav-item">
+              <a href="/login" class="btn btn-primary">Login</a>
+            </li>
+            <li class="nav-item">
+              <a href="/signup" class="btn btn-outline-primary">Sign Up</a>
+            </li>
+            <li class="nav-item google-btn-container">
+              <a href="/auth/google" class="google-btn">
+                <i class="fa fa-google"></i>
+              </a>
+            </li>
+          {{end}}
+          <li class="nav-item">
+            <button class="btn nav-link" id="toggle-theme">
+              <i id="theme-icon" class="fa fa-moon-o"></i>
+            </button>
+          </li>
+        </ul>
+      </div>
+    </nav>
+    <!-- Session Modal -->
+    <div class="modal fade" id="sessionModal" tabindex="-1" role="dialog" aria-labelledby="sessionModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content" id="session-modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="sessionModalLabel">Session Time Slots</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span>&times;</span>
+            </button>
+          </div>
+          <div class="modal-body" id="modal-time-slots">
+            <!-- Time slot tags go here -->
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="calendar-container" class="container mt-5">
+      <div id="calendar"></div>
+    </div>
+
+
+
+    <script>
+    document.addEventListener('DOMContentLoaded', async function () {
+      const calendarEl = document.getElementById('calendar');
+
+      let calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+
+        events: async function (fetchInfo, successCallback, failureCallback) {
+          try {
+            const start = fetchInfo.start.toISOString();
+            const end = fetchInfo.end.toISOString();
+
+            // Fetch all slot data
+            const slotRes = await fetch(`/get/days?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`);
+            const slotData = await slotRes.json();
+
+            // Fetch all session metadata for this date range
+            const sessionRes = await fetch(`/get/minis_sessions?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`);
+            const sessions = await sessionRes.json(); // array of Minis objects
+
+            // Map minis ID to session info (name, etc.)
+            const sessionMap = {};
+            for (const session of sessions) {
+              sessionMap[session.ID] = session;
+            }
+
+            const events = [];
+
+            // slotData: { "2025-06-17": [ "08:30 AM", ... ] }
+            for (const date in slotData) {
+              const slots = slotData[date];
+
+              // Optional enhancement: determine the matching session name
+              // If multiple sessions overlap on the same date, you could group or list them all
+              // For now, we'll just show a default name or the first match
+
+              let sessionName = 'Minis Session';
+              let matchedSession = null;
+
+              // Try to find a session whose Day matches this date
+              for (const session of sessions) {
+                if (session.Days.some(d => d.Start.startsWith(date))) {
+                  sessionName = session.Name;
+                  matchedSession = session;
+                  break;
+                }
+              }
+
+              events.push({
+                title: sessionName,
+                start: date,
+                allDay: true,
+                extendedProps: {
+                  slots: slots,
+                  minisSessionID: matchedSession?.ID || null
+                }
+              });
+            }
+
+            successCallback(events);
+          } catch (err) {
+            console.error("Failed to fetch calendar data:", err);
+            failureCallback(err);
+          }
+        },
+
+        eventClick: function (info) {
+          const modalTitle = document.getElementById('sessionModalLabel');
+          const modalBody = document.getElementById('modal-time-slots');
+          const slots = info.event.extendedProps.slots || [];
+          const sessionName = info.event.title;
+          const clickedDate = info.event.startStr;
+
+          modalTitle.textContent = sessionName;
+
+          if (slots.length === 0) {
+            modalBody.innerHTML = '<p class="text-muted">No available time slots.</p>';
+            return;
+          }
+
+          // Build slot tags with click handlers
+          const slotTags = slots.map(slot => `<span class="slot-tag" data-slot="${slot}">${slot}</span>`).join('');
+          const formHtml = `
+            <form id="booking-form">
+              <input type="hidden" name="minis_session_id" value="">
+              <input type="hidden" name="time_slot" value="">
+              <div id="slot-container">${slotTags}</div>
+              <button type="submit" class="btn btn-primary mt-3" disabled id="book-now-btn">Book Now</button>
+            </form>
+          `;
+
+          modalBody.innerHTML = formHtml;
+
+          // Figure out correct minis_session_id based on calendar event + sessions in memory
+          // We'll assume only one matching session per day from earlier session mapping
+          const minisSessionID = info.event.extendedProps.minisSessionID;
+          if (!minisSessionID) {
+            alert("No session ID found for this slot");
+            return;
+          }
+          document.querySelector('input[name="minis_session_id"]').value = minisSessionID;
+
+          // Add click handler for slot selection
+          modalBody.querySelectorAll('.slot-tag').forEach(tag => {
+            tag.addEventListener('click', function () {
+              // Unselect all
+              modalBody.querySelectorAll('.slot-tag').forEach(t => t.classList.remove('selected'));
+              this.classList.add('selected');
+
+              // Set hidden input
+              const timeSlot = this.dataset.slot;
+              document.querySelector('input[name="time_slot"]').value = timeSlot;
+
+              // Enable button
+              document.getElementById('book-now-btn').disabled = false;
+            });
+          });
+
+          // Handle form submission
+          document.getElementById('booking-form').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+
+            try {
+              const response = await fetch('/create/book_minis', {
+                method: 'POST',
+                body: formData
+              });
+
+              if (response.ok) {
+                alert("Booking successful!");
+                $('#sessionModal').modal('hide');
+                calendar.refetchEvents();
+              } else {
+                const errorText = await response.text();
+                alert("Error: " + errorText);
+              }
+            } catch (err) {
+              console.error("Booking error:", err);
+              alert("Something went wrong!");
+            }
+          });
+
+          $('#sessionModal').modal('show');
+        },
+
+        eventContent: function (arg) {
+          return {
+            html: `<button class="calendar-session-btn" title="${arg.event.title}">${arg.event.title}</button>`
+          };
+        },
+
+        headerToolbar: {
+          left: 'prev,next today',
+          center: 'title',
+          right: ''
+        },
+
+        height: 'auto'
+      });
+
+      calendar.render();
+    });
+    </script>
+
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggleButton = document.getElementById('toggle-theme');
+        const themeIcon = document.getElementById('theme-icon');
+        const body = document.body;
+
+        // Load user preference from localStorage
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+          body.setAttribute('data-theme', savedTheme);
+          themeIcon.className = savedTheme === 'light' ? 'fa fa-moon-o' : 'fa fa-sun-o';
+        } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          body.setAttribute('data-theme', 'dark');
+          themeIcon.className = 'fa fa-sun-o';
+        }
+
+        // Toggle theme manually
+        toggleButton.addEventListener('click', function() {
+          const currentTheme = body.getAttribute('data-theme');
+          const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+          body.setAttribute('data-theme', newTheme);
+          localStorage.setItem('theme', newTheme); // Save user preference
+          themeIcon.className = newTheme === 'light' ? 'fa fa-moon-o' : 'fa fa-sun-o';
+
+          if (calendarInitialized) {
+            calendar.render(); // rerender for proper theme adaptation
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

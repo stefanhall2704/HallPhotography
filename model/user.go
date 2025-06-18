@@ -22,7 +22,7 @@ type Minis struct {
 	Description      string      `gorm:"not null"`
 	DurationInterval string      `gorm:"not null"`
 	Days             []MinisDay  `gorm:"foreignKey:MinisID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
-	Sessions         []BookMinis `gorm:"foreignKey:MinisID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
+	// Sessions         []BookMinis `gorm:"foreignKey:MinisID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 }
 
 type MinisDay struct {

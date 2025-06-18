@@ -127,8 +127,204 @@ func generateMinisSlots(minisSessionId uint, minisIntervalRaw string, w http.Res
 	
 }
 
-func checkForAvailableTimeSlot(timeSlot string, minisSessionId uint, w http.ResponseWriter) bool {
-	return true
+func checkIfTimeslotIsAvailable(timeSlot string, minisSessionId uint, w http.ResponseWriter) bool {
+	var exists bool
+	database := db.ConnectDatabase()
+	err := database.Model(&model.BookMinis{}).
+		Select("count(*) > 0").
+		Where("time_slot = ? AND minis_id = ?", timeSlot, minisSessionId).
+		Find(&exists).Error
+
+	if err != nil {
+		http.Error(w, "Database error", http.StatusInternalServerError)
+		return false
+	}
+	return !exists
+}
+
+
+type TimeSlotRange struct {
+	Start time.Time
+	End   time.Time
+}
+
+func parseSlotDuration(durationStr string) (time.Duration, error) {
+	if strings.HasSuffix(durationStr, "min") {
+		minStr := strings.TrimSuffix(durationStr, "min")
+		minutes, err := time.ParseDuration(minStr + "m")
+		if err != nil {
+			return 0, fmt.Errorf("invalid duration: %w", err)
+		}
+		return minutes, nil
+	}
+	return 0, fmt.Errorf("unsupported duration format: %s", durationStr)
+}
+
+func GetAvailableTimeSlots(db *gorm.DB, minisID uint, startStr, endStr, durationStr string) ([]string, error) {
+	// Parse times
+	start, err := time.Parse(time.RFC3339, startStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid start time: %w", err)
+	}
+	end, err := time.Parse(time.RFC3339, endStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid end time: %w", err)
+	}
+
+	// Parse duration
+	slotDuration, err := parseSlotDuration(durationStr)
+	if err != nil {
+		return nil, err
+	}
+
+	// Query booked slots
+	var booked []string
+	if err := db.Model(&model.BookMinis{}).
+		Where("minis_id = ? AND time_slot >= ? AND time_slot < ?", minisID, start.Format(time.RFC3339), end.Format(time.RFC3339)).
+		Pluck("time_slot", &booked).Error; err != nil {
+		return nil, err
+	}
+
+	bookedSet := make(map[string]struct{})
+	for _, b := range booked {
+		bookedSet[b] = struct{}{}
+	}
+
+	// Build available slots
+	var available []string
+	for t := start; t.Add(slotDuration).Equal(end) || t.Add(slotDuration).Before(end); t = t.Add(slotDuration) {
+		slotKey := t.Format(time.RFC3339)
+		if _, taken := bookedSet[slotKey]; !taken {
+			available = append(available, t.Format("03:04 PM")) // local display format
+		}
+	}
+
+	return available, nil
+}
+
+func keys(m map[uint]bool) []uint {
+	result := make([]uint, 0, len(m))
+	for k := range m {
+		result = append(result, k)
+	}
+	return result
+}
+func getBookedSessions(w http.ResponseWriter, r *http.Request) {
+	//TODO: THIS IS NOT FILTERING OUT THE ALREADY BOOKED SESSIONS
+	// Parse query parameters
+	startStr := r.URL.Query().Get("start")
+	endStr := r.URL.Query().Get("end")
+
+	if startStr == "" || endStr == "" {
+		http.Error(w, "start and end query parameters are required", http.StatusBadRequest)
+		return
+	}
+
+	startTime, err := time.Parse(time.RFC3339, startStr)
+	if err != nil {
+		http.Error(w, "invalid start time format, expected RFC3339", http.StatusBadRequest)
+		return
+	}
+
+	endTime, err := time.Parse(time.RFC3339, endStr)
+	if err != nil {
+		http.Error(w, "invalid end time format, expected RFC3339", http.StatusBadRequest)
+		return
+	}
+
+	database := db.ConnectDatabase()
+
+	// Fetch all MinisDay records within the range
+	var days []model.MinisDay
+	if err := database.
+		Where("start >= ? AND end <= ?", startTime, endTime).
+		Find(&days).Error; err != nil {
+		http.Error(w, "error fetching days", http.StatusInternalServerError)
+		return
+	}
+
+	// Fetch all relevant Minis entries (by ID)
+	minisIDs := make(map[uint]bool)
+	for _, day := range days {
+		minisIDs[day.MinisID] = true
+	}
+
+	var minis []model.Minis
+	if err := database.
+		Where("id IN ?", keys(minisIDs)).
+		Find(&minis).Error; err != nil {
+		http.Error(w, "error fetching minis sessions", http.StatusInternalServerError)
+		return
+	}
+
+	// Map minisID -> duration
+	durationMap := make(map[uint]string)
+	for _, m := range minis {
+		durationMap[m.ID] = m.DurationInterval
+	}
+
+	// Group by date
+	allAvailableSlots := make(map[string][]string)
+
+	for _, day := range days {
+		duration := durationMap[day.MinisID]
+		if duration == "" {
+			continue // skip if no duration
+		}
+
+		slots, err := GetAvailableTimeSlots(database, day.MinisID, day.Start.Format(time.RFC3339), day.End.Format(time.RFC3339), duration)
+		if err != nil {
+			log.Printf("error generating slots for %s - %s: %v", day.Start, day.End, err)
+			continue
+		}
+
+		dateOnly := day.Start.Format("2006-01-02")
+		allAvailableSlots[dateOnly] = append(allAvailableSlots[dateOnly], slots...)
+	}
+
+	// Return as JSON
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(allAvailableSlots)
+}
+
+
+func bookMinisSessionView(w http.ResponseWriter, r *http.Request) {
+	session, err := store.Get(r, "session-name")
+	if err != nil {
+		log.Printf("Error retrieving session: %v", err)
+		http.Error(w, "Error retrieving session", http.StatusInternalServerError)
+		return
+	}
+
+	userID, _ := session.Values["userID"].(uint)
+	email, _ := session.Values["email"].(string)
+	firstName, _ := session.Values["firstName"].(string)
+	lastName, _ := session.Values["lastName"].(string)
+
+	var fullName string
+	if firstName != "" && lastName != "" {
+		fullName = firstName + " " + lastName
+	}
+
+	// Create data for the template
+	data := map[string]interface{}{
+		"UserID":        userID,
+		"Email":         email,
+		"Name":          fullName,
+		"Authenticated": userID != 0, // Checks if the user is logged in
+	}
+
+	t, err := template.ParseFiles("templates/minis/bookminis.html")
+	if err != nil {
+		log.Printf("Error parsing template: %v", err)
+		http.Error(w, "Error loading template", http.StatusInternalServerError)
+		return
+	}
+
+	if err := t.Execute(w, data); err != nil {
+		log.Printf("Error executing template: %v", err)
+		http.Error(w, "Error rendering page", http.StatusInternalServerError)
+	}
 }
 
 func bookMinisSession(w http.ResponseWriter, r *http.Request) {
@@ -139,44 +335,87 @@ func bookMinisSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	firstName, _ := session.Values["firstName"].(string)
-	lastName, _ := session.Values["lastName"].(string)
-	fullName := firstName + " " + lastName
-	log.Printf("Full Name: %s", fullName)
+	log.Printf("Session Values: %+v", session.Values)
+	// firstName, _ := session.Values["firstName"].(string)
+	// lastName, _ := session.Values["lastName"].(string)
+	// fullName := firstName + " " + lastName
 
-	if err := r.ParseForm(); err != nil {
+	if err := r.ParseMultipartForm(10 << 20); err != nil {
+		log.Printf("Error parsing multipart form: %v", err)
 		http.Error(w, "Error parsing form data", http.StatusBadRequest)
 		return
 	}
 
 	// convert userId
-	userIdStr, _ := session.Values["userID"].(string)
-  userId64, err := strconv.ParseUint(userIdStr, 10, 64)
-  if err != nil {
-      log.Fatal(err)
-  }
-  userId := uint(userId64)
+
+	userIDRaw, ok := session.Values["userID"]
+	if !ok {
+		http.Error(w, "User ID not found in session", http.StatusUnauthorized)
+		return
+	}
+
+	log.Printf("Raw userID value: %v, type: %T", userIDRaw, userIDRaw)
+
+	var userID uint
+	switch v := userIDRaw.(type) {
+	case string:
+		parsed, err := strconv.ParseUint(v, 10, 64)
+		if err != nil {
+			http.Error(w, "Invalid user ID", http.StatusBadRequest)
+			return
+		}
+		userID = uint(parsed)
+	case float64:
+		userID = uint(v)
+	case int:
+		userID = uint(v)
+	case int64:
+		userID = uint(v)
+	case uint:
+		userID = v
+	case json.Number:
+		parsed, err := v.Int64()
+		if err != nil {
+			http.Error(w, "Invalid user ID", http.StatusBadRequest)
+			return
+		}
+		userID = uint(parsed)
+	default:
+		log.Printf("Unexpected userID type: %T", userIDRaw)
+		http.Error(w, "Invalid user ID type", http.StatusBadRequest)
+		return
+	}
+
+
 
 	timeSlot := r.Form.Get("time_slot")
 
 	// convert minisSessionId
 	minisSessionIdStr := r.Form.Get("minis_session_id")
-	minisSessionId64, err := strconv.ParseUint(minisSessionIdStr, 10, 64)
-  if err != nil {
-      log.Fatal(err)
-  }
-  minisSessionId := uint(minisSessionId64)
+	if minisSessionIdStr == "" {
+		http.Error(w, "Missing minis_session_id", http.StatusBadRequest)
+		return
+	}
 
-	if checkForAvailableTimeSlot(timeSlot, minisSessionId, w) == false {
+	minisSessionId64, err := strconv.ParseUint(minisSessionIdStr, 10, 64)
+	if err != nil {
+		log.Printf("Invalid minis_session_id: %v", err)
+		http.Error(w, "Invalid minis_session_id", http.StatusBadRequest)
+		return
+	}
+
+	minisSessionId := uint(minisSessionId64)
+
+	if checkIfTimeslotIsAvailable(timeSlot, minisSessionId, w) == false {
 		http.Error(w, "Session time slot already booked", http.StatusBadRequest)
 
-		// Show popup to user that session is booked
+		// TODO:Show popup to user that session is booked
 		// redirect them back to the page with the sessions on there and show new time slots that are up to date
 		return
 	}
 	bookMinis := model.BookMinis{
 		MinisID: minisSessionId,
-		UserID: userId,
+		UserID: userID,
 		TimeSlot: timeSlot,
 	}
 
@@ -219,11 +458,14 @@ func getMinisSessionDays(w http.ResponseWriter, r *http.Request) {
 
 func getMinisSessions(w http.ResponseWriter, r *http.Request) {
 	database := db.ConnectDatabase()
+
 	var minis []model.Minis
-	if err := database.Find(&minis).Error; err != nil {
+	if err := database.Preload("Days").Find(&minis).Error; err != nil {
 		http.Error(w, "Error fetching sessions", http.StatusInternalServerError)
 		return
 	}
+
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(minis)
 }
 
@@ -348,6 +590,80 @@ func showCalendar(w http.ResponseWriter, r *http.Request) {
 }
 
 
+func getMinisSessionsInRange(w http.ResponseWriter, r *http.Request) {
+	startStr := r.URL.Query().Get("start")
+	endStr := r.URL.Query().Get("end")
+
+	if startStr == "" || endStr == "" {
+		http.Error(w, "start and end query parameters are required", http.StatusBadRequest)
+		return
+	}
+
+	startTime, err := time.Parse(time.RFC3339, startStr)
+	if err != nil {
+		http.Error(w, "invalid start time format", http.StatusBadRequest)
+		return
+	}
+
+	endTime, err := time.Parse(time.RFC3339, endStr)
+	if err != nil {
+		http.Error(w, "invalid end time format", http.StatusBadRequest)
+		return
+	}
+
+	database := db.ConnectDatabase()
+
+	// Step 1: Get all MinisDay entries within range
+	var minisDays []model.MinisDay
+	if err := database.
+		Where("start >= ? AND end <= ?", startTime, endTime).
+		Find(&minisDays).Error; err != nil {
+		http.Error(w, "error fetching minis days", http.StatusInternalServerError)
+		return
+	}
+
+	// Step 2: Extract unique MinisIDs
+	minisIDSet := make(map[uint]bool)
+	for _, day := range minisDays {
+		minisIDSet[day.MinisID] = true
+	}
+
+	if len(minisIDSet) == 0 {
+		// No sessions found in range
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode([]model.Minis{})
+		return
+	}
+
+	// Step 3: Load corresponding Minis entries with their Days preloaded
+	var minis []model.Minis
+	if err := database.
+		Preload("Days").
+		Where("id IN ?", keys(minisIDSet)).
+		Find(&minis).Error; err != nil {
+		http.Error(w, "error fetching minis sessions", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(minis)
+}
+func getMinisSessionByID(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	database := db.ConnectDatabase()
+
+	var minis model.Minis
+	if err := database.Preload("Days").First(&minis, id).Error; err != nil {
+		http.Error(w, "Minis session not found", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(minis)
+}
+
 func userPofile(w http.ResponseWriter, r *http.Request) {
 	session, err := store.Get(r, "session-name")
 	if err != nil {
@@ -415,7 +731,7 @@ func signup(w http.ResponseWriter, r *http.Request) {
 func main() {
 	auth.Google_auth_consent()
 	database := db.ConnectDatabase()
-	if err := database.AutoMigrate(&model.Minis{}, &model.MinisDay{}, &model.Package{}, &model.Photo{}); err != nil {
+	if err := database.AutoMigrate(&model.Minis{}, &model.MinisDay{}, &model.Package{}, &model.Photo{},&model.BookMinis{}); err != nil {
 		log.Fatalf("Failed to auto-migrate User table: %v", err)
 	}
 	log.Println("Database migrated successfully")
@@ -435,9 +751,15 @@ func main() {
 	}).Methods("GET")
 	request.Handle("/calendar", auth.AdminAuthMiddleware(http.HandlerFunc(showCalendar))).Methods("GET")
 	request.Handle("/get/minis_session", auth.AuthMiddleware(http.HandlerFunc(getMinisSessions))).Methods("GET")
+	request.Handle("/get/minis_session_by_id/{id}", auth.AuthMiddleware(http.HandlerFunc(getMinisSessionByID))).Methods("GET")
+	request.Handle("/get/minis_sessions", auth.AuthMiddleware(http.HandlerFunc(getMinisSessionsInRange))).Methods("GET")
 	request.Handle("/get/minis_session_days", auth.AuthMiddleware(http.HandlerFunc(getMinisSessionDays))).Methods("GET")
 	request.Handle("/get/minis", auth.AuthMiddleware(http.HandlerFunc(getMinis))).Methods("GET")
 	request.Handle("/get/users", auth.AuthMiddleware(http.HandlerFunc(getUsers))).Methods("GET")
+	request.Handle("/get/days", auth.AuthMiddleware(http.HandlerFunc(getBookedSessions))).Methods("GET")
+	request.Handle("/book_minis", auth.AuthMiddleware(http.HandlerFunc(bookMinisSessionView))).Methods("GET")
+	request.Handle("/create/book_minis", auth.AuthMiddleware(http.HandlerFunc(bookMinisSession))).Methods("POST")
+
 
 	loggedHandler := middleware.LoggingMiddleware(request)
 
