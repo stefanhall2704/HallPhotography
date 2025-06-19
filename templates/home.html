@@ -149,12 +149,13 @@ h1, h2, h3 {
   max-width: 900px;
 }
 
-#minis-sessions-list .mini-session {
+.mini-session-card {
   background-color: var(--hero-background-color);
-  padding: 20px;
-  border-radius: 8px;
-  margin-bottom: 20px;
   color: var(--hero-text-color);
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
 }
     </style>
   </head>
@@ -229,29 +230,69 @@ h1, h2, h3 {
             const list = document.getElementById('minis-sessions-list');
             list.innerHTML = '<h2 class="mb-4">Upcoming Mini Sessions</h2>';
 
-            if (sessions.length === 0) {
+            const now = new Date();
+            const upcoming = [];
+
+            for (const s of sessions) {
+              if (!Array.isArray(s.Days)) continue;
+
+              for (const day of s.Days) {
+                const start = new Date(day.Start);
+                const end = new Date(day.End);
+                if (end <= now) continue;
+                if (start <= now) continue;
+
+                try {
+                  const slotRes = await fetch(`/get/days?start=${encodeURIComponent(day.Start)}&end=${encodeURIComponent(day.End)}`);
+                  if (!slotRes.ok) continue;
+                  const slotData = await slotRes.json();
+                  const dateKey = day.Start.split('T')[0];
+                  const slots = slotData[dateKey] || [];
+                  if (slots.length > 0) {
+                    upcoming.push({ session: s, day });
+                    break;
+                  }
+                } catch (err) {
+                  console.error('Failed to load slots', err);
+                }
+              }
+            }
+
+            if (upcoming.length === 0) {
               list.innerHTML += '<p class="text-muted">No upcoming sessions.</p>';
               return;
             }
 
-            sessions.forEach(function(s) {
-              const div = document.createElement('div');
-              div.className = 'mini-session';
+            upcoming.forEach(({ session, day }) => {
+              const card = document.createElement('div');
+              card.className = 'card mini-session-card';
+
+              const bodyDiv = document.createElement('div');
+              bodyDiv.className = 'card-body';
 
               const h3 = document.createElement('h3');
-              h3.textContent = s.Name;
-              div.appendChild(h3);
+              h3.className = 'card-title';
+              h3.textContent = session.Name;
+              bodyDiv.appendChild(h3);
 
-              const ul = document.createElement('ul');
-              (s.Days || []).forEach(function(d) {
-                const li = document.createElement('li');
-                const date = new Date(d.Start);
-                li.textContent = date.toLocaleString();
-                ul.appendChild(li);
-              });
-              div.appendChild(ul);
+              const desc = document.createElement('p');
+              desc.className = 'card-text';
+              desc.textContent = session.Description;
+              bodyDiv.appendChild(desc);
 
-              list.appendChild(div);
+              const dateP = document.createElement('p');
+              dateP.className = 'card-text';
+              dateP.innerHTML = '<small class="text-muted">Starts ' + new Date(day.Start).toLocaleString() + '</small>';
+              bodyDiv.appendChild(dateP);
+
+              const btn = document.createElement('a');
+              btn.href = '/book_minis';
+              btn.className = 'btn btn-primary';
+              btn.textContent = 'Book Now';
+              bodyDiv.appendChild(btn);
+
+              card.appendChild(bodyDiv);
+              list.appendChild(card);
             });
           } catch (err) {
             console.error(err);
