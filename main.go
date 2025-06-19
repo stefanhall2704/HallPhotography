@@ -160,6 +160,7 @@ func parseSlotDuration(durationStr string) (time.Duration, error) {
 	return 0, fmt.Errorf("unsupported duration format: %s", durationStr)
 }
 
+
 func GetAvailableTimeSlots(db *gorm.DB, minisID uint, startStr, endStr, durationStr string) ([]string, error) {
 	// Parse times
 	start, err := time.Parse(time.RFC3339, startStr)
@@ -177,30 +178,30 @@ func GetAvailableTimeSlots(db *gorm.DB, minisID uint, startStr, endStr, duration
 		return nil, err
 	}
 
-	// Query booked slots
-	var booked []string
-	if err := db.Model(&model.BookMinis{}).
-		Where("minis_id = ? AND time_slot >= ? AND time_slot < ?", minisID, start.Format(time.RFC3339), end.Format(time.RFC3339)).
-		Pluck("time_slot", &booked).Error; err != nil {
+	// Get all booked slots for this minis session
+	var booked []model.BookMinis
+	if err := db.Where("minis_id = ?", minisID).Find(&booked).Error; err != nil {
 		return nil, err
 	}
 
+	// Build a set of booked strings like "03:00 PM"
 	bookedSet := make(map[string]struct{})
 	for _, b := range booked {
-		bookedSet[b] = struct{}{}
+		bookedSet[b.TimeSlot] = struct{}{}
 	}
 
 	// Build available slots
 	var available []string
 	for t := start; t.Add(slotDuration).Equal(end) || t.Add(slotDuration).Before(end); t = t.Add(slotDuration) {
-		slotKey := t.Format(time.RFC3339)
-		if _, taken := bookedSet[slotKey]; !taken {
-			available = append(available, t.Format("03:04 PM")) // local display format
+		display := t.Format("03:04 PM")
+		if _, taken := bookedSet[display]; !taken {
+			available = append(available, display)
 		}
 	}
 
 	return available, nil
 }
+
 
 func keys(m map[uint]bool) []uint {
 	result := make([]uint, 0, len(m))
@@ -460,7 +461,7 @@ func getMinisSessions(w http.ResponseWriter, r *http.Request) {
 	database := db.ConnectDatabase()
 
 	var minis []model.Minis
-	if err := database.Preload("Days").Find(&minis).Error; err != nil {
+	if err := database.Preload("Days").Preload("Sessions").Find(&minis).Error; err != nil {
 		http.Error(w, "Error fetching sessions", http.StatusInternalServerError)
 		return
 	}
