@@ -104,11 +104,11 @@ func NewSessionLength(minutes int) (SessionLength, error) {
 
 func generateMinisSlots(minisSessionId uint, minisIntervalRaw string, w http.ResponseWriter) {
 	minisIntervalString := strings.TrimSuffix(minisIntervalRaw, "min")
-	minisInterval, err := strconv.Atoi(minisIntervalString)
-	if err != nil {
-		log.Printf("Error converting:", err)
-		return
-	}
+        minisInterval, err := strconv.Atoi(minisIntervalString)
+        if err != nil {
+                log.Printf("Error converting: %v", err)
+                return
+        }
 
 	log.Printf("minisInterval: %d", minisInterval)
 	var duration string

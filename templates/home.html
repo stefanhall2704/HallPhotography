@@ -142,6 +142,21 @@ h1, h2, h3 {
   align-items: center;
   margin-left: 10px;
 }
+
+/* Upcoming minis list */
+#minis-sessions-list {
+  margin: 40px auto;
+  max-width: 900px;
+}
+
+.mini-session-card {
+  background-color: var(--hero-background-color);
+  color: var(--hero-text-color);
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
     </style>
   </head>
   <body data-theme="light">
@@ -191,12 +206,100 @@ h1, h2, h3 {
       </div>
     </section>
 
+    <section id="upcoming-minis">
+      <div class="container" id="minis-sessions-list">
+        <h2 class="mb-4">Upcoming Mini Sessions</h2>
+        <p class="text-muted">Loading sessions...</p>
+      </div>
+    </section>
+
     <!-- Scripts -->
     <script>
       document.addEventListener('DOMContentLoaded', function() {
         const toggleButton = document.getElementById('toggle-theme');
         const themeIcon = document.getElementById('theme-icon');
         const body = document.body;
+
+        async function loadMinisSessions() {
+          try {
+            const res = await fetch('/get/minis_session');
+            if (!res.ok) {
+              throw new Error('Failed to load sessions');
+            }
+            const sessions = await res.json();
+            const list = document.getElementById('minis-sessions-list');
+            list.innerHTML = '<h2 class="mb-4">Upcoming Mini Sessions</h2>';
+
+            const now = new Date();
+            const upcoming = [];
+
+            for (const s of sessions) {
+              if (!Array.isArray(s.Days)) continue;
+
+              for (const day of s.Days) {
+                const start = new Date(day.Start);
+                const end = new Date(day.End);
+                if (end <= now) continue;
+                if (start <= now) continue;
+
+                try {
+                  const slotRes = await fetch(`/get/days?start=${encodeURIComponent(day.Start)}&end=${encodeURIComponent(day.End)}`);
+                  if (!slotRes.ok) continue;
+                  const slotData = await slotRes.json();
+                  const dateKey = day.Start.split('T')[0];
+                  const slots = slotData[dateKey] || [];
+                  if (slots.length > 0) {
+                    upcoming.push({ session: s, day });
+                    break;
+                  }
+                } catch (err) {
+                  console.error('Failed to load slots', err);
+                }
+              }
+            }
+
+            if (upcoming.length === 0) {
+              list.innerHTML += '<p class="text-muted">No upcoming sessions.</p>';
+              return;
+            }
+
+            upcoming.forEach(({ session, day }) => {
+              const card = document.createElement('div');
+              card.className = 'card mini-session-card';
+
+              const bodyDiv = document.createElement('div');
+              bodyDiv.className = 'card-body';
+
+              const h3 = document.createElement('h3');
+              h3.className = 'card-title';
+              h3.textContent = session.Name;
+              bodyDiv.appendChild(h3);
+
+              const desc = document.createElement('p');
+              desc.className = 'card-text';
+              desc.textContent = session.Description;
+              bodyDiv.appendChild(desc);
+
+              const dateP = document.createElement('p');
+              dateP.className = 'card-text';
+              dateP.innerHTML = '<small class="text-muted">Starts ' + new Date(day.Start).toLocaleString() + '</small>';
+              bodyDiv.appendChild(dateP);
+
+              const btn = document.createElement('a');
+              btn.href = '/book_minis';
+              btn.className = 'btn btn-primary';
+              btn.textContent = 'Book Now';
+              bodyDiv.appendChild(btn);
+
+              card.appendChild(bodyDiv);
+              list.appendChild(card);
+            });
+          } catch (err) {
+            console.error(err);
+          }
+        }
+
+        loadMinisSessions();
 
         // Load user preference from localStorage
         const savedTheme = localStorage.getItem('theme');
