@@ -10,7 +10,7 @@ import (
 	"github.com/stefanhall2704/GoPhotography/model"
 )
 
-const MinimumBookingNoticeDays = 14 // 2 weeks
+const MinimumBookingNoticeDays = 7 // 1 week (reduced for testing)
 
 // Utility function to get keys from a map
 func Keys(m map[uint]bool) []uint {

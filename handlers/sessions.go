@@ -268,10 +268,10 @@ func GetSessionsInRange(w http.ResponseWriter, r *http.Request) {
 	// Calculate minimum bookable date (2 weeks from now)
 	minimumDate := time.Now().AddDate(0, 0, services.MinimumBookingNoticeDays)
 
-	// Step 1: Get all SessionDay entries within range that are at least 2 weeks out
+	// Step 1: Get all SessionDay entries within range that are at least 7 days out
 	var sessionDays []model.SessionDay
 	if err := database.
-		Where("start >= ? AND end <= ? AND start >= ?", startTime, endTime, minimumDate).
+		Where("start >= ? AND start <= ? AND start >= ?", startTime, endTime, minimumDate).
 		Find(&sessionDays).Error; err != nil {
 		http.Error(w, "error fetching session days", http.StatusInternalServerError)
 		return
@@ -357,6 +357,15 @@ func CreateSession(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error creating session", http.StatusInternalServerError)
 		return
 	}
+
+	// Notify all users about the new session availability
+	if err := NotifyAllUsersOfNewSession(database, name, "session", session.ID); err != nil {
+		log.Printf("⚠️  Failed to notify users of new session: %v", err)
+		// Don't fail the request if notifications fail
+	}
+
+	log.Printf("✅ Photography session created successfully: %s (ID: %d)", name, session.ID)
+	w.WriteHeader(http.StatusCreated)
 }
 
 func ShowSessionCalendar(w http.ResponseWriter, r *http.Request) {
@@ -371,6 +380,7 @@ func ShowSessionCalendar(w http.ResponseWriter, r *http.Request) {
 	email, _ := session.Values["email"].(string)
 	firstName, _ := session.Values["firstName"].(string)
 	lastName, _ := session.Values["lastName"].(string)
+	isAdmin, _ := session.Values["isAdmin"].(bool)
 
 	var fullName string
 	if firstName != "" && lastName != "" {
@@ -383,6 +393,7 @@ func ShowSessionCalendar(w http.ResponseWriter, r *http.Request) {
 		"Email":         email,
 		"Name":          fullName,
 		"Authenticated": userID != 0, // Checks if the user is logged in
+		"IsAdmin":       isAdmin,
 	}
 
 	t, err := template.ParseFiles("templates/sessions/createsessions.html")
@@ -425,10 +436,10 @@ func GetBookedSessions(w http.ResponseWriter, r *http.Request) {
 	// Calculate minimum bookable date (2 weeks from now)
 	minimumDate := time.Now().AddDate(0, 0, services.MinimumBookingNoticeDays)
 
-	// Fetch all SessionDay records within the range that are at least 2 weeks out
+	// Fetch all SessionDay records within the range that are at least 7 days out
 	var days []model.SessionDay
 	if err := database.
-		Where("start >= ? AND end <= ? AND start >= ?", startTime, endTime, minimumDate).
+		Where("start >= ? AND start <= ? AND start >= ?", startTime, endTime, minimumDate).
 		Find(&days).Error; err != nil {
 		http.Error(w, "error fetching days", http.StatusInternalServerError)
 		return

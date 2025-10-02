@@ -1572,12 +1572,23 @@
       card.className = `notification-card ${!notification.IsRead ? 'unread' : ''}`;
       card.dataset.id = notification.ID;
       
-      // Make clickable if related to a booking
+      // Make clickable if related to a booking or new session
       if (notification.RelatedID && notification.RelatedType) {
         card.style.cursor = 'pointer';
         card.onclick = () => {
           markAsRead(notification.ID);
-          openBookingModal(notification.RelatedType, notification.RelatedID);
+          
+          // For "new_session" notifications, redirect to booking page
+          if (notification.Type === 'new_session') {
+            if (notification.RelatedType === 'minis') {
+              window.location.href = '/book_minis';
+            } else if (notification.RelatedType === 'session') {
+              window.location.href = '/book_session';
+            }
+          } else {
+            // For booking-related notifications, open the booking modal
+            openBookingModal(notification.RelatedType, notification.RelatedID);
+          }
         };
       }
       

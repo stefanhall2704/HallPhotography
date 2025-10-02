@@ -222,3 +222,50 @@ func CreateBookingNotifications(database *gorm.DB, bookingID uint, userID uint, 
 	return nil
 }
 
+// NotifyAllUsersOfNewSession creates notifications for all users when a new session becomes available
+func NotifyAllUsersOfNewSession(database *gorm.DB, sessionName string, sessionType string, sessionID uint) error {
+	log.Printf("📢 Notifying all users of new %s session: %s (ID: %d)", sessionType, sessionName, sessionID)
+	
+	var users []model.User
+	if err := database.Find(&users).Error; err != nil {
+		log.Printf("❌ Error fetching users: %v", err)
+		return err
+	}
+
+	if len(users) == 0 {
+		log.Printf("⚠️  No users found in database")
+		return nil
+	}
+
+	// Map session type to display-friendly name
+	displayType := sessionType
+	if sessionType == "minis" {
+		displayType = "mini session"
+	} else if sessionType == "session" {
+		displayType = "photography session"
+	}
+
+	message := fmt.Sprintf("🎉 New %s available: %s! Click to view available dates and book your spot.", displayType, sessionName)
+	notificationCount := 0
+
+	for _, user := range users {
+		notification := model.Notification{
+			UserID:      user.ID,
+			Message:     message,
+			Type:        "new_session",
+			RelatedID:   sessionID,
+			RelatedType: sessionType,
+			IsRead:      false,
+		}
+
+		if err := database.Create(&notification).Error; err != nil {
+			log.Printf("❌ Error creating notification for user %d: %v", user.ID, err)
+			continue
+		}
+		notificationCount++
+	}
+
+	log.Printf("✅ Notified %d users of new session: %s", notificationCount, sessionName)
+	return nil
+}
+

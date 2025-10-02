@@ -2,645 +2,892 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Create Minis Session</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Regular Session - Admin - Hall Photography</title>
+  <meta name="description" content="Admin panel for creating regular photography sessions">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Main CSS -->
+  <link rel="stylesheet" href="../css/main.css">
+  
+  <!-- FullCalendar -->
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.17/main.min.css" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.17/index.global.min.js"></script>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+  
+  <!-- Toastify for notifications -->
+  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+  
   <style>
 
-/* Light Theme */
-body[data-theme="light"] {
-  --background-color: #fff4e6;
-  --text-color: #333333;
-  --accent-color: #FF6F61; /* Lollipop Color */
-  --navbar-background: #ffe8cc;
-  --navbar-text-color: #333333;
-  --icon-color: #333333;
-  --hero-background-color: #ffe8cc;
-  --hero-text-color: #333333;
-  --navbar-brand: #000;
+/* Admin Page Styles */
+.admin-page {
+  padding-top: 80px;
+  min-height: 100vh;
 }
 
-
-body[data-theme="light"] .modal-content {
-  background-color: #fefefe;
-  color: #333333;
-  border: 1px solid #888;
-}
-
-body[data-theme="light"] .close {
-  color: #aaa;
-}
-
-body[data-theme="light"] .close:hover,
-body[data-theme="light"] .close:focus {
-  color: black;
-}
-
-body[data-theme="light"] .fc {
-  background-color: #fff;
-  color: #333333;
-}
-
-body[data-theme="light"] .fc .fc-daygrid-day-number {
-  color: #333333;
-}
-
-body[data-theme="light"] .fc .fc-daygrid-day.fc-day-today {
-  background-color: #ffe8cc !important;
-}
-
-body[data-theme="light"] .fc .fc-event {
-  background-color: #FF6F61;
-  border: none;
-  color: #fff;
-}
-/* Dark Theme */
-
-body[data-theme="dark"] .modal-content {
-  background-color: #2c2c2c;
-  color: #ffffff;
-  border: 1px solid #555;
-}
-body[data-theme="dark"] .fc {
-  background-color: #1e1e1e;
-  color: #ffffff;
-}
-
-body[data-theme="dark"] .fc .fc-daygrid-day-number {
-  color: #ffffff;
-}
-
-body[data-theme="dark"] .fc .fc-daygrid-day.fc-day-today {
-  background-color: #333 !important;
-}
-
-body[data-theme="dark"] .fc .fc-event {
-  background-color: #FF6F61;
-  border: none;
-  color: #fff;
-}
-body[data-theme="dark"] {
-  --background-color: #1C1C1C;
-  --text-color: #ffffff;
-  --accent-color: #FF6F61; /* Lollipop Color */
-  --navbar-background: #333333;
-  --navbar-text-color: #ffffff;
-  --icon-color: #ffffff;
-  --hero-background-color: rgba(0, 0, 0, 0.7);
-  --hero-text-color: #ffffff;
-  --navbar-brand: #fff;
-}
-
-.navbar-brand {
-  color: var(--navbar-brand);
-  font-family: 'Recoleta', serif;
-}
-#main_section {
-  max-width: fit-content;
-  margin-left: auto;
-  margin-right: auto;
-}
-/* General body styles */
-body {
-  background-color: var(--background-color);
-  color: var(--text-color);
-  font-family: 'Sofia Pro', sans-serif;
-  margin: 0;
-  padding: 0;
-}
-
-/* Headings styled with Recoleta */
-h1, h2, h3 {
-  font-family: 'Recoleta', serif;
-  color: var(--hero-text-color);
-}
-
-/* Navbar styling */
-.navbar {
-  background-color: var(--navbar-background);
-  color: var(--navbar-text-color);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  padding: 10px 30px;
-}
-
-.navbar-nav .nav-link {
-  color: var(--navbar-text-color);
-  font-weight: 600;
-  font-family: 'Sofia Pro', sans-serif;
-}
-
-.navbar-nav .nav-link:hover {
-  color: var(--accent-color);
-}
-
-/* Button styling */
-.navbar-nav .nav-item .btn {
-  font-size: 1rem;
-  padding: 10px 20px;
-  margin-left: 10px;
-  font-family: 'Sofia Pro', sans-serif;
-}
-
-/* Google Icon Button styling */
-.google-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background-color: transparent;
-  border: none;
-  font-size: 1.5rem;
-  color: var(--icon-color);
-  cursor: pointer;
-  padding: 5px;
-  transition: color 0.3s ease;
-}
-
-.google-btn:hover {
-  color: var(--accent-color);
-}
-
-/* Hero section styling */
-.hero {
-  background: url('your-image-url.jpg') no-repeat center center/cover;
-  height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.admin-header {
+  background: linear-gradient(135deg, #1E3A5F, #2C5F8D);
+  color: white;
+  padding: var(--space-2xl) var(--space-lg);
   text-align: center;
+  position: relative;
+  overflow: hidden;
 }
 
-.hero-content {
-  background-color: var(--hero-background-color);
-  padding: 40px;
-  border-radius: 8px;
-  color: var(--hero-text-color);
+.admin-header::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 60%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+  transform: rotate(15deg);
 }
 
-/* Primary button styling */
-.btn-primary {
-  background-color: var(--accent-color);
-  border-color: var(--accent-color);
-  font-weight: 600;
-  padding: 10px 20px;
-  font-family: 'Sofia Pro', sans-serif;
-}
-
-.btn-primary:hover {
-  background-color: #FF4B4B; /* Darker Lollipop for hover */
-}
-
-/* Theme icon */
-#theme-icon {
-  margin-left: 10px;
-  font-size: 1.5rem;
-}
-
-.navbar-nav .google-btn-container {
+.admin-badge {
   display: inline-flex;
   align-items: center;
-  margin-left: 10px;
+  gap: var(--space-xs);
+  background: rgba(255, 255, 255, 0.2);
+  padding: var(--space-xs) var(--space-md);
+  border-radius: 20px;
+  font-size: 0.9rem;
+  margin-bottom: var(--space-sm);
 }
-#calendar {
-  max-height: 800px;
-  flex: 1 1 auto;
-  min-height: 0; /* important for shrinking inside flex */
-}
-/* Start Modal Styling */
-/* The Modal (background) */
 
-/* Modal overlay (background) */
+.admin-title {
+  font-size: clamp(2rem, 4vw, 2.5rem);
+  margin-bottom: var(--space-xs);
+  position: relative;
+  z-index: 1;
+}
+
+.admin-subtitle {
+  font-size: 1.1rem;
+  opacity: 0.9;
+  position: relative;
+  z-index: 1;
+}
+
+/* Form Container */
+.form-container {
+  max-width: 900px;
+  margin: calc(var(--space-2xl) * -1) auto var(--space-2xl);
+  padding: 0 var(--space-lg);
+  position: relative;
+  z-index: 10;
+}
+
+.form-card {
+  background: var(--warm-cream);
+  border-radius: 25px;
+  padding: var(--space-2xl);
+  box-shadow: var(--shadow-strong);
+  border: 2px solid rgba(30, 58, 95, 0.1);
+}
+
+.form-section-title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  color: var(--charcoal);
+  margin-bottom: var(--space-lg);
+  padding-bottom: var(--space-sm);
+  border-bottom: 2px solid rgba(30, 58, 95, 0.1);
+}
+
+.form-group {
+  margin-bottom: var(--space-lg);
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: var(--space-xs);
+  font-weight: 600;
+  color: var(--charcoal);
+  font-size: 0.95rem;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+  width: 100%;
+  padding: var(--space-md);
+  border: 2px solid rgba(139, 69, 19, 0.2);
+  border-radius: 15px;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  background: var(--off-white);
+  color: var(--charcoal);
+  transition: all var(--transition-normal);
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #1E3A5F;
+  box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.1);
+}
+
+.form-group textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.form-actions {
+  display: flex;
+  gap: var(--space-md);
+  justify-content: flex-end;
+  margin-top: var(--space-xl);
+  padding-top: var(--space-lg);
+  border-top: 2px solid rgba(30, 58, 95, 0.1);
+}
+
+.btn-admin {
+  background: linear-gradient(135deg, #1E3A5F, #2C5F8D);
+  color: white;
+  border: none;
+  padding: var(--space-md) var(--space-xl);
+  border-radius: 50px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  box-shadow: var(--shadow-soft);
+}
+
+.btn-admin:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-medium);
+}
+
+.btn-admin:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Calendar Modal */
 .modal {
-  display: none; /* Hidden by default */
   position: fixed;
-  z-index: 1000;
+  z-index: 1050;
   left: 0;
   top: 0;
   width: 100%;
   height: 100%;
-  overflow: hidden; /* Prevent scroll on background */
-  background-color: rgba(0, 0, 0, 0.4);
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(5px);
+  display: none;
+  align-items: center;
+  justify-content: center;
 }
 
-/* Modal content box */
+.modal.show {
+  display: flex !important;
+}
+
 .modal-content {
-  display: flex;
-  flex-direction: column;
-  height: 90vh;
-  width: 80%;
+  background: var(--warm-cream);
+  border-radius: 25px;
+  max-width: 1000px;
+  width: 90%;
   max-height: 90vh;
-  background-color: #fefefe;
-  margin: 5vh auto;
-  padding: 20px;
-  border: 1px solid #888;
-  box-sizing: border-box;
+  overflow: auto;
+  box-shadow: var(--shadow-strong);
   position: relative;
 }
 
-/* Inside content */
-.modal-body {
-  flex: 1;
-  overflow: hidden;
+.modal-header {
+  padding: var(--space-xl);
+  border-bottom: 2px solid rgba(30, 58, 95, 0.1);
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  background: var(--warm-cream);
+  z-index: 100;
 }
 
-#calendar {
-  flex: 1;
-  min-height: 0;
+.modal-title {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  color: var(--charcoal);
+  margin: 0;
 }
 
-/* Footer */
+.close {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  color: var(--charcoal);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  padding: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.close:hover {
+  color: #1E3A5F;
+  background: rgba(30, 58, 95, 0.1);
+  transform: rotate(90deg);
+}
+
+.modal-body {
+  padding: var(--space-xl);
+}
+
 .modal-footer {
+  padding: var(--space-xl);
+  border-top: 2px solid rgba(30, 58, 95, 0.1);
   display: flex;
   justify-content: flex-end;
-  padding-top: 10px;
+  gap: var(--space-md);
+  position: sticky;
+  bottom: 0;
+  background: var(--warm-cream);
 }
 
-/* Close button */
-.close {
-  position: absolute;
-  top: 10px;
-  right: 20px;
-  font-size: 28px;
-  color: #aaa;
-  cursor: pointer;
+/* Calendar Customization */
+.fc {
+  font-family: var(--font-body);
 }
 
-
-.close:hover,
-.close:focus {
-  color: black;
-  text-decoration: none;
-  cursor: pointer;
-}
-#store_calendar_values {
-  width: 15%;
-}
-/* End Modal Styling */
-
-body[data-theme="light"] #main_section {
-  background-color: #fff4e6;
-  border: 2px solid #FF6F61;
-  border-radius: 12px;
-  padding: 24px;
-  max-width: 600px;
-  margin: 40px auto;
-  box-shadow: 0 0 12px rgba(255, 111, 97, 0.2);
+.fc .fc-toolbar-title {
+  font-family: var(--font-display);
+  font-size: 1.5rem !important;
+  color: var(--charcoal);
 }
 
-body[data-theme="dark"] #main_section {
-  background-color: #1e1e1e;
-  border: 2px solid #FF6F61;
-  border-radius: 12px;
-  padding: 24px;
-  max-width: 600px;
-  margin: 40px auto;
-  box-shadow: 0 0 12px rgba(255, 111, 97, 0.2);
-}
-
-body[data-theme="light"] #main_section h2,
-body[data-theme="light"] #main_section label {
-  color: #333333;
-}
-
-body[data-theme="dark"] #main_section h2,
-body[data-theme="dark"] #main_section label {
-  color: #ffffff;
-}
-
-body[data-theme="light"] #main_section input,
-body[data-theme="light"] #main_section textarea {
-  background-color: #fff;
-  color: #333;
-  border: 1px solid #ccc;
-}
-
-body[data-theme="dark"] #main_section input,
-body[data-theme="dark"] #main_section textarea {
-  background-color: #2c2c2c;
-  color: #fff;
-  border: 1px solid #555;
-}
-
-#main_section .btn-primary {
-  background-color: #FF6F61;
+.fc .fc-button {
+  background: linear-gradient(135deg, #1E3A5F, #2C5F8D);
   border: none;
-  padding: 12px 20px;
-  font-weight: bold;
-  color: white;
-  border-radius: 6px;
-  transition: background-color 0.3s ease;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-weight: 500;
+  transition: all var(--transition-normal);
 }
 
-#main_section .btn-primary:hover {
-  background-color: #e85a4f;
+.fc .fc-button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-soft);
+}
+
+.fc .fc-daygrid-day {
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.fc .fc-daygrid-day:hover {
+  background-color: rgba(30, 58, 95, 0.05) !important;
+}
+
+.fc .fc-daygrid-day.selected-date {
+  background-color: rgba(30, 58, 95, 0.15) !important;
+}
+
+/* Selected Dates Display */
+.selected-dates-container {
+  margin-top: var(--space-lg);
+  padding: var(--space-lg);
+  background: var(--off-white);
+  border-radius: 15px;
+  border: 2px solid rgba(30, 58, 95, 0.1);
+}
+
+.selected-dates-title {
+  font-weight: 600;
+  color: var(--charcoal);
+  margin-bottom: var(--space-md);
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.selected-date-item {
+  background: white;
+  padding: var(--space-md);
+  border-radius: 12px;
+  margin-bottom: var(--space-sm);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid rgba(30, 58, 95, 0.1);
+}
+
+.selected-date-info {
+  flex: 1;
+}
+
+.selected-date-name {
+  font-weight: 600;
+  color: var(--charcoal);
+  margin-bottom: var(--space-xs);
+}
+
+.selected-date-time {
+  font-size: 0.9rem;
+  color: var(--warm-brown);
+}
+
+.remove-date-btn {
+  background: var(--deep-rust);
+  color: white;
+  border: none;
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-size: 0.9rem;
+}
+
+.remove-date-btn:hover {
+  background: #FF4B4B;
+  transform: scale(1.05);
+}
+
+/* Time Picker */
+.time-picker-container {
+  background: var(--off-white);
+  padding: var(--space-lg);
+  border-radius: 15px;
+  margin-top: var(--space-md);
+  border: 2px solid rgba(30, 58, 95, 0.1);
+}
+
+.time-picker-title {
+  font-weight: 600;
+  color: var(--charcoal);
+  margin-bottom: var(--space-md);
+}
+
+.time-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+}
+
+/* Info Box */
+.info-box {
+  background: rgba(30, 58, 95, 0.05);
+  border-left: 4px solid #1E3A5F;
+  padding: var(--space-md);
+  border-radius: 10px;
+  margin-bottom: var(--space-lg);
+}
+
+.info-box p {
+  margin: 0;
+  color: var(--charcoal);
+  line-height: 1.6;
+}
+
+/* Loading State */
+.btn-loading {
+  position: relative;
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.btn-loading::after {
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  top: 50%;
+  left: 50%;
+  margin-left: -8px;
+  margin-top: -8px;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  border-top-color: transparent;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to {transform: rotate(360deg);}
+}
+
+/* Toast Notifications */
+.toastify {
+  font-family: var(--font-body);
+  padding: 16px 24px;
+  border-radius: 15px;
+  box-shadow: var(--shadow-medium);
+  font-weight: 500;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .admin-header {
+    padding: var(--space-xl) var(--space-md);
+  }
+  
+  .form-card {
+    padding: var(--space-lg);
+  }
+  
+  .time-inputs {
+    grid-template-columns: 1fr;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+  }
+  
+  .btn-admin {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
   </style>
 </head>
-<body>
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg">
-      <a href="/" class="navbar-brand">Hall's Photography</a>
-      <div class="collapse navbar-collapse">
-        <ul class="navbar-nav ml-auto">
-          {{if .Authenticated}}
-            <li class="nav-item">
-              <a href="/book" class="nav-link">Book Session</a>
-            </li>
-            <li class="nav-item">
-              <a href="/profile" class="nav-link">Welcome, {{.Name}}</a>
-            </li>
-            <li class="nav-item">
-              <a href="/logout" class="btn btn-sm">Logout</a>
-            </li>
-          {{else}}
-            <li class="nav-item">
-              <a href="/login" class="btn btn-primary">Login</a>
-            </li>
-            <li class="nav-item">
-              <a href="/signup" class="btn btn-outline-primary">Sign Up</a>
-            </li>
-            <li class="nav-item google-btn-container">
-              <a href="/auth/google" class="google-btn">
-                <i class="fa fa-google"></i>
-              </a>
-            </li>
-          {{end}}
-          <li class="nav-item">
-            <button class="btn nav-link" id="toggle-theme">
-              <i id="theme-icon" class="fa fa-moon-o"></i>
-            </button>
-          </li>
+<body data-theme="light" class="admin-page">
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+      <div class="nav-container">
+        <a href="/" class="nav-brand">Hall Photography</a>
+        
+        <ul class="nav-menu">
+          <li><a href="/#about" class="nav-link">About</a></li>
+          <li><a href="/#portfolio" class="nav-link">Portfolio</a></li>
+          <li><a href="/#sessions" class="nav-link">Sessions</a></li>
+          <li><a href="/#contact" class="nav-link">Contact</a></li>
         </ul>
+        
+        <div class="nav-actions">
+          {{if .Authenticated}}
+            <a href="/profile" class="nav-link">Welcome, {{.Name}}</a>
+            <a href="/calendar" class="btn btn-primary" style="background: linear-gradient(135deg, #1E3A5F, #2C5F8D);">
+              <i class="fas fa-crown"></i> Admin
+            </a>
+            <a href="/logout" class="btn btn-outline">Logout</a>
+          {{else}}
+            <a href="/login" class="btn btn-outline">Login</a>
+          {{end}}
+          <button class="theme-toggle" id="theme-toggle">
+            <i class="fas fa-moon" id="theme-icon"></i>
+          </button>
+        </div>
+        
+        <button class="mobile-menu-toggle" id="mobile-menu-toggle">
+          <i class="fas fa-bars"></i>
+        </button>
       </div>
     </nav>
-  
- 
-<form id="minisForm">
-  <div id="main_section">
-    <h2 class="mb-4">Create Regular Session</h2>
 
-    <div class="form-group row align-items-center mb-3">
-      <label for="name" class="col-sm-3 col-form-label">Session Name</label>
-      <div class="col-sm-9">
-        <input type="text" id="name" name="name" class="form-control" required placeholder="e.g. Christmas Tree Minis" />
+    <!-- Admin Header -->
+    <div class="admin-header">
+      <div class="admin-badge">
+        <i class="fas fa-crown"></i>
+        <span>Admin Panel</span>
       </div>
+      <h1 class="admin-title">Create Regular Photography Session</h1>
+      <p class="admin-subtitle">Set up new full-length photography session dates for clients to book</p>
     </div>
 
-    <div class="form-group row align-items-start mb-3">
-      <label for="description" class="col-sm-3 col-form-label">Description</label>
-      <div class="col-sm-9">
-        <textarea id="description" name="description" class="form-control" rows="3" required></textarea>
-      </div>
+    <!-- Form Container -->
+    <div class="form-container">
+      <form id="sessionForm" class="form-card">
+        <h2 class="form-section-title">
+          <i class="fas fa-info-circle"></i> Session Details
+        </h2>
+
+        <div class="info-box">
+          <p><strong>Note:</strong> Regular sessions are full-length photography sessions (1-2 hours) with multiple locations and outfit changes. These are different from mini sessions and offer more flexibility and photos.</p>
+        </div>
+
+        <div class="form-group">
+          <label for="name">
+            <i class="fas fa-tag"></i> Session Name *
+          </label>
+          <input 
+            type="text" 
+            id="name" 
+            name="name" 
+            required 
+            placeholder="e.g., Family Portrait Session, Senior Photos, Engagement Session"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="description">
+            <i class="fas fa-align-left"></i> Description *
+          </label>
+          <textarea 
+            id="description" 
+            name="description" 
+            required
+            placeholder="Describe what this session includes: duration, number of photos, locations, outfit changes, etc."
+          ></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="time_intervals">
+            <i class="fas fa-clock"></i> Session Duration *
+          </label>
+          <input 
+            type="text" 
+            id="time_intervals" 
+            name="time_intervals" 
+            required 
+            placeholder="e.g., 1-2 hours, 2-3 hours"
+          />
+          <small style="color: var(--warm-brown); display: block; margin-top: var(--space-xs);">
+            This is informational for clients
+          </small>
+        </div>
+
+        <div class="form-group">
+          <label for="price">
+            <i class="fas fa-dollar-sign"></i> Session Price *
+          </label>
+          <input 
+            type="number" 
+            id="price" 
+            name="price" 
+            step="0.01" 
+            min="0" 
+            required 
+            placeholder="0.00"
+          />
+          <small style="color: var(--warm-brown); display: block; margin-top: var(--space-xs);">
+            Enter the base price for this session type
+          </small>
+        </div>
+
+        <div class="form-actions">
+          <button id="myBtn" class="btn-admin" type="button">
+            <i class="fas fa-calendar-plus"></i>
+            Select Available Dates
+          </button>
+        </div>
+      </form>
     </div>
 
-    <div class="form-group row align-items-center mb-4">
-      <label for="time_intervals" class="col-sm-3 col-form-label">Time Interval</label>
-      <div class="col-sm-9">
-        <select id="time_intervals" name="time_intervals" class="form-control" required>
-          <option value="">-- Select Interval --</option>
-          <option value="10min">10 minutes</option>
-          <option value="15min">15 minutes</option>
-          <option value="20min">20 minutes</option>
-          <option value="30min">30 minutes</option>
-        </select>
-      </div>
-    </div>
-
-    <div class="text-right">
-      <button id="myBtn" class="btn btn-primary" type="button">Select Dates</button>
-    </div>
-  </div>
-
-  <!-- Modal -->
-  <div id="myModal" class="modal">
-    <div class="modal-content">
-      <span class="close">&times;</span>
-      <div class="modal-body">
-        <div id="calendar"></div>
-        <div class="form-group mt-3">
-          <label>Click dates on the calendar below to add/remove them</label>
+    <!-- Calendar Modal -->
+    <div id="myModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 class="modal-title">
+            <i class="fas fa-calendar-alt"></i> Select Session Dates
+          </h3>
+          <button type="button" class="close" id="closeModal">
+            <span>&times;</span>
+          </button>
+        </div>
+        
+        <div class="modal-body">
+          <div class="info-box">
+            <p>Click on dates in the calendar to select them. For each selected date, you'll need to specify the start and end times when this session type is available.</p>
+          </div>
+          
+          <div id="calendar"></div>
+          
+          <div class="selected-dates-container" id="selectedDatesDisplay" style="display: none;">
+            <div class="selected-dates-title">
+              <i class="fas fa-check-circle"></i>
+              <span>Selected Dates (<span id="selectedCount">0</span>)</span>
+            </div>
+            <div id="selectedDatesList"></div>
+          </div>
+          
+          <div id="timePickerContainer"></div>
           <input type="hidden" id="session_days" name="session_days" />
         </div>
-      </div>
-      <div class="modal-footer">
-        <button id="store_calendar_values" class="btn btn-primary" type="submit">Create Regular Session</button>
+        
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal()">Cancel</button>
+          <button id="store_calendar_values" class="btn-admin" type="submit">
+            <i class="fas fa-check"></i>
+            Create Session
+          </button>
+        </div>
       </div>
     </div>
-  </div>
-</form>
 
+    <!-- Scripts -->
+    <script src="../js/main.js"></script>
+    
+    <script>
+    // Toast notification function
+    function showToast(message, type = 'info') {
+      const styles = {
+        success: { background: 'linear-gradient(135deg, var(--soft-sage), var(--burnt-orange))' },
+        error: { background: 'linear-gradient(135deg, var(--deep-rust), var(--burnt-orange))' },
+        warning: { background: 'linear-gradient(135deg, var(--golden-yellow), var(--burnt-orange))', color: '#333' },
+        info: { background: 'linear-gradient(135deg, #1E3A5F, #2C5F8D)' }
+      };
 
-  <script>
-  const selectedDates = new Map();
-  let pendingDate = null;
-
-  const calendarEl = document.getElementById('calendar');
-  const sessionDaysInput = document.getElementById('session_days');
-
-  function updateHighlights() {
-    sessionDaysInput.value = JSON.stringify(Object.fromEntries(selectedDates));
-    calendar.refetchEvents();
-  }
-
-  function openTimePicker(dateStr) {
-    // Remove existing picker if open
-    const existingPicker = document.getElementById('timePickerContainer');
-    if (existingPicker) {
-      existingPicker.remove();
+      Toastify({
+        text: message,
+        duration: 4000,
+        gravity: "top",
+        position: "right",
+        style: styles[type] || styles.info,
+        stopOnFocus: true
+      }).showToast();
     }
 
-    const timeHTML = `
-      <div id="timePickerContainer" style="margin-top: 10px;">
-        <div class="form-group">
-          <label>Start Time:</label>
-          <input type="time" id="startTimeInput" class="form-control" required />
-        </div>
-        <div class="form-group">
-          <label>End Time:</label>
-          <input type="time" id="endTimeInput" class="form-control" required />
-        </div>
-        <button id="confirmTime" class="btn btn-sm btn-primary">Confirm</button>
-      </div>
-    `;
-
-    const modalBody = document.querySelector('.modal-body');
-    const timeWrapper = document.createElement('div');
-    timeWrapper.innerHTML = timeHTML;
-    modalBody.appendChild(timeWrapper);
-
-    document.getElementById('confirmTime').onclick = () => {
-      const start = document.getElementById('startTimeInput').value;
-      const end = document.getElementById('endTimeInput').value;
-      if (start && end) {
-        selectedDates.set(dateStr, `${start} - ${end}`);
-        updateHighlights();
-        timeWrapper.remove();
-
-        // Reset calendar size to ensure proper layout
-        setTimeout(() => calendar.updateSize(), 0);
-      } else {
-        showToast('⚠️ Both start and end times are required.', 'warning');
-      }
-    };
-  }
-
-  const calendar = new FullCalendar.Calendar(calendarEl, {
-    initialView: 'dayGridMonth',
-    selectable: true,
-    selectMirror: true,
-    select: function(info) {
-      const dateStr = info.startStr + "T00:00";
-
-      // Remove existing picker if trying to open a new one
-      const existingPicker = document.getElementById('timePickerContainer');
-      if (existingPicker) {
-        existingPicker.remove();
-        calendar.updateSize();
-      }
-
-      if (selectedDates.has(dateStr)) {
-        selectedDates.delete(dateStr);
-        updateHighlights();
-      } else {
-        openTimePicker(dateStr);
-      }
-    },
-    dayMaxEvents: true,
-    events: function(info, successCallback) {
-      const eventArray = Array.from(selectedDates.entries()).map(([date, timeRange]) => ({
-        title: timeRange,
-        start: date,
-        allDay: true
-      }));
-      successCallback(eventArray);
+    // Modal controls
+    function openModal() {
+      document.getElementById('myModal').classList.add('show');
+      document.body.style.overflow = 'hidden';
+      // Re-render calendar after modal is visible to fix rendering issue
+      setTimeout(() => {
+        if (calendar) {
+          calendar.updateSize();
+          calendar.render();
+        }
+      }, 100);
     }
-  });
+
+    function closeModal() {
+      document.getElementById('myModal').classList.remove('show');
+      document.body.style.overflow = 'auto';
+    }
+
+    const selectedDates = new Map();
+    let pendingDate = null;
+    let calendar;
+
+    const sessionDaysInput = document.getElementById('session_days');
 
     function updateHighlights() {
-      sessionDaysInput.value = Array.from(selectedDates).join(',');
+      sessionDaysInput.value = JSON.stringify(Object.fromEntries(selectedDates));
       calendar.refetchEvents();
-    }
-    // Get the modal
-    var modal = document.getElementById("myModal");
-
-    // Get the button that opens the modal
-    var btn = document.getElementById("myBtn");
-
-    // Get the <span> element that closes the modal
-    var span = document.getElementsByClassName("close")[0];
-
-    let calendarInitialized = false;
-    // When the user clicks on the button, open the modal
-
-    btn.onclick = function() {
-      modal.style.display = "block";
-      setTimeout(() => {
-        if (!calendarInitialized) {
-          calendar.render();
-          calendarInitialized = true;
-        } else {
-          calendar.render(); // always rerender to fix visual glitches
-        }
-      }, 50); // give the modal time to render
+      updateSelectedDatesList();
     }
 
-    // When the user clicks on <span> (x), close the modal
-    span.onclick = function() {
-      modal.style.display = "none";
-    }
-
-    // When the user clicks anywhere outside of the modal, close it
-    window.onclick = function(event) {
-      if (event.target == modal) {
-        modal.style.display = "none";
+    function updateSelectedDatesList() {
+      const display = document.getElementById('selectedDatesDisplay');
+      const list = document.getElementById('selectedDatesList');
+      const count = document.getElementById('selectedCount');
+      
+      if (selectedDates.size === 0) {
+        display.style.display = 'none';
+        return;
       }
+      
+      display.style.display = 'block';
+      count.textContent = selectedDates.size;
+      
+      let html = '';
+      for (const [dateStr, times] of selectedDates) {
+        const date = new Date(dateStr);
+        const formattedDate = date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        
+        html += `
+          <div class="selected-date-item">
+            <div class="selected-date-info">
+              <div class="selected-date-name">${formattedDate}</div>
+              <div class="selected-date-time">
+                <i class="fas fa-clock"></i> ${times.start} - ${times.end}
+              </div>
+            </div>
+            <button type="button" class="remove-date-btn" onclick="removeDate('${dateStr}')">
+              <i class="fas fa-trash"></i> Remove
+            </button>
+          </div>
+        `;
+      }
+      
+      list.innerHTML = html;
     }
-  </script>
-<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
-<script>
-  // Toast notification utility
-  function showToast(message, type = 'info') {
-    const styles = {
-      success: { background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
-      error: { background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' },
-      warning: { background: 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)', color: '#333' },
-      info: { background: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)', color: '#333' }
-    };
 
-    Toastify({
-      text: message,
-      duration: 4000,
-      gravity: "top",
-      position: "right",
-      style: styles[type] || styles.info,
-      stopOnFocus: true
-    }).showToast();
-  }
+    function removeDate(dateStr) {
+      selectedDates.delete(dateStr);
+      updateHighlights();
+      showToast('Date removed', 'info');
+    }
 
-  document.addEventListener('DOMContentLoaded', function () {
-    document.getElementById('minisForm').addEventListener('submit', function (e) {
-      e.preventDefault();
+    function openTimePicker(dateStr) {
+      const container = document.getElementById('timePickerContainer');
+      const date = new Date(dateStr);
+      const formattedDate = date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      
+      container.innerHTML = `
+        <div class="time-picker-container">
+          <h4 class="time-picker-title">
+            <i class="fas fa-clock"></i> Set Times for ${formattedDate}
+          </h4>
+          <div class="time-inputs">
+            <div class="form-group">
+              <label>Start Time</label>
+              <input type="time" id="startTimeInput" class="form-control" required />
+            </div>
+            <div class="form-group">
+              <label>End Time</label>
+              <input type="time" id="endTimeInput" class="form-control" required />
+            </div>
+          </div>
+          <div style="display: flex; gap: var(--space-sm);">
+            <button type="button" id="confirmTime" class="btn-admin">
+              <i class="fas fa-check"></i> Confirm
+            </button>
+            <button type="button" onclick="cancelTimePicker()" class="btn btn-outline">
+              Cancel
+            </button>
+          </div>
+        </div>
+      `;
 
-      const formData = new URLSearchParams(new FormData(this));
+      document.getElementById('confirmTime').onclick = function () {
+        const start = document.getElementById('startTimeInput').value;
+        const end = document.getElementById('endTimeInput').value;
 
-      fetch('/create/session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: formData
-      })
-      .then(res => {
-        if (res.ok) {
-          showToast('🎉 Regular session created successfully!', 'success');
-          setTimeout(() => window.location.reload(), 1500);
-        } else {
-          res.text().then(msg => showToast('❌ Error: ' + msg, 'error'));
-        }
-      });
-    });
-
-    calendar.render();
-  });
-</script>
-
-    <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        const toggleButton = document.getElementById('toggle-theme');
-        const themeIcon = document.getElementById('theme-icon');
-        const body = document.body;
-
-        // Load user preference from localStorage
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme) {
-          body.setAttribute('data-theme', savedTheme);
-          themeIcon.className = savedTheme === 'light' ? 'fa fa-moon-o' : 'fa fa-sun-o';
-        } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-          body.setAttribute('data-theme', 'dark');
-          themeIcon.className = 'fa fa-sun-o';
+        if (!start || !end) {
+          showToast('Please enter both start and end times', 'warning');
+          return;
         }
 
-        // Toggle theme manually
-        toggleButton.addEventListener('click', function() {
-          const currentTheme = body.getAttribute('data-theme');
-          const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-          body.setAttribute('data-theme', newTheme);
-          localStorage.setItem('theme', newTheme); // Save user preference
-          themeIcon.className = newTheme === 'light' ? 'fa fa-moon-o' : 'fa fa-sun-o';
+        if (start >= end) {
+          showToast('End time must be after start time', 'warning');
+          return;
+        }
 
-          if (calendarInitialized) {
-            calendar.render(); // rerender for proper theme adaptation
+        const startDateTime = `${dateStr}T${start}`;
+        const endDateTime = `${dateStr}T${end}`;
+
+        selectedDates.set(dateStr, { start: startDateTime, end: endDateTime });
+        updateHighlights();
+        container.innerHTML = '';
+        pendingDate = null;
+        showToast('Date and time added successfully', 'success');
+      };
+    }
+
+    function cancelTimePicker() {
+      document.getElementById('timePickerContainer').innerHTML = '';
+      pendingDate = null;
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      const calendarEl = document.getElementById('calendar');
+
+      calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        selectable: true,
+        
+        dateClick: function (info) {
+          const dateStr = info.dateStr;
+
+          if (selectedDates.has(dateStr)) {
+            selectedDates.delete(dateStr);
+            updateHighlights();
+            document.getElementById('timePickerContainer').innerHTML = '';
+            showToast('Date removed', 'info');
+          } else {
+            pendingDate = dateStr;
+            openTimePicker(dateStr);
           }
-        });
-      });
-    </script>
-    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
-</body>
-</html>
+        },
 
+        events: function (fetchInfo, successCallback) {
+          const events = [];
+          for (const [dateStr, times] of selectedDates) {
+            events.push({
+              title: '✓ Selected',
+              start: dateStr,
+              allDay: true,
+              backgroundColor: '#1E3A5F',
+              borderColor: '#1E3A5F'
+            });
+          }
+          successCallback(events);
+        },
+
+        headerToolbar: {
+          left: 'prev,next today',
+          center: 'title',
+          right: ''
+        },
+
+        height: 'auto'
+      });
+
+      calendar.render();
+
+      // Open modal button
+      document.getElementById('myBtn').onclick = function () {
+        // Validate form first
+        const name = document.getElementById('name').value;
+        const description = document.getElementById('description').value;
+        const timeInterval = document.getElementById('time_intervals').value;
+        const price = document.getElementById('price').value;
+
+        if (!name || !description || !timeInterval || !price) {
+          showToast('Please fill in all session details first', 'warning');
+          return;
+        }
+
+        openModal();
+      };
+
+      // Close modal
+      document.getElementById('closeModal').onclick = closeModal;
+
+      // Submit button in modal footer
+      document.getElementById('store_calendar_values').onclick = async function (e) {
+        e.preventDefault();
+
+        if (selectedDates.size === 0) {
+          showToast('Please select at least one date', 'warning');
+          return;
+        }
+
+        const form = document.getElementById('sessionForm');
+        const formData = new FormData(form);
+        const submitBtn = this;
+        const originalText = submitBtn.innerHTML;
+
+        submitBtn.classList.add('btn-loading');
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+        submitBtn.disabled = true;
+
+        try {
+          const response = await fetch('/create/session', {
+            method: 'POST',
+            body: formData
+          });
+
+          if (response.ok) {
+            showToast('✅ Session created successfully! Users will be notified.', 'success');
+            closeModal();
+            setTimeout(() => window.location.href = '/profile', 2000);
+          } else {
+            const errorText = await response.text();
+            showToast('❌ ' + errorText, 'error');
+          }
+        } catch (err) {
+          console.error("Error creating session:", err);
+          showToast('❌ Something went wrong! Please try again.', 'error');
+        } finally {
+          submitBtn.classList.remove('btn-loading');
+          submitBtn.innerHTML = originalText;
+          submitBtn.disabled = false;
+        }
+      };
+    });
+    </script>
+  </body>
+</html>

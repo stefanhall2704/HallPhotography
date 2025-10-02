@@ -76,6 +76,7 @@ func BookMinisSessionView(w http.ResponseWriter, r *http.Request) {
 	email, _ := session.Values["email"].(string)
 	firstName, _ := session.Values["firstName"].(string)
 	lastName, _ := session.Values["lastName"].(string)
+	isAdmin, _ := session.Values["isAdmin"].(bool)
 
 	var fullName string
 	if firstName != "" && lastName != "" {
@@ -88,6 +89,7 @@ func BookMinisSessionView(w http.ResponseWriter, r *http.Request) {
 		"Email":         email,
 		"Name":          fullName,
 		"Authenticated": userID != 0, // Checks if the user is logged in
+		"IsAdmin":       isAdmin,
 	}
 
 	t, err := template.ParseFiles("templates/minis/bookminis.html")
@@ -301,9 +303,18 @@ func CreateMinisSession(w http.ResponseWriter, r *http.Request) {
 
 	database := db.ConnectDatabase()
 	if err := database.Create(&minisSession).Error; err != nil {
-		http.Error(w, "Error creating user", http.StatusInternalServerError)
+		http.Error(w, "Error creating mini session", http.StatusInternalServerError)
 		return
 	}
+
+	// Notify all users about the new mini session availability
+	if err := NotifyAllUsersOfNewSession(database, name, "minis", minisSession.ID); err != nil {
+		log.Printf("⚠️  Failed to notify users of new mini session: %v", err)
+		// Don't fail the request if notifications fail
+	}
+
+	log.Printf("✅ Mini session created successfully: %s (ID: %d)", name, minisSession.ID)
+	w.WriteHeader(http.StatusCreated)
 }
 
 func ShowMinisCalendar(w http.ResponseWriter, r *http.Request) {
@@ -319,6 +330,7 @@ func ShowMinisCalendar(w http.ResponseWriter, r *http.Request) {
 	email, _ := session.Values["email"].(string)
 	firstName, _ := session.Values["firstName"].(string)
 	lastName, _ := session.Values["lastName"].(string)
+	isAdmin, _ := session.Values["isAdmin"].(bool)
 
 	var fullName string
 	if firstName != "" && lastName != "" {
@@ -331,6 +343,7 @@ func ShowMinisCalendar(w http.ResponseWriter, r *http.Request) {
 		"Email":         email,
 		"Name":          fullName,
 		"Authenticated": userID != 0, // Checks if the user is logged in
+		"IsAdmin":       isAdmin,
 	}
 
 	t, err := template.ParseFiles("templates/minis/createminissessions.html")
@@ -371,15 +384,29 @@ func GetMinisSessionsInRange(w http.ResponseWriter, r *http.Request) {
 
 	// Calculate minimum bookable date (2 weeks from now)
 	minimumDate := time.Now().AddDate(0, 0, services.MinimumBookingNoticeDays)
+	log.Printf("📅 GetMinisSessionsInRange: Querying range %s to %s (minimum date: %s)", 
+		startTime.Format("2006-01-02"), endTime.Format("2006-01-02"), minimumDate.Format("2006-01-02"))
 
-	// Step 1: Get all MinisDay entries within range that are at least 2 weeks out
+	// Debug: Check all MinisDay entries in the database
+	var allMinisDays []model.MinisDay
+	database.Find(&allMinisDays)
+	log.Printf("🔍 Total MinisDay entries in database: %d", len(allMinisDays))
+	for i, day := range allMinisDays {
+		if i < 5 { // Log first 5 for debugging
+			log.Printf("  - MinisDay %d: MinisID=%d, Start=%s, End=%s", 
+				day.ID, day.MinisID, day.Start.Format("2006-01-02 15:04"), day.End.Format("2006-01-02 15:04"))
+		}
+	}
+
+	// Step 1: Get all MinisDay entries within range that are at least 7 days out
 	var minisDays []model.MinisDay
 	if err := database.
-		Where("start >= ? AND end <= ? AND start >= ?", startTime, endTime, minimumDate).
+		Where("start >= ? AND start <= ? AND start >= ?", startTime, endTime, minimumDate).
 		Find(&minisDays).Error; err != nil {
 		http.Error(w, "error fetching minis days", http.StatusInternalServerError)
 		return
 	}
+	log.Printf("📊 Found %d minisDays matching criteria", len(minisDays))
 
 	// Step 2: Extract unique MinisIDs
 	minisIDSet := make(map[uint]bool)
@@ -389,10 +416,13 @@ func GetMinisSessionsInRange(w http.ResponseWriter, r *http.Request) {
 
 	if len(minisIDSet) == 0 {
 		// No sessions found in range
+		log.Printf("⚠️  No minis sessions found in range (possibly none meet 2-week minimum)")
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode([]model.Minis{})
 		return
 	}
+
+	log.Printf("✅ Found %d unique minis sessions", len(minisIDSet))
 
 	// Step 3: Load corresponding Minis entries with their Days preloaded
 	var minis []model.Minis
@@ -449,13 +479,13 @@ func GetBookedMinisSessions(w http.ResponseWriter, r *http.Request) {
 
 	database := db.ConnectDatabase()
 
-	// Calculate minimum bookable date (2 weeks from now)
+	// Calculate minimum bookable date (7 days from now)
 	minimumDate := time.Now().AddDate(0, 0, services.MinimumBookingNoticeDays)
 
-	// Fetch all MinisDay records within the range that are at least 2 weeks out
+	// Fetch all MinisDay records within the range that are at least 7 days out
 	var days []model.MinisDay
 	if err := database.
-		Where("start >= ? AND end <= ? AND start >= ?", startTime, endTime, minimumDate).
+		Where("start >= ? AND start <= ? AND start >= ?", startTime, endTime, minimumDate).
 		Find(&days).Error; err != nil {
 		http.Error(w, "error fetching days", http.StatusInternalServerError)
 		return

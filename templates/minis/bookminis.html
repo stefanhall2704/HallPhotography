@@ -1,78 +1,400 @@
-<!-- TODO: create this page to show the calendar and use this endpoint "/get/days" that will return json of {"2025-06-17: ["08:30 AM",...]} -->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Create Minis Session</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Book Mini Session - Hall Photography</title>
+  <meta name="description" content="Book your mini photography session with Hall Photography">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Main CSS -->
+  <link rel="stylesheet" href="../css/main.css">
+  
+  <!-- FullCalendar -->
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.17/main.min.css" rel="stylesheet" />
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.17/index.global.min.js"></script>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
-    <!-- Toastify CSS for notifications -->
-    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+  
+  <!-- Toastify for notifications -->
+  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+  
   <style>
 
-/* Light Theme */
-body[data-theme="light"] {
-  --background-color: #fff4e6;
-  --text-color: #333333;
-  --accent-color: #FF6F61; /* Lollipop Color */
-  --navbar-background: #ffe8cc;
-  --navbar-text-color: #333333;
-  --icon-color: #333333;
-  --hero-background-color: #ffe8cc;
-  --hero-text-color: #333333;
-  --navbar-brand: #000;
+/* Page-specific Styles */
+.booking-page {
+  padding-top: 80px;
+  min-height: 100vh;
+}
 
-.slot-tag {
-  display: inline-block;
-  padding: 6px 12px;
-  margin: 4px;
-  background-color: #eee;
-  border-radius: 5px;
+.page-header {
+  text-align: center;
+  padding: var(--space-2xl) var(--space-lg) var(--space-xl);
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.page-title {
+  font-size: clamp(2rem, 4vw, 3rem);
+  color: var(--charcoal);
+  margin-bottom: var(--space-sm);
+  font-weight: 400;
+  font-style: italic;
+}
+
+.page-subtitle {
+  font-size: 1.2rem;
+  color: var(--warm-brown);
+  font-weight: 300;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* Info Cards */
+.info-cards {
+  max-width: 1200px;
+  margin: 0 auto var(--space-xl);
+  padding: 0 var(--space-lg);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-lg);
+}
+
+.info-card {
+  background: var(--warm-cream);
+  padding: var(--space-lg);
+  border-radius: 20px;
+  box-shadow: var(--shadow-soft);
+  transition: all var(--transition-normal);
+  border: 2px solid rgba(210, 105, 30, 0.1);
+}
+
+.info-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-medium);
+  border-color: var(--burnt-orange);
+}
+
+.info-card-icon {
+  font-size: 2.5rem;
+  color: var(--burnt-orange);
+  margin-bottom: var(--space-sm);
+}
+
+.info-card-title {
+  font-size: 1.3rem;
+  color: var(--charcoal);
+  margin-bottom: var(--space-xs);
+  font-family: var(--font-display);
+}
+
+.info-card-text {
+  color: var(--warm-brown);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.info-card-list {
+  list-style: none;
+  padding: 0;
+  margin: var(--space-sm) 0 0;
+}
+
+.info-card-list li {
+  color: var(--warm-brown);
+  padding: var(--space-xs) 0;
+  padding-left: var(--space-md);
+  position: relative;
+}
+
+.info-card-list li::before {
+  content: '→';
+  position: absolute;
+  left: 0;
+  color: var(--burnt-orange);
+  font-weight: bold;
+}
+
+/* Calendar Container */
+.calendar-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--space-lg) var(--space-2xl);
+}
+
+.calendar-wrapper {
+  background: var(--warm-cream);
+  border-radius: 25px;
+  padding: var(--space-xl);
+  box-shadow: var(--shadow-medium);
+  border: 2px solid rgba(210, 105, 30, 0.1);
+}
+
+/* FullCalendar Customization */
+.fc {
+  font-family: var(--font-body);
+}
+
+.fc .fc-toolbar-title {
+  font-family: var(--font-display);
+  font-size: 1.8rem !important;
+  color: var(--charcoal);
+  font-weight: 400;
+}
+
+.fc .fc-button {
+  background: linear-gradient(135deg, var(--burnt-orange), var(--deep-rust));
+  border: none;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-weight: 500;
+  transition: all var(--transition-normal);
+  text-transform: capitalize;
+}
+
+.fc .fc-button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-soft);
+}
+
+.fc .fc-button:disabled {
+  opacity: 0.5;
+}
+
+.fc .fc-col-header-cell {
+  padding: var(--space-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+}
+
+[data-theme="light"] .fc .fc-col-header-cell {
+  background: var(--off-white);
+  color: var(--warm-brown);
+  border-color: rgba(139, 69, 19, 0.1);
+}
+
+[data-theme="dark"] .fc .fc-col-header-cell {
+  background: var(--warm-cream);
+  color: var(--charcoal);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.fc .fc-daygrid-day {
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.fc .fc-daygrid-day:hover {
+  background-color: rgba(210, 105, 30, 0.05) !important;
+}
+
+.fc .fc-daygrid-day.fc-day-today {
+  background-color: rgba(218, 165, 32, 0.15) !important;
+}
+
+.fc .fc-daygrid-day-number {
+  padding: 8px;
+  font-weight: 500;
+}
+
+/* Calendar Event Button */
+.fc-daygrid-event {
+  background: none !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 4px auto !important;
   cursor: pointer;
 }
 
-.slot-tag.selected {
-  background-color: #007bff;
+.calendar-session-btn {
+  background: linear-gradient(135deg, var(--burnt-orange), var(--deep-rust));
   color: white;
+  font-size: 0.75rem;
+  padding: 8px 14px;
+  border-radius: 15px;
+  font-weight: 600;
+  border: none;
+  box-shadow: var(--shadow-soft);
+  transition: all var(--transition-normal);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 95%;
+  display: inline-block;
 }
 
-/* Toast notification styling */
+.calendar-session-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-medium);
+}
+
+/* Modal Styling */
+.modal {
+  position: fixed;
+  z-index: 1050;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(5px);
+  display: none;
+}
+
+.modal.show {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-dialog {
+  max-width: 600px;
+  width: 90%;
+  margin: var(--space-lg);
+}
+
+.modal-content {
+  background: var(--warm-cream);
+  border-radius: 25px;
+  box-shadow: var(--shadow-strong);
+  border: none;
+  overflow: hidden;
+}
+
+[data-theme="dark"] .modal-content {
+  background: var(--warm-cream);
+}
+
+.modal-header {
+  padding: var(--space-xl);
+  border-bottom: 2px solid rgba(210, 105, 30, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-title {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  color: var(--charcoal);
+  margin: 0;
+  font-weight: 400;
+}
+
+.close {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  color: var(--charcoal);
+  cursor: pointer;
+  transition: color var(--transition-fast);
+  padding: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.close:hover {
+  color: var(--burnt-orange);
+  background: rgba(210, 105, 30, 0.1);
+}
+
+.modal-body {
+  padding: var(--space-xl);
+}
+
+/* Time Slot Tags */
+.slot-tag {
+  display: inline-block;
+  background: var(--off-white);
+  color: var(--charcoal);
+  padding: 12px 18px;
+  margin: 6px;
+  border-radius: 15px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  border: 2px solid rgba(139, 69, 19, 0.2);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+.slot-tag:hover {
+  border-color: var(--burnt-orange);
+  background: rgba(210, 105, 30, 0.1);
+  transform: translateY(-2px);
+}
+
+.slot-tag.selected {
+  background: linear-gradient(135deg, var(--burnt-orange), var(--deep-rust));
+  color: white;
+  border-color: var(--burnt-orange);
+}
+
+/* Form Styling */
+.form-control {
+  width: 100%;
+  padding: var(--space-md);
+  border: 2px solid rgba(139, 69, 19, 0.2);
+  border-radius: 15px;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  background: var(--off-white);
+  color: var(--charcoal);
+  transition: all var(--transition-normal);
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--burnt-orange);
+  box-shadow: 0 0 0 3px rgba(210, 105, 30, 0.1);
+}
+
+/* Toast Notifications */
 .toastify {
-  font-family: 'Montserrat', sans-serif;
+  font-family: var(--font-body);
   padding: 16px 24px;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-radius: 15px;
+  box-shadow: var(--shadow-medium);
+  font-weight: 500;
 }
 
-.toast-success {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+/* Alert Styling */
+.alert {
+  padding: var(--space-lg);
+  border-radius: 15px;
+  margin-bottom: var(--space-lg);
+  border: none;
 }
 
-.toast-error {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+.alert-info {
+  background: rgba(156, 175, 136, 0.15);
+  color: var(--charcoal);
+  border-left: 4px solid var(--soft-sage);
 }
 
-.toast-warning {
-  background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
-  color: #333 !important;
+.alert-warning {
+  background: rgba(218, 165, 32, 0.15);
+  color: var(--charcoal);
+  border-left: 4px solid var(--golden-yellow);
 }
 
-.toast-info {
-  background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
-  color: #333 !important;
-}
-
-/* Loading spinner */
+/* Loading State */
 .btn-loading {
   position: relative;
   pointer-events: none;
+  opacity: 0.7;
 }
 
 .btn-loading::after {
@@ -87,412 +409,173 @@ body[data-theme="light"] {
   border: 2px solid #ffffff;
   border-radius: 50%;
   border-top-color: transparent;
-  animation: spinner 0.6s linear infinite;
+  animation: spin 0.6s linear infinite;
 }
 
-@keyframes spinner {
-  to {transform: rotate(360deg);}
+/* Dark Theme Support */
+[data-theme="dark"] .info-card,
+[data-theme="dark"] .calendar-wrapper,
+[data-theme="dark"] .modal-content {
+  background: var(--warm-cream);
 }
 
-/* Date validation warning */
-.date-too-soon {
-  opacity: 0.5;
-  position: relative;
+[data-theme="dark"] .fc {
+  background: var(--off-white);
 }
 
-.date-too-soon::after {
-  content: "⚠️ Too soon";
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  font-size: 0.7rem;
-  background: #ffc107;
-  color: #000;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-weight: bold;
-}
-.modal-body {
-  padding: 20px;
-}
-/* Contain button inside day box and shrink size */
-.calendar-button-wrapper {
-  display: flex;
-  justify-content: center;
-  padding: 2px 0;
-  width: 100%;
+[data-theme="dark"] .fc .fc-daygrid-day-number {
+  color: var(--charcoal);
 }
 
-
-.fc-daygrid-event {
-  background: none !important;
-  border: none !important;
-  padding: 0 !important;
-  margin: 0 auto !important;
-  width: 100%;
-  text-align: center;
+[data-theme="dark"] .fc .fc-daygrid-day.fc-day-today {
+  background-color: rgba(218, 165, 32, 0.2) !important;
 }
 
-.fc-event-title {
-  display: block !important;
-  padding: 0 !important;
-  white-space: nowrap !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  max-width: 100%;
-}
-
-.calendar-session-btn {
-  background-color: var(--accent-color);
-  color: white;
-  font-size: 0.75rem;
-  padding: 6px 12px;
-  border-radius: 999px;
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-  max-width: 90%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: inline-block;
-  border: none;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: background-color 0.2s ease;
-}
-
-.calendar-session-btn:hover {
-  background-color: #FF4B4B;
-}
-
-
-
-.slot-tag {
-  display: inline-block;
-  background-color: #f1f3f5;
-  color: #212529;
-  padding: 8px 14px;
-  margin: 6px;
-  border-radius: 20px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  border: 1px solid #dee2e6;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-  transition: background-color 0.2s ease, color 0.2s ease;
-  cursor: default;
-}
-
-
-body[data-theme="light"] .modal-content {
-  background-color: #fefefe;
-  color: #333333;
-  border: 1px solid #888;
-}
-
-body[data-theme="light"] .close {
-  color: #aaa;
-}
-
-body[data-theme="light"] .close:hover,
-body[data-theme="light"] .close:focus {
-  color: black;
-}
-
-body[data-theme="light"] .fc {
-  background-color: #fff;
-  color: #333333;
-}
-
-.fc-event-main {
-  background: none !important;
-  padding: 0 !important;
-}
-
-body[data-theme="light"] .fc .fc-daygrid-day-number {
-  color: #333333;
-}
-
-body[data-theme="light"] .fc .fc-daygrid-day.fc-day-today {
-  background-color: #ffe8cc !important;
-}
-
-body[data-theme="dark"] .fc .fc-col-header-cell {
-  background-color: #2c2c2c;
-  color: #ffffff;
-  border-color: #444;
-}
-
-body[data-theme="light"] .fc .fc-col-header-cell {
-  background-color: #fff4e6;
-  color: #333333;
-  border-color: #ccc;
-}
-body[data-theme="dark"] .fc .fc-event,
-body[data-theme="light"] .fc .fc-event {
-  background: none !important;
-  border: none !important;
-  color: inherit !important;
-}
-/* Dark Theme */
-
-body[data-theme="dark"] .modal-content {
-  background-color: #2c2c2c;
-  color: #ffffff;
-  border: 1px solid #555;
-}
-body[data-theme="dark"] .fc {
-  background-color: #1e1e1e;
-  color: #ffffff;
-}
-
-body[data-theme="dark"] .fc .fc-daygrid-day-number {
-  color: #ffffff;
-}
-
-body[data-theme="dark"] .fc .fc-daygrid-day.fc-day-today {
-  background-color: #333 !important;
-}
-
-body[data-theme="dark"] .fc .fc-event {
-  background-color: #FF6F61;
-  border: none;
-  color: #fff;
-}
-body[data-theme="dark"] {
-  --background-color: #1C1C1C;
-  --text-color: #ffffff;
-  --accent-color: #FF6F61; /* Lollipop Color */
-  --navbar-background: #333333;
-  --navbar-text-color: #ffffff;
-  --icon-color: #ffffff;
-  --hero-background-color: rgba(0, 0, 0, 0.7);
-  --hero-text-color: #ffffff;
-  --navbar-brand: #fff;
-}
-
-.navbar-brand {
-  color: var(--navbar-brand);
-  font-family: 'Recoleta', serif;
-}
-#main_section {
-  max-width: fit-content;
-  margin-left: auto;
-  margin-right: auto;
-}
-/* General body styles */
-body {
-  background-color: var(--background-color);
-  color: var(--text-color);
-  font-family: 'Sofia Pro', sans-serif;
-  margin: 0;
-  padding: 0;
-}
-
-/* Headings styled with Recoleta */
-h1, h2, h3 {
-  font-family: 'Recoleta', serif;
-  color: var(--hero-text-color);
-}
-
-/* Navbar styling */
-.navbar {
-  background-color: var(--navbar-background);
-  color: var(--navbar-text-color);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  padding: 10px 30px;
-}
-
-.navbar-nav .nav-link {
-  color: var(--navbar-text-color);
-  font-weight: 600;
-  font-family: 'Sofia Pro', sans-serif;
-}
-
-.navbar-nav .nav-link:hover {
-  color: var(--accent-color);
-}
-
-/* Button styling */
-.navbar-nav .nav-item .btn {
-  font-size: 1rem;
-  padding: 10px 20px;
-  margin-left: 10px;
-  font-family: 'Sofia Pro', sans-serif;
-}
-
-/* Google Icon Button styling */
-.google-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background-color: transparent;
-  border: none;
-  font-size: 1.5rem;
-  color: var(--icon-color);
-  cursor: pointer;
-  padding: 5px;
-  transition: color 0.3s ease;
-}
-
-.google-btn:hover {
-  color: var(--accent-color);
-}
-
-/* Hero section styling */
-.hero {
-  background: url('your-image-url.jpg') no-repeat center center/cover;
-  height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-}
-
-.hero-content {
-  background-color: var(--hero-background-color);
-  padding: 40px;
-  border-radius: 8px;
-  color: var(--hero-text-color);
-}
-
-/* Primary button styling */
-.btn-primary {
-  background-color: var(--accent-color);
-  border-color: var(--accent-color);
-  font-weight: 600;
-  padding: 10px 20px;
-  font-family: 'Sofia Pro', sans-serif;
-}
-
-.btn-primary:hover {
-  background-color: #FF4B4B; /* Darker Lollipop for hover */
-}
-
-/* Theme icon */
-#theme-icon {
-  margin-left: 10px;
-  font-size: 1.5rem;
-}
-
-.navbar-nav .google-btn-container {
-  display: inline-flex;
-  align-items: center;
-  margin-left: 10px;
-}
-#calendar {
-  height: 100%;
-  flex: 1 1 auto;
-  min-height: 0; /* important for shrinking inside flex */
-}
-
-#store_calendar_values {
-  width: 15%;
-}
-/* End Modal Styling */
-
-body[data-theme="light"] #main_section {
-  background-color: #fff4e6;
-  border: 2px solid #FF6F61;
-  border-radius: 12px;
-  padding: 24px;
-  max-width: 600px;
-  margin: 40px auto;
-  box-shadow: 0 0 12px rgba(255, 111, 97, 0.2);
-}
-
-body[data-theme="dark"] #main_section {
-  background-color: #1e1e1e;
-  border: 2px solid #FF6F61;
-  border-radius: 12px;
-  padding: 24px;
-  max-width: 600px;
-  margin: 40px auto;
-  box-shadow: 0 0 12px rgba(255, 111, 97, 0.2);
-}
-
-body[data-theme="light"] #main_section h2,
-body[data-theme="light"] #main_section label {
-  color: #333333;
-}
-
-body[data-theme="dark"] #main_section h2,
-body[data-theme="dark"] #main_section label {
-  color: #ffffff;
-}
-
-body[data-theme="light"] #main_section input,
-body[data-theme="light"] #main_section textarea {
-  background-color: #fff;
-  color: #333;
-  border: 1px solid #ccc;
-}
-
-body[data-theme="dark"] #main_section input,
-body[data-theme="dark"] #main_section textarea {
-  background-color: #2c2c2c;
-  color: #fff;
-  border: 1px solid #555;
-}
-
-#main_section .btn-primary {
-  background-color: #FF6F61;
-  border: none;
-  padding: 12px 20px;
-  font-weight: bold;
-  color: white;
-  border-radius: 6px;
-  transition: background-color 0.3s ease;
-}
-
-#main_section .btn-primary:hover {
-  background-color: #e85a4f;
+/* Responsive Design */
+@media (max-width: 768px) {
+  .info-cards {
+    grid-template-columns: 1fr;
+  }
+  
+  .calendar-wrapper {
+    padding: var(--space-lg);
+  }
+  
+  .modal-dialog {
+    margin: var(--space-sm);
+  }
+  
+  .fc .fc-toolbar {
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+  
+  .page-header {
+    padding: var(--space-lg);
+  }
 }
 
   </style>
 </head>
-<body>
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg">
-      <a href="/" class="navbar-brand">Hall's Photography</a>
-      <div class="collapse navbar-collapse">
-        <ul class="navbar-nav ml-auto">
-          {{if .Authenticated}}
-            <li class="nav-item">
-              <a href="/book" class="nav-link">Book Session</a>
-            </li>
-            <li class="nav-item">
-              <a href="/profile" class="nav-link">Welcome, {{.Name}}</a>
-            </li>
-            <li class="nav-item">
-              <a href="/logout" class="btn btn-sm">Logout</a>
-            </li>
-          {{else}}
-            <li class="nav-item">
-              <a href="/login" class="btn btn-primary">Login</a>
-            </li>
-            <li class="nav-item">
-              <a href="/signup" class="btn btn-outline-primary">Sign Up</a>
-            </li>
-            <li class="nav-item google-btn-container">
-              <a href="/auth/google" class="google-btn">
-                <i class="fa fa-google"></i>
-              </a>
-            </li>
-          {{end}}
-          <li class="nav-item">
-            <button class="btn nav-link" id="toggle-theme">
-              <i id="theme-icon" class="fa fa-moon-o"></i>
-            </button>
-          </li>
+<body data-theme="light" class="booking-page">
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+      <div class="nav-container">
+        <a href="/" class="nav-brand">Hall Photography</a>
+        
+        <ul class="nav-menu">
+          <li><a href="/#about" class="nav-link">About</a></li>
+          <li><a href="/#portfolio" class="nav-link">Portfolio</a></li>
+          <li><a href="/#sessions" class="nav-link">Sessions</a></li>
+          <li><a href="/#contact" class="nav-link">Contact</a></li>
         </ul>
+        
+        <div class="nav-actions">
+          {{if .Authenticated}}
+            <div class="dropdown" style="position: relative; display: inline-block;">
+              <button class="btn btn-primary dropdown-toggle" id="bookingDropdown" style="cursor: pointer;">
+                <i class="fas fa-calendar-plus"></i>
+                Book Session
+                <i class="fas fa-chevron-down" style="font-size: 0.8em; margin-left: 5px;"></i>
+              </button>
+              <div class="dropdown-menu" id="bookingDropdownMenu" style="display: none; position: absolute; top: 100%; right: 0; background: var(--warm-cream); box-shadow: var(--shadow-medium); border-radius: 15px; margin-top: 8px; min-width: 200px; z-index: 1000; overflow: hidden;">
+                <a href="/book_minis" style="display: block; padding: 14px 20px; color: var(--charcoal); text-decoration: none; transition: background 0.2s; font-weight: 500;">
+                  <i class="fas fa-users"></i> Book Minis Session
+                </a>
+                <a href="/book_session" style="display: block; padding: 14px 20px; color: var(--charcoal); text-decoration: none; transition: background 0.2s; border-top: 1px solid rgba(139, 69, 19, 0.1); font-weight: 500;">
+                  <i class="fas fa-camera"></i> Book Regular Session
+                </a>
+              </div>
+            </div>
+            <a href="/profile" class="nav-link" style="position: relative;">
+              <i class="fas fa-bell" style="font-size: 1.1rem;"></i>
+              <span id="notification-badge" style="display: none; position: absolute; top: -5px; right: -10px; background: var(--burnt-orange); color: white; border-radius: 10px; padding: 2px 6px; font-size: 0.7rem; font-weight: 700;"></span>
+            </a>
+            <a href="/profile" class="nav-link">Welcome, {{.Name}}</a>
+            {{if .IsAdmin}}
+              <a href="/calendar" class="btn btn-primary" style="background: linear-gradient(135deg, #1E3A5F, #2C5F8D);">
+                <i class="fas fa-crown"></i> Admin
+              </a>
+            {{end}}
+            <a href="/logout" class="btn btn-outline">Logout</a>
+          {{else}}
+            <a href="/login" class="btn btn-outline">Login</a>
+            <a href="/signup" class="btn btn-primary">Sign Up</a>
+            <a href="/auth/google" class="btn btn-outline">
+              <i class="fab fa-google"></i>
+            </a>
+          {{end}}
+          <button class="theme-toggle" id="theme-toggle">
+            <i class="fas fa-moon" id="theme-icon"></i>
+          </button>
+        </div>
+        
+        <button class="mobile-menu-toggle" id="mobile-menu-toggle">
+          <i class="fas fa-bars"></i>
+        </button>
       </div>
     </nav>
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <h1 class="page-title">Book Your Mini Session</h1>
+      <p class="page-subtitle">
+        Quick, affordable sessions perfect for capturing special moments in a shorter timeframe.
+      </p>
+    </div>
+
+    <!-- Info Cards -->
+    <div class="info-cards">
+      <div class="info-card">
+        <div class="info-card-icon">
+          <i class="fas fa-calendar-check"></i>
+        </div>
+        <h3 class="info-card-title">Booking Policy</h3>
+        <p class="info-card-text">
+          All mini sessions must be booked at least <strong>2 weeks (14 days)</strong> in advance. 
+          This ensures we have adequate time to prepare for your session.
+        </p>
+      </div>
+
+      <div class="info-card">
+        <div class="info-card-icon">
+          <i class="fas fa-clock"></i>
+        </div>
+        <h3 class="info-card-title">Session Duration</h3>
+        <p class="info-card-text">
+          Mini sessions are shorter, focused sessions typically lasting 20-30 minutes. 
+          Perfect for quick family portraits, headshots, or capturing a special moment.
+        </p>
+      </div>
+
+      <div class="info-card">
+        <div class="info-card-icon">
+          <i class="fas fa-list-check"></i>
+        </div>
+        <h3 class="info-card-title">How to Book</h3>
+        <ul class="info-card-list">
+          <li>Browse available mini session dates</li>
+          <li>Click on a date with available slots</li>
+          <li>Select your preferred time</li>
+          <li>Complete your booking</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Calendar -->
+    <div class="calendar-container">
+      <div class="calendar-wrapper">
+        <div id="calendar"></div>
+      </div>
+    </div>
+
     <!-- Session Modal -->
-    <div class="modal fade" id="sessionModal" tabindex="-1" role="dialog" aria-labelledby="sessionModalLabel" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content" id="session-modal-content">
+    <div class="modal" id="sessionModal">
+      <div class="modal-dialog">
+        <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title" id="sessionModalLabel">Session Time Slots</h5>
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <button type="button" class="close" id="closeModal">
               <span>&times;</span>
             </button>
           </div>
@@ -502,32 +585,18 @@ body[data-theme="dark"] #main_section textarea {
         </div>
       </div>
     </div>
-    <div id="calendar-container" class="container mt-5">
-      <!-- Booking Policy Banner -->
-      <div class="alert alert-info mb-4" role="alert">
-        <h5 class="alert-heading"><i class="fa fa-info-circle"></i> Booking Policy</h5>
-        <p class="mb-0">
-          <strong>Please note:</strong> All minis sessions must be booked at least <strong>2 weeks (14 days)</strong> in advance. 
-          This ensures we have adequate time to prepare for your session and provide the best experience possible. 
-          Sessions within the next 2 weeks will not be available for booking.
-        </p>
-      </div>
-      <div id="calendar"></div>
-    </div>
 
-
-
-    <!-- Toastify JS for notifications -->
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <!-- Scripts -->
+    <script src="../js/main.js"></script>
     
     <script>
     // Utility functions for toast notifications
     function showToast(message, type = 'info') {
       const styles = {
-        success: { background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
-        error: { background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' },
-        warning: { background: 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)', color: '#333' },
-        info: { background: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)', color: '#333' }
+        success: { background: 'linear-gradient(135deg, var(--soft-sage), var(--burnt-orange))' },
+        error: { background: 'linear-gradient(135deg, var(--deep-rust), var(--burnt-orange))' },
+        warning: { background: 'linear-gradient(135deg, var(--golden-yellow), var(--burnt-orange))', color: '#333' },
+        info: { background: 'linear-gradient(135deg, var(--burnt-orange), var(--deep-rust))' }
       };
 
       Toastify({
@@ -539,6 +608,25 @@ body[data-theme="dark"] #main_section textarea {
         stopOnFocus: true
       }).showToast();
     }
+
+    // Modal functionality
+    function openModal() {
+      document.getElementById('sessionModal').classList.add('show');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+      document.getElementById('sessionModal').classList.remove('show');
+      document.body.style.overflow = 'auto';
+    }
+
+    // Close modal on background click
+    document.getElementById('sessionModal')?.addEventListener('click', function(e) {
+      if (e.target === this) closeModal();
+    });
+
+    // Close modal on close button click
+    document.getElementById('closeModal')?.addEventListener('click', closeModal);
 
     // Check if a date is at least 2 weeks in the future
     function isDateBookable(dateStr) {
@@ -559,15 +647,25 @@ body[data-theme="dark"] #main_section textarea {
             const start = fetchInfo.start.toISOString();
             const end = fetchInfo.end.toISOString();
 
+            console.log('Fetching minis sessions for range:', start, 'to', end);
+
             // Fetch all slot data
-            const slotRes = await fetch(`/get/days?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`);
+            const slotRes = await fetch(`/get/minis_days?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`);
+            if (!slotRes.ok) {
+              console.error('Failed to fetch minis days:', slotRes.status);
+            }
             const slotData = await slotRes.json();
+            console.log('Slot data received:', slotData);
 
             // Fetch all session metadata for this date range
             const sessionRes = await fetch(`/get/minis_sessions?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`);
-            const sessions = await sessionRes.json(); // array of Minis objects
+            if (!sessionRes.ok) {
+              console.error('Failed to fetch minis sessions:', sessionRes.status);
+            }
+            const sessions = await sessionRes.json();
+            console.log('Minis sessions received:', sessions);
 
-            // Map minis ID to session info (name, etc.)
+            // Map session ID to session info
             const sessionMap = {};
             for (const session of sessions) {
               sessionMap[session.ID] = session;
@@ -579,16 +677,12 @@ body[data-theme="dark"] #main_section textarea {
             for (const date in slotData) {
               const slots = slotData[date];
 
-              // Optional enhancement: determine the matching session name
-              // If multiple sessions overlap on the same date, you could group or list them all
-              // For now, we'll just show a default name or the first match
-
-              let sessionName = 'Minis Session';
+              let sessionName = 'Mini Session';
               let matchedSession = null;
 
               // Try to find a session whose Day matches this date
               for (const session of sessions) {
-                if (session.Days.some(d => d.Start.startsWith(date))) {
+                if (session.Days && session.Days.some(d => d.Start.startsWith(date))) {
                   sessionName = session.Name;
                   matchedSession = session;
                   break;
@@ -601,14 +695,22 @@ body[data-theme="dark"] #main_section textarea {
                 allDay: true,
                 extendedProps: {
                   slots: slots,
-                  minisSessionID: matchedSession?.ID || null
+                  sessionID: matchedSession?.ID || null,
+                  price: matchedSession?.Price || null
                 }
               });
+            }
+
+            console.log('Calendar events created:', events);
+            if (events.length === 0) {
+              console.warn('No events to display. You may need to create minis sessions first.');
+              showToast('ℹ️ No mini sessions available yet. Contact admin to set up sessions.', 'info');
             }
 
             successCallback(events);
           } catch (err) {
             console.error("Failed to fetch calendar data:", err);
+            showToast('❌ Failed to load calendar data', 'error');
             failureCallback(err);
           }
         },
@@ -619,14 +721,22 @@ body[data-theme="dark"] #main_section textarea {
           const slots = info.event.extendedProps.slots || [];
           const sessionName = info.event.title;
           const clickedDate = info.event.startStr;
+          const sessionID = info.event.extendedProps.sessionID;
 
           modalTitle.textContent = sessionName;
 
           // Check if this date is bookable
           const dateIsBookable = isDateBookable(clickedDate);
           
+          if (!sessionID) {
+            modalBody.innerHTML = '<p class="text-muted" style="color: var(--warm-brown);">No session ID found for this date.</p>';
+            openModal();
+            return;
+          }
+
           if (slots.length === 0) {
-            modalBody.innerHTML = '<p class="text-muted">No available time slots.</p>';
+            modalBody.innerHTML = '<p class="text-muted" style="color: var(--warm-brown);">No available time slots.</p>';
+            openModal();
             return;
           }
 
@@ -636,36 +746,29 @@ body[data-theme="dark"] #main_section textarea {
           // Add warning banner if date is too soon
           const warningBanner = !dateIsBookable ? `
             <div class="alert alert-warning" role="alert">
-              <i class="fa fa-exclamation-triangle"></i>
+              <i class="fas fa-exclamation-triangle"></i>
               <strong>Notice:</strong> This session is within the next 2 weeks. Bookings must be made at least 14 days in advance.
             </div>
           ` : '';
           
+          const dateDisplay = new Date(clickedDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+          
           const formHtml = `
             ${warningBanner}
-            <p class="text-muted mb-3">
-              <i class="fa fa-calendar"></i> ${new Date(clickedDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            <p class="text-muted" style="color: var(--warm-brown); margin-bottom: var(--space-lg);">
+              <i class="fas fa-calendar"></i> <strong>${dateDisplay}</strong>
             </p>
             <form id="booking-form">
-              <input type="hidden" name="minis_session_id" value="">
+              <input type="hidden" name="session_id" value="${sessionID}">
               <input type="hidden" name="time_slot" value="">
-              <div id="slot-container">${slotTags}</div>
-              <button type="submit" class="btn btn-primary mt-3" disabled id="book-now-btn">
-                <i class="fa fa-check-circle"></i> Book Now
+              <div id="slot-container" style="margin-bottom: var(--space-lg);">${slotTags}</div>
+              <button type="submit" class="btn btn-primary" disabled id="book-now-btn">
+                <i class="fas fa-check-circle"></i> Book Now
               </button>
             </form>
           `;
 
           modalBody.innerHTML = formHtml;
-
-          // Figure out correct minis_session_id based on calendar event + sessions in memory
-          // We'll assume only one matching session per day from earlier session mapping
-          const minisSessionID = info.event.extendedProps.minisSessionID;
-          if (!minisSessionID) {
-            showToast("❌ No session ID found for this slot", "error");
-            return;
-          }
-          document.querySelector('input[name="minis_session_id"]').value = minisSessionID;
 
           // Add click handler for slot selection
           modalBody.querySelectorAll('.slot-tag').forEach(tag => {
@@ -689,17 +792,17 @@ body[data-theme="dark"] #main_section textarea {
 
             // Check if the date is bookable (frontend validation)
             if (!isDateBookable(clickedDate)) {
-              showToast('⚠️ Sessions must be booked at least 2 weeks in advance!', 'warning');
+              showToast('⚠️ Mini sessions must be booked at least 2 weeks in advance!', 'warning');
               return;
             }
 
             const formData = new FormData(this);
             const submitBtn = document.getElementById('book-now-btn');
-            const originalText = submitBtn.textContent;
+            const originalText = submitBtn.innerHTML;
 
             // Show loading state
             submitBtn.classList.add('btn-loading');
-            submitBtn.textContent = 'Booking...';
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Booking...';
             submitBtn.disabled = true;
 
             try {
@@ -709,9 +812,9 @@ body[data-theme="dark"] #main_section textarea {
               });
 
               if (response.ok) {
-                showToast('🎉 Booking successful! See you soon!', 'success');
-                $('#sessionModal').modal('hide');
-                calendar.refetchEvents();
+                showToast('🎉 Booking successful! Redirecting to your profile...', 'success');
+                closeModal();
+                setTimeout(() => window.location.href = '/profile', 1500);
               } else {
                 const errorText = await response.text();
                 // Extract the error message from the response
@@ -729,12 +832,12 @@ body[data-theme="dark"] #main_section textarea {
             } finally {
               // Restore button state
               submitBtn.classList.remove('btn-loading');
-              submitBtn.textContent = originalText;
+              submitBtn.innerHTML = originalText;
               submitBtn.disabled = false;
             }
           });
 
-          $('#sessionModal').modal('show');
+          openModal();
         },
 
         eventContent: function (arg) {
@@ -757,36 +860,61 @@ body[data-theme="dark"] #main_section textarea {
     });
     </script>
 
-
+    {{if .Authenticated}}
     <script>
+      // Dropdown functionality
       document.addEventListener('DOMContentLoaded', function() {
-        const toggleButton = document.getElementById('toggle-theme');
-        const themeIcon = document.getElementById('theme-icon');
-        const body = document.body;
-
-        // Load user preference from localStorage
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme) {
-          body.setAttribute('data-theme', savedTheme);
-          themeIcon.className = savedTheme === 'light' ? 'fa fa-moon-o' : 'fa fa-sun-o';
-        } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-          body.setAttribute('data-theme', 'dark');
-          themeIcon.className = 'fa fa-sun-o';
+        const dropdownBtn = document.getElementById('bookingDropdown');
+        const dropdownMenu = document.getElementById('bookingDropdownMenu');
+        
+        if (dropdownBtn && dropdownMenu) {
+          // Toggle dropdown on click
+          dropdownBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const isVisible = dropdownMenu.style.display === 'block';
+            dropdownMenu.style.display = isVisible ? 'none' : 'block';
+          });
+          
+          // Close dropdown when clicking outside
+          document.addEventListener('click', function(e) {
+            if (!dropdownBtn.contains(e.target) && !dropdownMenu.contains(e.target)) {
+              dropdownMenu.style.display = 'none';
+            }
+          });
+          
+          // Add hover effects to dropdown items
+          const dropdownItems = dropdownMenu.querySelectorAll('a');
+          dropdownItems.forEach(item => {
+            item.addEventListener('mouseenter', function() {
+              this.style.background = 'rgba(210, 105, 30, 0.1)';
+            });
+            item.addEventListener('mouseleave', function() {
+              this.style.background = 'transparent';
+            });
+          });
         }
 
-        // Toggle theme manually
-        toggleButton.addEventListener('click', function() {
-          const currentTheme = body.getAttribute('data-theme');
-          const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-          body.setAttribute('data-theme', newTheme);
-          localStorage.setItem('theme', newTheme); // Save user preference
-          themeIcon.className = newTheme === 'light' ? 'fa fa-moon-o' : 'fa fa-sun-o';
+        // Load notification count
+        function loadNotificationCount() {
+          fetch('/get/notifications/unread_count')
+            .then(response => response.json())
+            .then(data => {
+              if (data.count > 0) {
+                const badge = document.getElementById('notification-badge');
+                if (badge) {
+                  badge.textContent = data.count;
+                  badge.style.display = 'block';
+                }
+              }
+            })
+            .catch(error => console.error('Error loading notification count:', error));
+        }
 
-          if (window.calendarInitialized) {
-            calendar.render(); // rerender for proper theme adaptation
-          }
-        });
+        loadNotificationCount();
+        // Refresh notification count every 30 seconds
+        setInterval(loadNotificationCount, 30000);
       });
     </script>
+    {{end}}
   </body>
 </html>
