@@ -383,7 +383,7 @@ body[data-theme="dark"] #main_section textarea {
  
 <form id="minisForm">
   <div id="main_section">
-    <h2 class="mb-4">Create Minis Session</h2>
+    <h2 class="mb-4">Create Regular Session</h2>
 
     <div class="form-group row align-items-center mb-3">
       <label for="name" class="col-sm-3 col-form-label">Session Name</label>
@@ -429,7 +429,7 @@ body[data-theme="dark"] #main_section textarea {
         </div>
       </div>
       <div class="modal-footer">
-        <button id="store_calendar_values" class="btn btn-primary" type="submit">Create Minis Session</button>
+        <button id="store_calendar_values" class="btn btn-primary" type="submit">Create Regular Session</button>
       </div>
     </div>
   </div>
@@ -589,14 +589,14 @@ body[data-theme="dark"] #main_section textarea {
 
       const formData = new URLSearchParams(new FormData(this));
 
-      fetch('/create/minis_session', {
+      fetch('/create/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: formData
       })
       .then(res => {
         if (res.ok) {
-          showToast('🎉 Minis session created successfully!', 'success');
+          showToast('🎉 Regular session created successfully!', 'success');
           setTimeout(() => window.location.reload(), 1500);
         } else {
           res.text().then(msg => showToast('❌ Error: ' + msg, 'error'));

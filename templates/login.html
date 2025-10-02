@@ -3,215 +3,144 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login</title>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
-
+  <title>Login - Hall Photography</title>
+  <meta name="description" content="Login to your Hall Photography account to book sessions and manage your profile.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/main.css">
   <style>
-/* Font settings */
-@import url('https://fonts.googleapis.com/css2?family=Recoleta:wght@400&family=Sofia+Pro:wght@300;400&display=swap');
-
+/* Login page specific styles */
 body {
-  font-family: 'Sofia Pro', sans-serif;
-  font-weight: 300;
-}
-
-h1, h2, h3 {
-  font-family: 'Recoleta', serif;
-  font-weight: 400;
-}
-
-h4, h5, h6, .subtitle {
-  font-family: 'Sofia Pro', sans-serif;
-  font-weight: 400;
-}
-
-p {
-  font-family: 'Sofia Pro', sans-serif;
-  font-weight: 300;
-}
-
-.btn {
-  font-family: 'Sofia Pro', sans-serif;
-  font-weight: 400;
-}
-
-/* Color Palette - Lollipop, Light Accent scheme */
-body.light {
-  background-color: #ffe8cc; /* Slightly darker Lollipop Yellow */
-  color: #333;
-}
-
-body.dark {
-  background-color: #1a1a1a;
-  color: #fff;
-}
-
-.wrapper {
   display: flex;
-  justify-content: center;
   align-items: center;
-  height: 100vh;
+  justify-content: center;
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
 }
 
-.container {
-  max-width: 400px;
-  padding: 20px;
-  text-align: center;
-  border-radius: 10px;
+/* Background Pattern */
+body::after {
+  content: '';
+  position: absolute;
+  bottom: -30%;
+  left: -10%;
+  width: 40%;
+  height: 150%;
+  background: radial-gradient(circle, var(--soft-sage) 0%, transparent 70%);
+  opacity: 0.05;
+  transform: rotate(-10deg);
+  z-index: -1;
 }
 
-/* Light Mode Card */
-body.light .container {
-  background-color: #fff4e6;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+/* Login Container */
+.login-container {
+  background: var(--warm-cream);
+  border-radius: 25px;
+  padding: var(--space-2xl);
+  box-shadow: var(--shadow-strong);
+  width: 100%;
+  max-width: 450px;
+  margin: var(--space-lg);
+  position: relative;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  animation: fadeInUp 0.6s ease-out;
 }
 
-/* Dark Mode Card */
-body.dark .container {
-  background-color: rgba(0, 0, 0, 0.7);
-  box-shadow: 0px 4px 10px rgba(255, 255, 255, 0.1);
-}
-
-/* Input Styles */
-input {
-  width: 85%;
-  padding: 10px;
-  margin: 10px 0;
-  border-radius: 5px;
-  border: 1px solid #ccc;
-}
-
-/* Button Styles */
-.btn {
-  width: 85%;
-  padding: 10px;
-  border-radius: 5px;
-  border: none;
-  cursor: pointer;
-  background-color: #FF6F61; /* Lollipop Color */
-  color: white;
-}
-
-.btn:hover {
-  background-color: #FF4B4B; /* Darker Lollipop for hover */
-}
-
-.btn-danger {
-  background-color: #db4437;
-  color: white;
-}
-
-/* Links */
-a {
-  color: inherit;
-  text-decoration: underline;
-}
-
-a:hover {
-  text-decoration: none;
+[data-theme="dark"] .login-container {
+  background: var(--warm-cream);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 /* Theme Toggle */
 .theme-toggle {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  font-size: 24px;
-  cursor: pointer;
+  top: var(--space-lg);
+  right: var(--space-lg);
 }
 
-.theme-toggle i {
-  transition: color 0.3s ease;
+/* Social Login */
+.social-login {
+  margin-top: var(--space-lg);
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+  .login-container {
+    margin: var(--space-md);
+    padding: var(--space-xl);
+  }
+  
+  .theme-toggle {
+    top: var(--space-md);
+    right: var(--space-md);
+  }
 }
   </style>
-
 </head>
-<body>
-
-<div class="wrapper">
-  <div class="container">
+<body data-theme="light" class="auth-page">
+  <div class="login-container">
     <!-- Theme Toggle Button -->
-    <div class="theme-toggle" id="themeToggleBtn">
-      <i class="fas fa-sun" id="themeIcon"></i>
-    </div>
+    <button class="theme-toggle" id="theme-toggle">
+      <i class="fas fa-moon" id="theme-icon"></i>
+    </button>
 
     <div class="login-form">
-      <h2>Login</h2>
+      <h1>Welcome Back</h1>
+      <p>Sign in to your Hall Photography account</p>
       
       <form id="loginForm" method="POST">
-        <input type="text" id="username" name="username" placeholder="Enter your username" required="required" />
-        <input type="password" id="password" name="password" placeholder="Enter your password" required="required" />
-        <button type="submit" class="btn btn-primary btn-block btn-large">Log In</button>
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input 
+            type="text" 
+            id="username" 
+            name="username" 
+            class="form-input"
+            placeholder="Enter your username" 
+            required 
+          />
+        </div>
+        
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input 
+            type="password" 
+            id="password" 
+            name="password" 
+            class="form-input"
+            placeholder="Enter your password" 
+            required 
+          />
+        </div>
+        
+        <button type="submit" class="btn btn-primary">
+          <i class="fas fa-sign-in-alt"></i>
+          Sign In
+        </button>
       </form>
 
+      <div class="divider">
+        <span>or</span>
+      </div>
+
       <div class="social-login">
-        <p>Or, log in with:</p>
-        <a href="/auth/google" class="btn btn-danger">
-          <span class="fab fa-google"></span> Continue with Google
+        <a href="/auth/google" class="btn btn-google">
+          <i class="fab fa-google"></i>
+          Continue with Google
         </a>
       </div>
 
-      <br>
-
-      <p>
-        New here? <a href="/signup">Create an account</a>
+      <p style="text-align: center; margin-top: var(--space-lg);">
+        New here? <a href="/signup" class="link">Create an account</a>
       </p>
     </div>
   </div>
-</div>
 
-<script>
-  // Theme Toggle Script
-  const themeToggleBtn = document.getElementById('themeToggleBtn');
-  const themeIcon = document.getElementById('themeIcon');
-  const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-  
-  document.body.className = currentTheme;
-  themeIcon.className = currentTheme === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
-
-  themeToggleBtn.addEventListener('click', function() {
-    const newTheme = (document.body.className === 'dark') ? 'light' : 'dark';
-    document.body.className = newTheme;
-    themeIcon.className = newTheme === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
-    localStorage.setItem('theme', newTheme);
-  });
-
-  // Prevent authenticated users from accessing login page
-  const isAuthenticated = false; // This should be set server-side based on the user's session
-  if (isAuthenticated) {
-    window.location.href = "/";
-  }
-
-  // Login Form AJAX Script
-  document.getElementById('loginForm').addEventListener('submit', function (event) {
-    event.preventDefault(); // Prevent default form submission
-
-    // Get input values
-    var username = document.getElementById('username').value;
-    var password = document.getElementById('password').value;
-
-    // Perform basic client-side validation
-    if (!username || !password) {
-      alert('Please enter both username and password.');
-      return;
-    }
-
-    // Send login request to server using AJAX
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', '/login/process');
-    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-    xhr.onload = function () {
-      if (xhr.status === 200) {
-        // Redirect to home page if login is successful
-        window.location.href = "/";
-      } else {
-        // Display error message if login fails
-        alert('Login failed. Please check your username and password.');
-      }
-    };
-    xhr.send('username=' + encodeURIComponent(username) + '&password=' + encodeURIComponent(password));
-  });
-</script>
-
+  <script src="js/main.js"></script>
+  <script src="js/auth.js"></script>
 </body>
 </html>

@@ -102,6 +102,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	session.Values["firstName"] = user.FirstName
 	session.Values["lastName"] = user.LastName
 	session.Values["email"] = user.Email
+	session.Values["isAdmin"] = user.IsAdmin
 	session.Options = &sessions.Options{
 		Path:     "/",
 		MaxAge:   3600,
@@ -163,6 +164,7 @@ func GoogleAuthCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	session.Values["firstName"] = dbUser.FirstName
 	session.Values["lastName"] = dbUser.LastName
 	session.Values["email"] = dbUser.Email
+	session.Values["isAdmin"] = dbUser.IsAdmin
 
 	// ✅ Store Google OAuth tokens
 	session.Values["access_token"] = user.AccessToken
@@ -198,12 +200,6 @@ func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
-var allowedAdminIDs = map[uint]struct{}{
-	3: {},
-	1: {},
-	2: {},
-}
-
 func AdminAuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		session, err := store.Get(r, "session-name")
@@ -218,8 +214,16 @@ func AdminAuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		if _, allowed := allowedAdminIDs[userID]; !allowed {
-			http.Redirect(w, r, "/login", http.StatusFound)
+		// Check if user is admin from database
+		database := db.ConnectDatabase()
+		var user model.User
+		if err := database.First(&user, userID).Error; err != nil {
+			http.Error(w, "User not found", http.StatusNotFound)
+			return
+		}
+
+		if !user.IsAdmin {
+			http.Error(w, "Access denied: Admin privileges required", http.StatusForbidden)
 			return
 		}
 

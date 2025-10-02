@@ -13,6 +13,8 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
+    <!-- Toastify CSS for notifications -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
   <style>
 
 /* Light Theme */
@@ -39,6 +41,76 @@ body[data-theme="light"] {
 .slot-tag.selected {
   background-color: #007bff;
   color: white;
+}
+
+/* Toast notification styling */
+.toastify {
+  font-family: 'Montserrat', sans-serif;
+  padding: 16px 24px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.toast-success {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.toast-error {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.toast-warning {
+  background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+  color: #333 !important;
+}
+
+.toast-info {
+  background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+  color: #333 !important;
+}
+
+/* Loading spinner */
+.btn-loading {
+  position: relative;
+  pointer-events: none;
+}
+
+.btn-loading::after {
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  top: 50%;
+  left: 50%;
+  margin-left: -8px;
+  margin-top: -8px;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  border-top-color: transparent;
+  animation: spinner 0.6s linear infinite;
+}
+
+@keyframes spinner {
+  to {transform: rotate(360deg);}
+}
+
+/* Date validation warning */
+.date-too-soon {
+  opacity: 0.5;
+  position: relative;
+}
+
+.date-too-soon::after {
+  content: "⚠️ Too soon";
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 0.7rem;
+  background: #ffc107;
+  color: #000;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: bold;
 }
 .modal-body {
   padding: 20px;
@@ -431,12 +503,51 @@ body[data-theme="dark"] #main_section textarea {
       </div>
     </div>
     <div id="calendar-container" class="container mt-5">
+      <!-- Booking Policy Banner -->
+      <div class="alert alert-info mb-4" role="alert">
+        <h5 class="alert-heading"><i class="fa fa-info-circle"></i> Booking Policy</h5>
+        <p class="mb-0">
+          <strong>Please note:</strong> All minis sessions must be booked at least <strong>2 weeks (14 days)</strong> in advance. 
+          This ensures we have adequate time to prepare for your session and provide the best experience possible. 
+          Sessions within the next 2 weeks will not be available for booking.
+        </p>
+      </div>
       <div id="calendar"></div>
     </div>
 
 
 
+    <!-- Toastify JS for notifications -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    
     <script>
+    // Utility functions for toast notifications
+    function showToast(message, type = 'info') {
+      const styles = {
+        success: { background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
+        error: { background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' },
+        warning: { background: 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)', color: '#333' },
+        info: { background: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)', color: '#333' }
+      };
+
+      Toastify({
+        text: message,
+        duration: 4000,
+        gravity: "top",
+        position: "right",
+        style: styles[type] || styles.info,
+        stopOnFocus: true
+      }).showToast();
+    }
+
+    // Check if a date is at least 2 weeks in the future
+    function isDateBookable(dateStr) {
+      const date = new Date(dateStr);
+      const twoWeeksFromNow = new Date();
+      twoWeeksFromNow.setDate(twoWeeksFromNow.getDate() + 14);
+      return date >= twoWeeksFromNow;
+    }
+    
     document.addEventListener('DOMContentLoaded', async function () {
       const calendarEl = document.getElementById('calendar');
 
@@ -511,6 +622,9 @@ body[data-theme="dark"] #main_section textarea {
 
           modalTitle.textContent = sessionName;
 
+          // Check if this date is bookable
+          const dateIsBookable = isDateBookable(clickedDate);
+          
           if (slots.length === 0) {
             modalBody.innerHTML = '<p class="text-muted">No available time slots.</p>';
             return;
@@ -518,12 +632,27 @@ body[data-theme="dark"] #main_section textarea {
 
           // Build slot tags with click handlers
           const slotTags = slots.map(slot => `<span class="slot-tag" data-slot="${slot}">${slot}</span>`).join('');
+          
+          // Add warning banner if date is too soon
+          const warningBanner = !dateIsBookable ? `
+            <div class="alert alert-warning" role="alert">
+              <i class="fa fa-exclamation-triangle"></i>
+              <strong>Notice:</strong> This session is within the next 2 weeks. Bookings must be made at least 14 days in advance.
+            </div>
+          ` : '';
+          
           const formHtml = `
+            ${warningBanner}
+            <p class="text-muted mb-3">
+              <i class="fa fa-calendar"></i> ${new Date(clickedDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            </p>
             <form id="booking-form">
               <input type="hidden" name="minis_session_id" value="">
               <input type="hidden" name="time_slot" value="">
               <div id="slot-container">${slotTags}</div>
-              <button type="submit" class="btn btn-primary mt-3" disabled id="book-now-btn">Book Now</button>
+              <button type="submit" class="btn btn-primary mt-3" disabled id="book-now-btn">
+                <i class="fa fa-check-circle"></i> Book Now
+              </button>
             </form>
           `;
 
@@ -533,7 +662,7 @@ body[data-theme="dark"] #main_section textarea {
           // We'll assume only one matching session per day from earlier session mapping
           const minisSessionID = info.event.extendedProps.minisSessionID;
           if (!minisSessionID) {
-            alert("No session ID found for this slot");
+            showToast("❌ No session ID found for this slot", "error");
             return;
           }
           document.querySelector('input[name="minis_session_id"]').value = minisSessionID;
@@ -558,7 +687,20 @@ body[data-theme="dark"] #main_section textarea {
           document.getElementById('booking-form').addEventListener('submit', async function (e) {
             e.preventDefault();
 
+            // Check if the date is bookable (frontend validation)
+            if (!isDateBookable(clickedDate)) {
+              showToast('⚠️ Sessions must be booked at least 2 weeks in advance!', 'warning');
+              return;
+            }
+
             const formData = new FormData(this);
+            const submitBtn = document.getElementById('book-now-btn');
+            const originalText = submitBtn.textContent;
+
+            // Show loading state
+            submitBtn.classList.add('btn-loading');
+            submitBtn.textContent = 'Booking...';
+            submitBtn.disabled = true;
 
             try {
               const response = await fetch('/create/book_minis', {
@@ -567,16 +709,28 @@ body[data-theme="dark"] #main_section textarea {
               });
 
               if (response.ok) {
-                alert("Booking successful!");
+                showToast('🎉 Booking successful! See you soon!', 'success');
                 $('#sessionModal').modal('hide');
                 calendar.refetchEvents();
               } else {
                 const errorText = await response.text();
-                alert("Error: " + errorText);
+                // Extract the error message from the response
+                if (errorText.includes('at least') && errorText.includes('days')) {
+                  showToast('⚠️ This session is too soon! Please book at least 2 weeks in advance.', 'warning');
+                } else if (errorText.includes('already booked')) {
+                  showToast('❌ This time slot is already booked. Please choose another.', 'error');
+                } else {
+                  showToast('❌ ' + errorText, 'error');
+                }
               }
             } catch (err) {
               console.error("Booking error:", err);
-              alert("Something went wrong!");
+              showToast('❌ Something went wrong! Please try again.', 'error');
+            } finally {
+              // Restore button state
+              submitBtn.classList.remove('btn-loading');
+              submitBtn.textContent = originalText;
+              submitBtn.disabled = false;
             }
           });
 
@@ -599,6 +753,7 @@ body[data-theme="dark"] #main_section textarea {
       });
 
       calendar.render();
+      window.calendarInitialized = true;
     });
     </script>
 
@@ -627,7 +782,7 @@ body[data-theme="dark"] #main_section textarea {
           localStorage.setItem('theme', newTheme); // Save user preference
           themeIcon.className = newTheme === 'light' ? 'fa fa-moon-o' : 'fa fa-sun-o';
 
-          if (calendarInitialized) {
+          if (window.calendarInitialized) {
             calendar.render(); // rerender for proper theme adaptation
           }
         });

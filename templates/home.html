@@ -3,326 +3,726 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Home</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
+    <title>Hall Photography - Capturing Life's Beautiful Moments</title>
+    <meta name="description" content="Professional photography services specializing in portraits, events, and mini sessions. Book your session today.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/main.css">
     <style>
-/* Font settings */
-@import url('https://fonts.googleapis.com/css2?family=Recoleta:wght@400&family=Sofia+Pro:wght@300;400&display=swap');
-
-/* Light Theme */
-body[data-theme="light"] {
-  --background-color: #fff4e6;
-  --text-color: #333333;
-  --accent-color: #FF6F61; /* Lollipop Color */
-  --navbar-background: #ffe8cc;
-  --navbar-text-color: #333333;
-  --icon-color: #333333;
-  --hero-background-color: #ffe8cc;
-  --hero-text-color: #333333;
-  --navbar-brand: #000;
-}
-
-/* Dark Theme */
-body[data-theme="dark"] {
-  --background-color: #1C1C1C;
-  --text-color: #ffffff;
-  --accent-color: #FF6F61; /* Lollipop Color */
-  --navbar-background: #333333;
-  --navbar-text-color: #ffffff;
-  --icon-color: #ffffff;
-  --hero-background-color: rgba(0, 0, 0, 0.7);
-  --hero-text-color: #ffffff;
-  --navbar-brand: #fff;
-}
-
-.navbar-brand {
-  color: var(--navbar-brand);
-  font-family: 'Recoleta', serif;
-}
-
-/* General body styles */
-body {
-  background-color: var(--background-color);
-  color: var(--text-color);
-  font-family: 'Sofia Pro', sans-serif;
-  margin: 0;
-  padding: 0;
-}
-
-/* Headings styled with Recoleta */
-h1, h2, h3 {
-  font-family: 'Recoleta', serif;
-  color: var(--hero-text-color);
-}
-
-/* Navbar styling */
-.navbar {
-  background-color: var(--navbar-background);
-  color: var(--navbar-text-color);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  padding: 10px 30px;
-}
-
-.navbar-nav .nav-link {
-  color: var(--navbar-text-color);
-  font-weight: 600;
-  font-family: 'Sofia Pro', sans-serif;
-}
-
-.navbar-nav .nav-link:hover {
-  color: var(--accent-color);
-}
-
-/* Button styling */
-.navbar-nav .nav-item .btn {
-  font-size: 1rem;
-  padding: 10px 20px;
-  margin-left: 10px;
-  font-family: 'Sofia Pro', sans-serif;
-}
-
-/* Google Icon Button styling */
-.google-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background-color: transparent;
-  border: none;
-  font-size: 1.5rem;
-  color: var(--icon-color);
-  cursor: pointer;
-  padding: 5px;
-  transition: color 0.3s ease;
-}
-
-.google-btn:hover {
-  color: var(--accent-color);
-}
-
-/* Hero section styling */
+/* Homepage-specific styles */
 .hero {
-  background: url('your-image-url.jpg') no-repeat center center/cover;
-  height: 100vh;
+  min-height: 100vh;
   display: flex;
   align-items: center;
-  justify-content: center;
-  text-align: center;
+  position: relative;
+  overflow: hidden;
+  padding-top: 80px;
+}
+
+.hero-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, var(--warm-cream) 0%, var(--off-white) 100%);
+  z-index: -2;
+}
+
+.hero-bg::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 60%;
+  height: 200%;
+  background: radial-gradient(circle, var(--golden-yellow) 0%, transparent 70%);
+  opacity: 0.1;
+  transform: rotate(15deg);
 }
 
 .hero-content {
-  background-color: var(--hero-background-color);
-  padding: 40px;
-  border-radius: 8px;
-  color: var(--hero-text-color);
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 var(--space-lg);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2xl);
+  align-items: center;
 }
 
-/* Primary button styling */
-.btn-primary {
-  background-color: var(--accent-color);
-  border-color: var(--accent-color);
+.hero-text {
+  transform: translateX(-20px);
+  opacity: 0;
+  animation: slideInLeft 1s ease 0.3s forwards;
+}
+
+.hero-title {
+  margin-bottom: var(--space-md);
+  color: var(--charcoal);
+  font-size: clamp(2.5rem, 5vw, 4rem);
+}
+
+.hero-subtitle {
+  font-size: 1.3rem;
+  color: var(--warm-brown);
+  margin-bottom: var(--space-lg);
+  font-weight: 300;
+}
+
+.hero-description {
+  font-size: 1.1rem;
+  margin-bottom: var(--space-xl);
+  max-width: 500px;
+}
+
+.hero-cta {
+  display: flex;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.hero-gallery {
+  position: relative;
+  transform: translateX(20px);
+  opacity: 0;
+  animation: slideInRight 1s ease 0.6s forwards;
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md);
+  transform: rotate(-2deg);
+}
+
+.gallery-item {
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: var(--shadow-medium);
+  transition: all var(--transition-slow);
+}
+
+.gallery-item:nth-child(1) {
+  grid-row: 1 / 3;
+  transform: translateY(-20px);
+}
+
+.gallery-item:nth-child(2) {
+  transform: translateX(20px);
+}
+
+.gallery-item:nth-child(3) {
+  transform: translateX(-20px) translateY(20px);
+}
+
+.gallery-item:hover {
+  transform: scale(1.05) rotate(0deg);
+  z-index: 10;
+}
+
+.gallery-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--transition-slow);
+}
+
+.gallery-item:hover img {
+  transform: scale(1.1);
+}
+
+.gallery-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, var(--burnt-orange), var(--deep-rust));
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
   font-weight: 600;
-  padding: 10px 20px;
-  font-family: 'Sofia Pro', sans-serif;
 }
 
-.btn-primary:hover {
-  background-color: #FF4B4B; /* Darker Lollipop for hover */
+.gallery-item:hover .gallery-overlay {
+  opacity: 0.8;
 }
 
-/* Theme icon */
-#theme-icon {
-  margin-left: 10px;
+/* Sessions Section */
+.sessions-section {
+  padding: var(--space-2xl) 0;
+  background: var(--off-white);
+  position: relative;
+}
+
+.sessions-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 var(--space-lg);
+}
+
+.section-header {
+  text-align: center;
+  margin-bottom: var(--space-2xl);
+  transform: translateY(30px);
+  opacity: 0;
+  animation: fadeInUp 1s ease 0.8s forwards;
+}
+
+.section-title {
+  color: var(--charcoal);
+  margin-bottom: var(--space-sm);
+  font-size: clamp(2rem, 4vw, 3rem);
+}
+
+.section-subtitle {
+  font-size: 1.2rem;
+  color: var(--warm-brown);
+  font-weight: 300;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.sessions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: var(--space-xl);
+  margin-top: var(--space-xl);
+}
+
+.session-card {
+  background: var(--warm-cream);
+  border-radius: 25px;
+  padding: var(--space-xl);
+  box-shadow: var(--shadow-soft);
+  transition: all var(--transition-slow);
+  position: relative;
+  overflow: hidden;
+  transform: translateY(30px);
+  opacity: 0;
+  animation: fadeInUp 1s ease forwards;
+}
+
+.session-card:nth-child(1) { animation-delay: 1s; }
+.session-card:nth-child(2) { animation-delay: 1.2s; }
+.session-card:nth-child(3) { animation-delay: 1.4s; }
+
+.session-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--burnt-orange), var(--golden-yellow));
+}
+
+.session-card:hover {
+  transform: translateY(-10px);
+  box-shadow: var(--shadow-strong);
+}
+
+.session-title {
+  color: var(--charcoal);
+  margin-bottom: var(--space-sm);
   font-size: 1.5rem;
 }
 
-.navbar-nav .google-btn-container {
-  display: inline-flex;
+.session-description {
+  color: var(--warm-brown);
+  margin-bottom: var(--space-md);
+  font-size: 1rem;
+}
+
+.session-meta {
+  display: flex;
+  justify-content: space-between;
   align-items: center;
-  margin-left: 10px;
+  margin-bottom: var(--space-md);
+  font-size: 0.9rem;
+  color: var(--warm-brown);
 }
 
-/* Upcoming minis list */
-#minis-sessions-list {
-  margin: 40px auto;
-  max-width: 900px;
+.session-date {
+  font-weight: 500;
 }
 
-.mini-session-card {
-  background-color: var(--hero-background-color);
-  color: var(--hero-text-color);
-  border: none;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  margin-bottom: 20px;
+.session-slots {
+  background: var(--soft-sage);
+  color: white;
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: 20px;
+  font-size: 0.8rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .hero-content {
+    grid-template-columns: 1fr;
+    text-align: center;
+    gap: var(--space-xl);
+  }
+  
+  .hero-text {
+    transform: translateY(20px);
+    animation: fadeInUp 1s ease 0.3s forwards;
+  }
+  
+  .hero-gallery {
+    transform: translateY(20px);
+    animation: fadeInUp 1s ease 0.6s forwards;
+  }
+  
+  .gallery-grid {
+    transform: rotate(0deg);
+  }
+  
+  .gallery-item:nth-child(1),
+  .gallery-item:nth-child(2),
+  .gallery-item:nth-child(3) {
+    transform: none;
+  }
+  
+  .sessions-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .hero-cta {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero {
+    padding-top: 100px;
+  }
+  
+  .hero-content {
+    padding: 0 var(--space-md);
+  }
+  
+  .sessions-container {
+    padding: 0 var(--space-md);
+  }
+  
+  .session-card {
+    padding: var(--space-lg);
+  }
 }
     </style>
   </head>
-  <body data-theme="light">
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg">
-      <a href="/" class="navbar-brand">Hall's Photography</a>
-      <div class="collapse navbar-collapse">
-        <ul class="navbar-nav ml-auto">
-          {{if .Authenticated}}
-            <li class="nav-item">
-              <a href="/book" class="nav-link">Book Session</a>
-            </li>
-            <li class="nav-item">
-              <a href="/profile" class="nav-link">Welcome, {{.Name}}</a>
-            </li>
-            <li class="nav-item">
-              <a href="/logout" class="btn btn-sm">Logout</a>
-            </li>
-          {{else}}
-            <li class="nav-item">
-              <a href="/login" class="btn btn-primary">Login</a>
-            </li>
-            <li class="nav-item">
-              <a href="/signup" class="btn btn-outline-primary">Sign Up</a>
-            </li>
-            <li class="nav-item google-btn-container">
-              <a href="/auth/google" class="google-btn">
-                <i class="fa fa-google"></i>
-              </a>
-            </li>
-          {{end}}
-          <li class="nav-item">
-            <button class="btn nav-link" id="toggle-theme">
-              <i id="theme-icon" class="fa fa-moon-o"></i>
-            </button>
-          </li>
+  <body data-theme="light" class="home-page">
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+      <div class="nav-container">
+        <a href="/" class="nav-brand">Hall Photography</a>
+        
+        <ul class="nav-menu">
+          <li><a href="#about" class="nav-link">About</a></li>
+          <li><a href="#portfolio" class="nav-link">Portfolio</a></li>
+          <li><a href="#sessions" class="nav-link">Sessions</a></li>
+          <li><a href="#contact" class="nav-link">Contact</a></li>
         </ul>
+        
+        <div class="nav-actions">
+          {{if .Authenticated}}
+            <div class="dropdown" style="position: relative; display: inline-block;">
+              <button class="btn btn-primary dropdown-toggle" id="bookingDropdown" style="cursor: pointer;">
+                <i class="fas fa-calendar-plus"></i>
+                Book Session
+                <i class="fas fa-chevron-down" style="font-size: 0.8em; margin-left: 5px;"></i>
+              </button>
+              <div class="dropdown-menu" id="bookingDropdownMenu" style="display: none; position: absolute; top: 100%; right: 0; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-radius: 8px; margin-top: 8px; min-width: 180px; z-index: 1000;">
+                <a href="/book_minis" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; transition: background 0.2s;">
+                  <i class="fas fa-users"></i> Book Minis Session
+                </a>
+                <a href="/book_session" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; transition: background 0.2s; border-top: 1px solid #eee;">
+                  <i class="fas fa-camera"></i> Book Regular Session
+                </a>
+              </div>
+            </div>
+            <a href="/profile" class="nav-link" style="position: relative;">
+              <i class="fas fa-bell" style="font-size: 1.1rem;"></i>
+              <span id="notification-badge" style="display: none; position: absolute; top: -5px; right: -10px; background: #FF6F61; color: white; border-radius: 10px; padding: 2px 6px; font-size: 0.7rem; font-weight: 700;"></span>
+            </a>
+            <a href="/profile" class="nav-link">Welcome, {{.Name}}</a>
+            {{if .IsAdmin}}
+              <a href="/calendar" class="btn btn-primary" style="background: linear-gradient(135deg, #1E3A5F, #2C5F8D);">
+                <i class="fas fa-crown"></i> Admin
+              </a>
+            {{end}}
+            <a href="/logout" class="btn btn-outline">Logout</a>
+          {{else}}
+            <a href="/login" class="btn btn-outline">Login</a>
+            <a href="/signup" class="btn btn-primary">Sign Up</a>
+            <a href="/auth/google" class="btn btn-outline">
+              <i class="fab fa-google"></i>
+            </a>
+          {{end}}
+          <button class="theme-toggle" id="theme-toggle">
+            <i class="fas fa-moon" id="theme-icon"></i>
+          </button>
+        </div>
+        
+        <button class="mobile-menu-toggle" id="mobile-menu-toggle">
+          <i class="fas fa-bars"></i>
+        </button>
       </div>
     </nav>
 
     <!-- Hero Section -->
     <section class="hero">
+      <div class="hero-bg"></div>
       <div class="hero-content">
-        <h1>Welcome to Our Photography Platform</h1>
-        <p>Capture and cherish your special moments with us.</p>
-        <a href="/explore" class="btn btn-primary">Explore Packages</a>
+        <div class="hero-text">
+          <h1 class="hero-title">Capturing Life's Beautiful Moments</h1>
+          <p class="hero-subtitle">Professional Photography with a Personal Touch</p>
+          <p class="hero-description">
+            From intimate portraits to special events, I specialize in creating timeless memories 
+            that tell your unique story. Every session is crafted with care, creativity, and an 
+            eye for the extraordinary in the ordinary.
+          </p>
+          <div class="hero-cta">
+            <a href="#sessions" class="btn btn-primary">
+              <i class="fas fa-camera"></i>
+              View Sessions
+            </a>
+            <a href="#portfolio" class="btn btn-outline">
+              <i class="fas fa-images"></i>
+              See My Work
+            </a>
+          </div>
+        </div>
+        
+        <div class="hero-gallery">
+          <div class="gallery-grid">
+            <div class="gallery-item">
+              <img src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80" alt="Portrait Photography" loading="lazy">
+              <div class="gallery-overlay">Portraits</div>
+            </div>
+            <div class="gallery-item">
+              <img src="https://images.unsplash.com/photo-1519741497674-611481863552?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80" alt="Family Photography" loading="lazy">
+              <div class="gallery-overlay">Families</div>
+            </div>
+            <div class="gallery-item">
+              <img src="https://images.unsplash.com/photo-1511285560929-80b456fea0bc?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80" alt="Event Photography" loading="lazy">
+              <div class="gallery-overlay">Events</div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
-    <section id="upcoming-minis">
-      <div class="container" id="minis-sessions-list">
-        <h2 class="mb-4">Upcoming Mini Sessions</h2>
-        <p class="text-muted">Loading sessions...</p>
+    <!-- About Section -->
+    <section class="about-section" id="about" style="padding: 80px 0; background: var(--warm-cream);">
+      <div class="sessions-container">
+        <div class="section-header">
+          <h2 class="section-title">About Hall Photography</h2>
+          <p class="section-subtitle">
+            Passionate about capturing the moments that matter most
+          </p>
+        </div>
+        <div style="max-width: 800px; margin: 0 auto; padding: 40px 20px;">
+          <p style="font-size: 1.1rem; line-height: 1.8; color: var(--warm-brown); margin-bottom: 20px;">
+            Welcome! I'm a professional photographer dedicated to telling your story through stunning imagery. 
+            With years of experience in portrait, family, and event photography, I specialize in creating 
+            timeless photos that you'll treasure forever.
+          </p>
+          <p style="font-size: 1.1rem; line-height: 1.8; color: var(--warm-brown); margin-bottom: 20px;">
+            My approach is simple: make you feel comfortable, capture authentic moments, and deliver 
+            exceptional quality. Whether it's a quick mini session or a full photography experience, 
+            I'm committed to exceeding your expectations.
+          </p>
+          <div style="text-align: center; margin-top: 40px;">
+            <a href="#contact" class="btn btn-primary">
+              <i class="fas fa-envelope"></i>
+              Get In Touch
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Portfolio Section -->
+    <section class="portfolio-section" id="portfolio" style="padding: 80px 0; background: var(--off-white);">
+      <div class="sessions-container">
+        <div class="section-header">
+          <h2 class="section-title">Portfolio</h2>
+          <p class="section-subtitle">
+            A glimpse into my recent work
+          </p>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; margin-top: 40px;">
+          <div style="position: relative; overflow: hidden; border-radius: 15px; box-shadow: var(--shadow-medium); transition: transform 0.3s;">
+            <img src="https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+                 alt="Portrait" style="width: 100%; height: 350px; object-fit: cover;">
+            <div style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); padding: 20px; color: white;">
+              <h3 style="margin: 0; font-size: 1.3rem;">Portrait Sessions</h3>
+            </div>
+          </div>
+          <div style="position: relative; overflow: hidden; border-radius: 15px; box-shadow: var(--shadow-medium); transition: transform 0.3s;">
+            <img src="https://images.unsplash.com/photo-1511895426328-dc8714191300?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+                 alt="Family" style="width: 100%; height: 350px; object-fit: cover;">
+            <div style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); padding: 20px; color: white;">
+              <h3 style="margin: 0; font-size: 1.3rem;">Family Photography</h3>
+            </div>
+          </div>
+          <div style="position: relative; overflow: hidden; border-radius: 15px; box-shadow: var(--shadow-medium); transition: transform 0.3s;">
+            <img src="https://images.unsplash.com/photo-1529636798458-92182e662485?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+                 alt="Events" style="width: 100%; height: 350px; object-fit: cover;">
+            <div style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); padding: 20px; color: white;">
+              <h3 style="margin: 0; font-size: 1.3rem;">Special Events</h3>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sessions Section -->
+    <section class="sessions-section" id="sessions">
+      <div class="sessions-container">
+        <div class="section-header">
+          <h2 class="section-title">Photography Sessions</h2>
+          <p class="section-subtitle">
+            Choose from our mini sessions or book a full photography session tailored to your needs.
+          </p>
+        </div>
+        
+        <!-- Session Type Tabs -->
+        <div style="text-align: center; margin-bottom: 40px;">
+          <button class="session-tab active" data-tab="minis" style="padding: 12px 30px; margin: 0 10px; border: 2px solid #FF6F61; background: #FF6F61; color: white; border-radius: 25px; font-weight: 600; cursor: pointer; transition: all 0.3s;">
+            <i class="fas fa-users"></i> Mini Sessions
+          </button>
+          <button class="session-tab" data-tab="regular" style="padding: 12px 30px; margin: 0 10px; border: 2px solid #FF6F61; background: transparent; color: #FF6F61; border-radius: 25px; font-weight: 600; cursor: pointer; transition: all 0.3s;">
+            <i class="fas fa-camera"></i> Regular Sessions
+          </button>
+        </div>
+        
+        <!-- Minis Sessions -->
+        <div class="sessions-content" id="minis-content">
+          <h3 style="text-align: center; color: #333; margin-bottom: 20px;">Upcoming Mini Sessions</h3>
+          <p style="text-align: center; color: #666; margin-bottom: 30px;">
+            Limited-time photography sessions designed to capture your special moments in a relaxed, creative environment.
+          </p>
+          <div class="sessions-grid" id="minis-sessions-list">
+            <div class="loading">
+              <div class="loading-spinner"></div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Regular Sessions -->
+        <div class="sessions-content" id="regular-content" style="display: none;">
+          <h3 style="text-align: center; color: #333; margin-bottom: 20px;">Regular Photography Sessions</h3>
+          <p style="text-align: center; color: #666; margin-bottom: 30px;">
+            Full photography sessions with extended time, multiple locations, and outfit changes. Perfect for families, portraits, and special occasions.
+          </p>
+          <div class="sessions-grid" id="regular-sessions-list">
+            <div class="loading">
+              <div class="loading-spinner"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section class="contact-section" id="contact" style="padding: 80px 0; background: var(--warm-cream);">
+      <div class="sessions-container">
+        <div class="section-header">
+          <h2 class="section-title">Get In Touch</h2>
+          <p class="section-subtitle">
+            Ready to book your session or have questions? I'd love to hear from you!
+          </p>
+        </div>
+        <div style="max-width: 600px; margin: 40px auto; text-align: center;">
+          <div style="background: white; padding: 40px; border-radius: 20px; box-shadow: var(--shadow-soft);">
+            <div style="margin-bottom: 30px;">
+              <i class="fas fa-envelope" style="font-size: 2rem; color: var(--burnt-orange); margin-bottom: 10px;"></i>
+              <h3 style="color: var(--charcoal); margin-bottom: 10px;">Email Me</h3>
+              <a href="mailto:caitlinthompson2998@yahoo.com" style="color: var(--warm-brown); text-decoration: none; font-size: 1.1rem;">
+                caitlinthompson2998@yahoo.com
+              </a>
+            </div>
+            <div style="margin-bottom: 30px;">
+              <i class="fas fa-phone" style="font-size: 2rem; color: var(--burnt-orange); margin-bottom: 10px;"></i>
+              <h3 style="color: var(--charcoal); margin-bottom: 10px;">Call Me</h3>
+              <a href="tel:+1234567890" style="color: var(--warm-brown); text-decoration: none; font-size: 1.1rem;">
+                (804) 892-4096
+              </a>
+            </div>
+            <div>
+              <i class="fas fa-map-marker-alt" style="font-size: 2rem; color: var(--burnt-orange); margin-bottom: 10px;"></i>
+              <h3 style="color: var(--charcoal); margin-bottom: 10px;">Location</h3>
+              <p style="color: var(--warm-brown); font-size: 1.1rem; margin: 0;">
+                Serving the Greater Lynchburg Area
+              </p>
+            </div>
+            {{if .Authenticated}}
+            <div style="margin-top: 40px; padding-top: 30px; border-top: 2px solid var(--off-white);">
+              <a href="/book_session" class="btn btn-primary" style="margin-right: 10px;">
+                <i class="fas fa-camera"></i>
+                Book Regular Session
+              </a>
+              <a href="/book_minis" class="btn btn-outline">
+                <i class="fas fa-users"></i>
+                Book Minis Session
+              </a>
+            </div>
+            {{else}}
+            <div style="margin-top: 40px; padding-top: 30px; border-top: 2px solid var(--off-white);">
+              <p style="color: var(--warm-brown); margin-bottom: 15px;">Sign up to book your session today!</p>
+              <a href="/signup" class="btn btn-primary">
+                <i class="fas fa-user-plus"></i>
+                Create Account
+              </a>
+            </div>
+            {{end}}
+          </div>
+        </div>
       </div>
     </section>
 
     <!-- Scripts -->
+    <script src="js/main.js"></script>
+    <script src="js/home.js"></script>
+    
+    {{if .Authenticated}}
     <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        const toggleButton = document.getElementById('toggle-theme');
-        const themeIcon = document.getElementById('theme-icon');
-        const body = document.body;
-
-        async function loadMinisSessions() {
-          try {
-            const res = await fetch('/get/minis_session');
-            if (!res.ok) {
-              throw new Error('Failed to load sessions');
-            }
-            const sessions = await res.json();
-            const list = document.getElementById('minis-sessions-list');
-            list.innerHTML = '<h2 class="mb-4">Upcoming Mini Sessions</h2>';
-
-            const now = new Date();
-            const upcoming = [];
-
-            for (const s of sessions) {
-              if (!Array.isArray(s.Days)) continue;
-
-              for (const day of s.Days) {
-                const start = new Date(day.Start);
-                const end = new Date(day.End);
-                if (end <= now) continue;
-                if (start <= now) continue;
-
-                try {
-                  const slotRes = await fetch(`/get/days?start=${encodeURIComponent(day.Start)}&end=${encodeURIComponent(day.End)}`);
-                  if (!slotRes.ok) continue;
-                  const slotData = await slotRes.json();
-                  const dateKey = day.Start.split('T')[0];
-                  const slots = slotData[dateKey] || [];
-                  if (slots.length > 0) {
-                    upcoming.push({ session: s, day });
-                    break;
-                  }
-                } catch (err) {
-                  console.error('Failed to load slots', err);
-                }
+      // Load notification count if user is authenticated
+      function loadNotificationCount() {
+        fetch('/get/notifications/unread_count')
+          .then(response => response.json())
+          .then(data => {
+            if (data.count > 0) {
+              const badge = document.getElementById('notification-badge');
+              if (badge) {
+                badge.textContent = data.count;
+                badge.style.display = 'block';
               }
             }
+          })
+          .catch(error => console.error('Error loading notification count:', error));
+      }
 
-            if (upcoming.length === 0) {
-              list.innerHTML += '<p class="text-muted">No upcoming sessions.</p>';
-              return;
+      // Booking dropdown functionality
+      document.addEventListener('DOMContentLoaded', function() {
+        loadNotificationCount();
+        // Refresh notification count every 30 seconds
+        setInterval(loadNotificationCount, 30000);
+        const dropdownBtn = document.getElementById('bookingDropdown');
+        const dropdownMenu = document.getElementById('bookingDropdownMenu');
+        
+        if (dropdownBtn && dropdownMenu) {
+          // Toggle dropdown on click
+          dropdownBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const isVisible = dropdownMenu.style.display === 'block';
+            dropdownMenu.style.display = isVisible ? 'none' : 'block';
+          });
+          
+          // Close dropdown when clicking outside
+          document.addEventListener('click', function(e) {
+            if (!dropdownBtn.contains(e.target) && !dropdownMenu.contains(e.target)) {
+              dropdownMenu.style.display = 'none';
             }
-
-            upcoming.forEach(({ session, day }) => {
-              const card = document.createElement('div');
-              card.className = 'card mini-session-card';
-
-              const bodyDiv = document.createElement('div');
-              bodyDiv.className = 'card-body';
-
-              const h3 = document.createElement('h3');
-              h3.className = 'card-title';
-              h3.textContent = session.Name;
-              bodyDiv.appendChild(h3);
-
-              const desc = document.createElement('p');
-              desc.className = 'card-text';
-              desc.textContent = session.Description;
-              bodyDiv.appendChild(desc);
-
-              const dateP = document.createElement('p');
-              dateP.className = 'card-text';
-              dateP.innerHTML = '<small class="text-muted">Starts ' + new Date(day.Start).toLocaleString() + '</small>';
-              bodyDiv.appendChild(dateP);
-
-              const btn = document.createElement('a');
-              btn.href = '/book_minis';
-              btn.className = 'btn btn-primary';
-              btn.textContent = 'Book Now';
-              bodyDiv.appendChild(btn);
-
-              card.appendChild(bodyDiv);
-              list.appendChild(card);
+          });
+          
+          // Add hover effects to dropdown items
+          const dropdownItems = dropdownMenu.querySelectorAll('a');
+          dropdownItems.forEach(item => {
+            item.addEventListener('mouseenter', function() {
+              this.style.background = '#f8f9fa';
             });
-          } catch (err) {
-            console.error(err);
+            item.addEventListener('mouseleave', function() {
+              this.style.background = 'white';
+            });
+          });
+        }
+        
+        // Session tabs functionality
+        const sessionTabs = document.querySelectorAll('.session-tab');
+        const minisContent = document.getElementById('minis-content');
+        const regularContent = document.getElementById('regular-content');
+        const regularSessionsList = document.getElementById('regular-sessions-list');
+        
+        let regularSessionsLoaded = false;
+        
+        sessionTabs.forEach(tab => {
+          tab.addEventListener('click', function() {
+            const tabType = this.getAttribute('data-tab');
+            
+            // Update tab styles
+            sessionTabs.forEach(t => {
+              if (t.getAttribute('data-tab') === tabType) {
+                t.style.background = '#FF6F61';
+                t.style.color = 'white';
+                t.classList.add('active');
+              } else {
+                t.style.background = 'transparent';
+                t.style.color = '#FF6F61';
+                t.classList.remove('active');
+              }
+            });
+            
+            // Show/hide content
+            if (tabType === 'minis') {
+              minisContent.style.display = 'block';
+              regularContent.style.display = 'none';
+            } else {
+              minisContent.style.display = 'none';
+              regularContent.style.display = 'block';
+              
+              // Load regular sessions if not already loaded
+              if (!regularSessionsLoaded) {
+                loadRegularSessions();
+                regularSessionsLoaded = true;
+              }
+            }
+          });
+        });
+        
+        // Function to load regular sessions
+        async function loadRegularSessions() {
+          try {
+            const response = await fetch('/get/sessions');
+            if (!response.ok) {
+              throw new Error('Failed to fetch sessions');
+            }
+            const sessions = await response.json();
+            
+            if (sessions && sessions.length > 0) {
+              regularSessionsList.innerHTML = sessions.map(session => `
+                <div class="session-card" style="background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.3s, box-shadow 0.3s;">
+                  <h3 style="color: #333; margin-bottom: 10px; font-size: 1.5rem;">${session.Name}</h3>
+                  <p style="color: #666; margin-bottom: 15px;">${session.Description}</p>
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
+                    <div style="color: #FF6F61; font-weight: 600; font-size: 1.2rem;">
+                      $${session.Price ? session.Price.toFixed(2) : 'TBD'}
+                    </div>
+                    <a href="/book_session" class="btn btn-primary" style="text-decoration: none;">
+                      <i class="fas fa-calendar-check"></i> Book Now
+                    </a>
+                  </div>
+                </div>
+              `).join('');
+            } else {
+              regularSessionsList.innerHTML = '<p style="text-align: center; color: #999; padding: 40px;">No regular sessions available at this time.</p>';
+            }
+          } catch (error) {
+            console.error('Error loading regular sessions:', error);
+            regularSessionsList.innerHTML = '<p style="text-align: center; color: #999; padding: 40px;">Unable to load sessions. Please try again later.</p>';
           }
         }
-
-        loadMinisSessions();
-
-        // Load user preference from localStorage
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme) {
-          body.setAttribute('data-theme', savedTheme);
-          themeIcon.className = savedTheme === 'light' ? 'fa fa-moon-o' : 'fa fa-sun-o';
-        } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-          body.setAttribute('data-theme', 'dark');
-          themeIcon.className = 'fa fa-sun-o';
-        }
-
-        // Toggle theme manually
-        toggleButton.addEventListener('click', function() {
-          const currentTheme = body.getAttribute('data-theme');
-          const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-          body.setAttribute('data-theme', newTheme);
-          localStorage.setItem('theme', newTheme); // Save user preference
-          themeIcon.className = newTheme === 'light' ? 'fa fa-moon-o' : 'fa fa-sun-o';
-        });
       });
     </script>
-    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+    {{end}}
   </body>
 </html>
