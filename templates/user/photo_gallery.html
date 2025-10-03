@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photo Gallery - Hall Photography</title>
+    <link rel="stylesheet" href="/css/main.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .back-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .back-btn:hover {
+            background: #5a6268;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .select-mode-btn {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .photo-card {
+            position: relative;
+            background: #f8f9fa;
+            border-radius: 10px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .photo-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+        }
+
+        .photo-card.selected {
+            border: 4px solid #667eea;
+        }
+
+        .photo-img {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+        }
+
+        .photo-info {
+            padding: 15px;
+        }
+
+        .photo-name {
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 5px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .photo-size {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .checkbox-overlay {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 30px;
+            height: 30px;
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 50%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .select-mode .checkbox-overlay {
+            display: flex;
+        }
+
+        .photo-card.selected .checkbox-overlay {
+            background: #667eea;
+            color: white;
+        }
+
+        .loading, .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            color: #ddd;
+        }
+
+        .payment-required {
+            text-align: center;
+            padding: 60px 20px;
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 10px;
+            color: #856404;
+        }
+
+        .payment-required h2 {
+            color: #856404;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            position: relative;
+            max-width: 90vw;
+            max-height: 90vh;
+        }
+
+        .modal-img {
+            max-width: 100%;
+            max-height: 90vh;
+            object-fit: contain;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 40px;
+            color: white;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .modal-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.3);
+            color: white;
+            font-size: 40px;
+            padding: 20px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+        }
+
+        .modal-nav:hover {
+            background: rgba(255,255,255,0.5);
+        }
+
+        .modal-prev {
+            left: 20px;
+        }
+
+        .modal-next {
+            right: 20px;
+        }
+
+        .selection-count {
+            background: #667eea;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="toolbar">
+            <a href="/profile" class="back-btn">← Back to Profile</a>
+            <div class="action-buttons">
+                <span class="selection-count" id="selection-count" style="display: none;">0 selected</span>
+                <button class="btn select-mode-btn" id="select-mode-btn">Select Multiple</button>
+                <button class="btn btn-primary" id="download-selected-btn" style="display: none;" disabled>
+                    Download Selected
+                </button>
+                <button class="btn btn-success" id="download-all-btn">
+                    Download All
+                </button>
+            </div>
+        </div>
+
+        <h1>📸 Your Photos</h1>
+        <p class="subtitle">{{.BookingType}} booking #{{.BookingID}}</p>
+
+        <div id="loading" class="loading">
+            <p>Loading photos...</p>
+        </div>
+
+        <div id="payment-required" class="payment-required" style="display: none;">
+            <div class="empty-state-icon">💳</div>
+            <h2>Payment Required</h2>
+            <p>Please complete payment to view and download your photos.</p>
+            <p>Contact the photographer for payment details.</p>
+        </div>
+
+        <div id="empty-state" class="empty-state" style="display: none;">
+            <div class="empty-state-icon">📷</div>
+            <h2>No Photos Yet</h2>
+            <p>Your photos will appear here once the photographer uploads them.</p>
+        </div>
+
+        <div class="photo-grid" id="photo-grid"></div>
+    </div>
+
+    <!-- Photo Modal -->
+    <div class="modal" id="photo-modal">
+        <span class="modal-close" id="modal-close">&times;</span>
+        <button class="modal-nav modal-prev" id="modal-prev">‹</button>
+        <div class="modal-content">
+            <img class="modal-img" id="modal-img" src="" alt="Photo">
+        </div>
+        <button class="modal-nav modal-next" id="modal-next">›</button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    
+    <script>
+        const bookingType = '{{.BookingType}}';
+        const bookingID = '{{.BookingID}}';
+
+        let photos = [];
+        let selectedPhotos = new Set();
+        let selectMode = false;
+        let currentModalIndex = 0;
+
+        const photoGrid = document.getElementById('photo-grid');
+        const loading = document.getElementById('loading');
+        const emptyState = document.getElementById('empty-state');
+        const paymentRequired = document.getElementById('payment-required');
+        const selectModeBtn = document.getElementById('select-mode-btn');
+        const downloadSelectedBtn = document.getElementById('download-selected-btn');
+        const downloadAllBtn = document.getElementById('download-all-btn');
+        const selectionCount = document.getElementById('selection-count');
+        const modal = document.getElementById('photo-modal');
+        const modalImg = document.getElementById('modal-img');
+        const modalClose = document.getElementById('modal-close');
+        const modalPrev = document.getElementById('modal-prev');
+        const modalNext = document.getElementById('modal-next');
+
+        // Toast notification function
+        function showToast(message, type = 'info') {
+            const colors = {
+                success: '#28a745',
+                error: '#dc3545',
+                warning: '#ffc107',
+                info: '#17a2b8'
+            };
+
+            Toastify({
+                text: message,
+                duration: 3000,
+                gravity: 'top',
+                position: 'right',
+                style: {
+                    background: colors[type] || colors.info,
+                },
+            }).showToast();
+        }
+
+        async function loadPhotos() {
+            try {
+                const response = await fetch(`/booking/${bookingType}/${bookingID}/photos`);
+                
+                if (response.status === 402) {
+                    loading.style.display = 'none';
+                    paymentRequired.style.display = 'block';
+                    return;
+                }
+
+                if (!response.ok) throw new Error('Failed to fetch photos');
+                
+                photos = await response.json();
+                console.log('📸 Loaded photos:', photos);
+                
+                loading.style.display = 'none';
+                
+                if (photos.length === 0) {
+                    emptyState.style.display = 'block';
+                    return;
+                }
+
+                renderPhotos();
+            } catch (error) {
+                console.error('Error loading photos:', error);
+                loading.innerHTML = '<p style="color: red;">Error loading photos. Please try again.</p>';
+            }
+        }
+
+        function renderPhotos() {
+            photoGrid.innerHTML = photos.map((photo, index) => `
+                <div class="photo-card" data-index="${index}" data-photo-id="${photo.ID}">
+                    <div class="checkbox-overlay">✓</div>
+                    <img class="photo-img" 
+                         src="/photo/${photo.ID}/view" 
+                         alt="${photo.FileName}"
+                         onerror="console.error('Failed to load photo:', this.src); this.style.border='2px solid red';">
+                    <div class="photo-info">
+                        <div class="photo-name">${photo.FileName}</div>
+                        <div class="photo-size">${formatFileSize(photo.FileSize)}</div>
+                    </div>
+                </div>
+            `).join('');
+
+            attachPhotoCardListeners();
+            console.log('📸 Rendered', photos.length, 'photo cards');
+        }
+
+        function attachPhotoCardListeners() {
+            document.querySelectorAll('.photo-card').forEach(card => {
+                card.addEventListener('click', (e) => {
+                    if (selectMode) {
+                        toggleSelection(card);
+                    } else {
+                        openModal(parseInt(card.dataset.index));
+                    }
+                });
+            });
+        }
+
+        function toggleSelection(card) {
+            const photoId = parseInt(card.dataset.photoId);
+            
+            if (selectedPhotos.has(photoId)) {
+                selectedPhotos.delete(photoId);
+                card.classList.remove('selected');
+            } else {
+                selectedPhotos.add(photoId);
+                card.classList.add('selected');
+            }
+
+            updateSelectionUI();
+        }
+
+        function updateSelectionUI() {
+            const count = selectedPhotos.size;
+            selectionCount.textContent = `${count} selected`;
+            downloadSelectedBtn.disabled = count === 0;
+        }
+
+        selectModeBtn.addEventListener('click', () => {
+            selectMode = !selectMode;
+            
+            if (selectMode) {
+                document.body.classList.add('select-mode');
+                photoGrid.classList.add('select-mode');
+                selectModeBtn.textContent = 'Cancel';
+                downloadSelectedBtn.style.display = 'inline-block';
+                selectionCount.style.display = 'inline-block';
+            } else {
+                document.body.classList.remove('select-mode');
+                photoGrid.classList.remove('select-mode');
+                selectModeBtn.textContent = 'Select Multiple';
+                downloadSelectedBtn.style.display = 'none';
+                selectionCount.style.display = 'none';
+                selectedPhotos.clear();
+                document.querySelectorAll('.photo-card').forEach(card => {
+                    card.classList.remove('selected');
+                });
+            }
+        });
+
+        downloadSelectedBtn.addEventListener('click', async () => {
+            if (selectedPhotos.size === 0) return;
+
+            try {
+                const response = await fetch('/booking/photos/download-multiple', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        photo_ids: Array.from(selectedPhotos)
+                    })
+                });
+
+                if (!response.ok) throw new Error('Download failed');
+
+                // Get the blob and trigger download
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `photos_${bookingType}_${bookingID}.zip`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                a.remove();
+
+                const count = selectedPhotos.size;
+                showToast(`✅ Downloaded ${count} photo${count > 1 ? 's' : ''} successfully!`, 'success');
+                
+                // Reload photos
+                selectedPhotos.clear();
+                selectMode = false;
+                selectModeBtn.click(); // Exit select mode
+                loadPhotos();
+            } catch (error) {
+                console.error('Download error:', error);
+                showToast('❌ Failed to download photos. Please try again.', 'error');
+            }
+        });
+
+        downloadAllBtn.addEventListener('click', async () => {
+            try {
+                const response = await fetch(`/booking/${bookingType}/${bookingID}/photos/download-all`);
+                
+                if (!response.ok) throw new Error('Download failed');
+
+                // Get the blob and trigger download
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `photos_${bookingType}_${bookingID}_all.zip`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                a.remove();
+
+                showToast(`✅ Downloaded all photos successfully!`, 'success');
+                
+                // Reload photos
+                loadPhotos();
+            } catch (error) {
+                console.error('Download error:', error);
+                showToast('❌ Failed to download photos. Please try again.', 'error');
+            }
+        });
+
+        function openModal(index) {
+            currentModalIndex = index;
+            const photo = photos[index];
+            modalImg.src = `/photo/${photo.ID}/view`;
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            modal.classList.remove('active');
+        }
+
+        function nextPhoto() {
+            currentModalIndex = (currentModalIndex + 1) % photos.length;
+            openModal(currentModalIndex);
+        }
+
+        function prevPhoto() {
+            currentModalIndex = (currentModalIndex - 1 + photos.length) % photos.length;
+            openModal(currentModalIndex);
+        }
+
+        modalClose.addEventListener('click', closeModal);
+        modalNext.addEventListener('click', nextPhoto);
+        modalPrev.addEventListener('click', prevPhoto);
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (!modal.classList.contains('active')) return;
+            
+            if (e.key === 'Escape') closeModal();
+            if (e.key === 'ArrowRight') nextPhoto();
+            if (e.key === 'ArrowLeft') prevPhoto();
+        });
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        // Load photos on page load
+        loadPhotos();
+    </script>
+</body>
+</html>
+

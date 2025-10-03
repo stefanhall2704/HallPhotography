@@ -37,6 +37,12 @@
   animation: fadeInUp 0.6s ease-out;
 }
 
+.profile-picture-container {
+  position: relative;
+  width: 120px;
+  height: 120px;
+}
+
 .profile-picture {
   width: 120px;
   height: 120px;
@@ -44,6 +50,73 @@
   object-fit: cover;
   box-shadow: var(--shadow-medium);
   border: 4px solid var(--golden-yellow);
+  display: block;
+}
+
+.profile-picture-initials {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--burnt-orange), var(--golden-yellow));
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  font-weight: bold;
+  box-shadow: var(--shadow-medium);
+  border: 4px solid var(--golden-yellow);
+}
+
+.profile-picture-upload {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--burnt-orange);
+  color: white;
+  border: 3px solid white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.profile-picture-upload:hover {
+  background: var(--golden-yellow);
+  transform: scale(1.1);
+}
+
+.profile-picture-upload input {
+  display: none;
+}
+
+.profile-picture-delete {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #dc3545;
+  color: white;
+  border: 3px solid white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  font-size: 0.9rem;
+}
+
+.profile-picture-delete:hover {
+  background: #c82333;
+  transform: scale(1.1);
 }
 
 .profile-info {
@@ -475,6 +548,74 @@
   background: var(--warm-cream);
 }
 
+/* Price Input Modal Styles */
+.price-input-group {
+  margin-bottom: var(--space-xl);
+}
+
+.price-input-label {
+  display: block;
+  color: var(--charcoal);
+  font-weight: 600;
+  font-size: 1rem;
+  margin-bottom: var(--space-sm);
+}
+
+.price-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.price-input-prefix {
+  position: absolute;
+  left: var(--space-md);
+  color: var(--warm-brown);
+  font-size: 1.3rem;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.price-input-field {
+  width: 100%;
+  padding: var(--space-md) var(--space-md) var(--space-md) 2.5rem;
+  border: 2px solid #e5e5e5;
+  border-radius: 12px;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--charcoal);
+  background: white;
+  transition: all 0.3s ease;
+}
+
+.price-input-field:focus {
+  outline: none;
+  border-color: var(--burnt-orange);
+  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.1);
+}
+
+.price-input-field.error {
+  border-color: #dc3545;
+}
+
+.price-input-error {
+  color: #dc3545;
+  font-size: 0.9rem;
+  margin-top: var(--space-xs);
+  display: none;
+}
+
+.price-input-error.show {
+  display: block;
+}
+
+.price-input-hint {
+  color: var(--warm-brown);
+  font-size: 0.9rem;
+  margin-top: var(--space-xs);
+  font-style: italic;
+}
+
 @media (max-width: 480px) {
   .confirmation-modal-content {
     padding: var(--space-lg);
@@ -541,7 +682,22 @@
       <div class="profile-container">
       <!-- Profile Header -->
       <div class="profile-header">
-        <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80" alt="Profile Picture" class="profile-picture">
+        <div class="profile-picture-container" id="profile-picture-container">
+          {{if .ProfilePicture}}
+            <img src="/{{.ProfilePicture}}" alt="Profile Picture" class="profile-picture" id="profile-picture-img">
+            <button class="profile-picture-delete" id="delete-profile-picture" title="Remove profile picture">
+              <i class="fas fa-times"></i>
+            </button>
+          {{else}}
+            <div class="profile-picture-initials" id="profile-picture-initials">
+              {{.Initials}}
+            </div>
+          {{end}}
+          <label class="profile-picture-upload" title="Change profile picture">
+            <i class="fas fa-camera"></i>
+            <input type="file" id="profile-picture-input" accept="image/*">
+          </label>
+        </div>
         <div class="profile-info">
         <h1 class="profile-name">{{.Name}}</h1>
           <p class="profile-email">{{.Email}}</p>
@@ -565,6 +721,14 @@
         <h2><i class="fas fa-shield-alt"></i> Admin Panel</h2>
         <p style="margin-bottom: 20px; opacity: 0.9;">Manage photography sessions and bookings</p>
         <div class="admin-actions">
+          <a href="/admin/dashboard" class="admin-button" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            <i class="fas fa-chart-line"></i>
+            Admin Dashboard
+          </a>
+          <a href="/admin/photo-todo" class="admin-button" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+            <i class="fas fa-cloud-upload-alt"></i>
+            Photo Upload Todo
+          </a>
           <a href="/calendar" class="admin-button">
             <i class="fas fa-calendar-plus"></i>
             Create Minis Session
@@ -1122,13 +1286,60 @@
             <div style="color: #888; font-size: 0.9rem; margin-bottom: 5px;"><i class="fas fa-calendar"></i> Booked On</div>
             <div style="font-weight: 600; color: #333;">${new Date(booking.CreatedAt).toLocaleDateString()}</div>
           </div>
-          ${bookingType === 'session' && booking.Session?.Price ? `
+          ${booking.ProposedPrice ? `
             <div>
               <div style="color: #888; font-size: 0.9rem; margin-bottom: 5px;"><i class="fas fa-dollar-sign"></i> Price</div>
-              <div style="font-weight: 600; color: #333;">$${booking.Session.Price.toFixed(2)}</div>
+              <div style="font-weight: 600; color: #333;">$${booking.ProposedPrice.toFixed(2)}</div>
             </div>
           ` : ''}
+          <div>
+            <div style="color: #888; font-size: 0.9rem; margin-bottom: 5px;"><i class="fas fa-money-bill-wave"></i> Payment</div>
+            <div style="font-weight: 600; color: ${booking.HasPaid ? '#28a745' : '#dc3545'};">
+              ${booking.HasPaid ? '✅ Paid' : '❌ Not Paid'}
+            </div>
+          </div>
+          <div>
+            <div style="color: #888; font-size: 0.9rem; margin-bottom: 5px;"><i class="fas fa-images"></i> Photos</div>
+            <div style="font-weight: 600; color: ${booking.PhotosUploaded ? '#28a745' : '#6c757d'};">
+              ${booking.PhotosUploaded ? '✅ Uploaded' : '⏳ Pending'}
+            </div>
+          </div>
         </div>
+        ${isAdmin ? `
+          <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #e9ecef;">
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end;">
+              ${!booking.HasPaid ? `
+                <button onclick="markAsPaid()" class="btn btn-success" style="padding: 8px 16px; font-size: 14px;">
+                  <i class="fas fa-check-circle"></i> Mark as Paid
+                </button>
+              ` : ''}
+              ${!booking.PhotosUploaded && booking.Status === 'confirmed' ? `
+                <a href="/admin/booking/${bookingType}/${booking.ID}/upload-photos-view" class="btn btn-primary" style="padding: 8px 16px; font-size: 14px;">
+                  <i class="fas fa-cloud-upload-alt"></i> Upload Photos
+                </a>
+              ` : ''}
+              ${booking.PhotosUploaded ? `
+                <a href="/booking/${bookingType}/${booking.ID}/photos-view" class="btn btn-outline" style="padding: 8px 16px; font-size: 14px;">
+                  <i class="fas fa-images"></i> View Photos
+                </a>
+              ` : ''}
+            </div>
+          </div>
+        ` : ''}
+        ${!isAdmin && booking.PhotosUploaded ? `
+          <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #e9ecef;">
+            ${booking.HasPaid ? `
+              <a href="/booking/${bookingType}/${booking.ID}/photos-view" class="btn btn-primary" style="width: 100%; padding: 15px; font-size: 16px; text-align: center; display: block; text-decoration: none;">
+                <i class="fas fa-images"></i> View & Download Your Photos
+              </a>
+            ` : `
+              <div style="background: #fff3cd; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107;">
+                <p style="margin: 0; color: #856404;"><i class="fas fa-exclamation-triangle"></i> <strong>Payment Required</strong></p>
+                <p style="margin: 10px 0 0 0; color: #856404; font-size: 14px;">Please complete payment to view and download your photos. Contact the photographer for payment details.</p>
+              </div>
+            `}
+          </div>
+        ` : ''}
       `;
       
       document.getElementById('booking-info').innerHTML = infoHTML;
@@ -1231,62 +1442,65 @@
     function updateBookingStatus(status) {
       if (!currentBooking) return;
       
-      // For session confirmations, require a price
-      if (currentBooking.type === 'session' && status === 'confirmed') {
-        const price = prompt('Please enter the session price (in dollars):');
-        if (!price) {
-          showToast('⚠️ Price is required to confirm a photography session', 'warning');
-          return;
-        }
-        
-        const priceNum = parseFloat(price);
-        if (isNaN(priceNum) || priceNum <= 0) {
-          showToast('⚠️ Please enter a valid price greater than 0', 'warning');
-          return;
-        }
-        
-        const formData = new FormData();
-        formData.append('status', status);
-        formData.append('proposed_price', priceNum.toString());
-        
-        fetch(`/admin/booking/${currentBooking.type}/${currentBooking.id}/status`, {
-          method: 'POST',
-          body: formData
-        })
-          .then(response => {
-            if (!response.ok) {
-              return response.text().then(text => { throw new Error(text) });
-            }
-            return response.json();
-          })
-          .then(() => {
-            showToast(`🎉 Price proposal sent! The user will be notified to approve $${priceNum.toFixed(2)}.`, 'success');
-            loadBookingDetails(currentBooking.type, currentBooking.id);
-          })
-          .catch(error => {
-            console.error('Error updating booking:', error);
-            showToast('❌ Failed to update booking: ' + error.message, 'error');
-          });
+      // For confirmations, require a price (both sessions and minis)
+      if (status === 'confirmed') {
+        const sessionType = currentBooking.type === 'session' ? 'photography session' : 'mini session';
+        showPriceInputModal({
+          title: '💰 Set Price',
+          message: `Enter the price for this ${sessionType}. The user will be notified to approve it.`,
+          hint: 'This price will be sent to the user for approval before finalizing the booking.',
+          onConfirm: (price) => {
+            const formData = new FormData();
+            formData.append('status', status);
+            formData.append('proposed_price', price.toString());
+            
+            fetch(`/admin/booking/${currentBooking.type}/${currentBooking.id}/status`, {
+              method: 'POST',
+              body: formData
+            })
+              .then(response => {
+                if (!response.ok) {
+                  return response.text().then(text => { throw new Error(text) });
+                }
+                return response.json();
+              })
+              .then(() => {
+                showToast(`🎉 Price proposal sent! The user will be notified to approve $${price.toFixed(2)}.`, 'success');
+                loadBookingDetails(currentBooking.type, currentBooking.id);
+              })
+              .catch(error => {
+                console.error('Error updating booking:', error);
+                showToast('❌ Failed to update booking: ' + error.message, 'error');
+              });
+          }
+        });
       } else {
-        // For minis or other status updates
-        if (!confirm(`Are you sure you want to ${status} this booking?`)) return;
-        
-        const formData = new FormData();
-        formData.append('status', status);
-        
-        fetch(`/admin/booking/${currentBooking.type}/${currentBooking.id}/status`, {
-          method: 'POST',
-          body: formData
-        })
-          .then(response => response.json())
-          .then(() => {
-            showToast(`✅ Booking ${status} successfully!`, 'success');
-            loadBookingDetails(currentBooking.type, currentBooking.id);
-          })
-          .catch(error => {
-            console.error('Error updating booking:', error);
-            showToast('❌ Failed to update booking', 'error');
-          });
+        // For other status updates
+        showConfirmationModal({
+          title: 'Confirm Action',
+          message: `Are you sure you want to ${status} this booking?`,
+          confirmText: 'Yes, Continue',
+          cancelText: 'Cancel',
+          confirmClass: 'btn-secondary',
+          onConfirm: () => {
+            const formData = new FormData();
+            formData.append('status', status);
+            
+            fetch(`/admin/booking/${currentBooking.type}/${currentBooking.id}/status`, {
+              method: 'POST',
+              body: formData
+            })
+              .then(response => response.json())
+              .then(() => {
+                showToast(`✅ Booking ${status} successfully!`, 'success');
+                loadBookingDetails(currentBooking.type, currentBooking.id);
+              })
+              .catch(error => {
+                console.error('Error updating booking:', error);
+                showToast('❌ Failed to update booking', 'error');
+              });
+          }
+        });
       }
     }
 
@@ -1331,44 +1545,108 @@
     // ========== USER RESPONSE FUNCTIONS ==========
     
     function acceptProposedTime() {
-      if (!currentBooking || !confirm('Accept the proposed time and confirm this booking?')) return;
+      if (!currentBooking) return;
       
-      const formData = new FormData();
-      formData.append('status', 'confirmed');
-      
-      fetch(`/admin/booking/${currentBooking.type}/${currentBooking.id}/status`, {
-        method: 'POST',
-        body: formData
-      })
-        .then(response => response.json())
-        .then(() => {
-          showToast('🎉 Booking confirmed! The photographer will be notified.', 'success');
-          loadBookingDetails(currentBooking.type, currentBooking.id);
-        })
-        .catch(error => {
-          console.error('Error accepting time:', error);
-          showToast('❌ Failed to accept proposed time', 'error');
-        });
+      showConfirmationModal({
+        title: '✅ Accept Proposed Time',
+        message: 'Accept the proposed time and confirm this booking?',
+        confirmText: 'Yes, Accept',
+        cancelText: 'Cancel',
+        confirmClass: 'btn-primary',
+        onConfirm: () => {
+          const formData = new FormData();
+          formData.append('status', 'confirmed');
+          
+          fetch(`/admin/booking/${currentBooking.type}/${currentBooking.id}/status`, {
+            method: 'POST',
+            body: formData
+          })
+            .then(response => response.json())
+            .then(() => {
+              showToast('🎉 Booking confirmed! The photographer will be notified.', 'success');
+              loadBookingDetails(currentBooking.type, currentBooking.id);
+            })
+            .catch(error => {
+              console.error('Error accepting time:', error);
+              showToast('❌ Failed to accept proposed time', 'error');
+            });
+        }
+      });
     }
 
     function declineProposedTime() {
-      if (!currentBooking || !confirm('Decline this booking?')) return;
+      if (!currentBooking) return;
       
-      const formData = new FormData();
-      formData.append('status', 'cancelled');
+      showConfirmationModal({
+        title: '❌ Decline Booking',
+        message: 'Are you sure you want to decline this booking? This action will cancel the booking.',
+        confirmText: 'Yes, Decline',
+        cancelText: 'Cancel',
+        confirmClass: 'btn-secondary',
+        onConfirm: () => {
+          const formData = new FormData();
+          formData.append('status', 'cancelled');
+          
+          fetch(`/admin/booking/${currentBooking.type}/${currentBooking.id}/status`, {
+            method: 'POST',
+            body: formData
+          })
+            .then(response => response.json())
+            .then(() => {
+              showToast('Booking declined.', 'info');
+              closeBookingModal();
+            })
+            .catch(error => {
+              console.error('Error declining:', error);
+              showToast('❌ Failed to decline', 'error');
+            });
+        }
+      });
+    }
+
+    function markAsPaid() {
+      if (!currentBooking) return;
       
-      fetch(`/admin/booking/${currentBooking.type}/${currentBooking.id}/status`, {
-        method: 'POST',
-        body: formData
-      })
+      // Get the booking to know the price
+      fetch(`/booking/${currentBooking.type}/${currentBooking.id}`)
         .then(response => response.json())
-        .then(() => {
-          showToast('Booking declined.', 'info');
-          closeBookingModal();
+        .then(data => {
+          const booking = data.booking;
+          const amount = booking.ProposedPrice || 0;
+          
+          showPriceInputModal({
+            title: '💰 Mark as Paid',
+            message: 'Enter the amount received from the client:',
+            hint: `Proposed price was $${amount.toFixed(2)}`,
+            defaultValue: amount.toFixed(2),
+            onConfirm: (paidAmount) => {
+              const formData = new FormData();
+              formData.append('amount', paidAmount.toString());
+              
+              fetch(`/admin/booking/${currentBooking.type}/${currentBooking.id}/payment`, {
+                method: 'POST',
+                body: formData
+              })
+                .then(response => {
+                  if (!response.ok) {
+                    return response.text().then(text => { throw new Error(text) });
+                  }
+                  return response.json();
+                })
+                .then(() => {
+                  showToast(`✅ Payment of $${paidAmount.toFixed(2)} marked as received!`, 'success');
+                  loadBookingDetails(currentBooking.type, currentBooking.id);
+                })
+                .catch(error => {
+                  console.error('Error marking payment:', error);
+                  showToast('❌ Failed to mark payment: ' + error.message, 'error');
+                });
+            }
+          });
         })
         .catch(error => {
-          console.error('Error declining:', error);
-          showToast('❌ Failed to decline', 'error');
+          console.error('Error loading booking:', error);
+          showToast('❌ Failed to load booking details', 'error');
         });
     }
 
@@ -1503,6 +1781,225 @@
       
       modal.querySelector('#cancelBtn').onclick = cancelHandler;
       modal.querySelector('.confirmation-modal-overlay').onclick = cancelHandler;
+    }
+
+    // Price input modal
+    function showPriceInputModal(options) {
+      const modal = document.createElement('div');
+      modal.className = 'confirmation-modal';
+      modal.innerHTML = `
+        <div class="confirmation-modal-overlay"></div>
+        <div class="confirmation-modal-content">
+          <h3 class="confirmation-modal-title">${options.title || 'Set Price'}</h3>
+          <p class="confirmation-modal-message">${options.message || 'Enter the session price:'}</p>
+          
+          <div class="price-input-group">
+            <label class="price-input-label">Price (USD)</label>
+            <div class="price-input-wrapper">
+              <span class="price-input-prefix">$</span>
+              <input 
+                type="number" 
+                class="price-input-field" 
+                id="priceInput" 
+                placeholder="0.00" 
+                step="0.01" 
+                min="0"
+                value="${options.defaultValue || ''}"
+              >
+            </div>
+            <div class="price-input-error" id="priceError">Please enter a valid price greater than $0</div>
+            ${options.hint ? `<div class="price-input-hint">${options.hint}</div>` : ''}
+          </div>
+          
+          <div class="confirmation-modal-actions">
+            <button class="btn btn-primary" id="confirmPriceBtn">
+              <i class="fas fa-check"></i> Confirm Price
+            </button>
+            <button class="btn btn-outline" id="cancelPriceBtn">
+              <i class="fas fa-times"></i> Cancel
+            </button>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(modal);
+      setTimeout(() => modal.classList.add('show'), 10);
+      
+      const priceInput = modal.querySelector('#priceInput');
+      const priceError = modal.querySelector('#priceError');
+      const confirmBtn = modal.querySelector('#confirmPriceBtn');
+      
+      // Focus on input
+      setTimeout(() => priceInput.focus(), 100);
+      
+      // Validate price
+      function validatePrice() {
+        const value = parseFloat(priceInput.value);
+        if (isNaN(value) || value <= 0) {
+          priceInput.classList.add('error');
+          priceError.classList.add('show');
+          return false;
+        }
+        priceInput.classList.remove('error');
+        priceError.classList.remove('show');
+        return true;
+      }
+      
+      // Handle input changes
+      priceInput.addEventListener('input', () => {
+        if (priceInput.value) {
+          validatePrice();
+        } else {
+          priceInput.classList.remove('error');
+          priceError.classList.remove('show');
+        }
+      });
+      
+      // Handle Enter key
+      priceInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          confirmBtn.click();
+        }
+      });
+      
+      // Handle confirm
+      confirmBtn.onclick = () => {
+        if (validatePrice()) {
+          const price = parseFloat(priceInput.value);
+          modal.classList.remove('show');
+          setTimeout(() => modal.remove(), 300);
+          if (options.onConfirm) options.onConfirm(price);
+        }
+      };
+      
+      // Handle cancel
+      const cancelHandler = () => {
+        modal.classList.remove('show');
+        setTimeout(() => modal.remove(), 300);
+        if (options.onCancel) options.onCancel();
+      };
+      
+      modal.querySelector('#cancelPriceBtn').onclick = cancelHandler;
+      modal.querySelector('.confirmation-modal-overlay').onclick = cancelHandler;
+    }
+
+    // Profile Picture Upload
+    const profilePictureInput = document.getElementById('profile-picture-input');
+    const deleteProfilePictureBtn = document.getElementById('delete-profile-picture');
+    const profilePictureContainer = document.getElementById('profile-picture-container');
+
+    if (profilePictureInput) {
+      profilePictureInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+          showToast('❌ Please select an image file', 'error');
+          return;
+        }
+
+        // Validate file size (10MB max)
+        if (file.size > 10 * 1024 * 1024) {
+          showToast('❌ Image must be less than 10MB', 'error');
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append('profile_picture', file);
+
+        try {
+          const response = await fetch('/api/profile/picture/upload', {
+            method: 'POST',
+            body: formData
+          });
+
+          if (!response.ok) {
+            const error = await response.text();
+            throw new Error(error);
+          }
+
+          const data = await response.json();
+          showToast('✅ Profile picture updated successfully!', 'success');
+          
+          // Update UI
+          profilePictureContainer.innerHTML = `
+            <img src="/${data.profile_picture}" alt="Profile Picture" class="profile-picture" id="profile-picture-img">
+            <button class="profile-picture-delete" id="delete-profile-picture" title="Remove profile picture">
+              <i class="fas fa-times"></i>
+            </button>
+            <label class="profile-picture-upload" title="Change profile picture">
+              <i class="fas fa-camera"></i>
+              <input type="file" id="profile-picture-input" accept="image/*">
+            </label>
+          `;
+          
+          // Reattach event listeners
+          attachProfilePictureListeners();
+        } catch (error) {
+          console.error('Upload error:', error);
+          showToast('❌ Failed to upload profile picture: ' + error.message, 'error');
+        }
+
+        // Reset input
+        e.target.value = '';
+      });
+    }
+
+    if (deleteProfilePictureBtn) {
+      deleteProfilePictureBtn.addEventListener('click', async () => {
+        showConfirmationModal({
+          title: '🗑️ Remove Profile Picture',
+          message: 'Are you sure you want to remove your profile picture? Your initials will be displayed instead.',
+          confirmText: 'Yes, Remove',
+          cancelText: 'Cancel',
+          confirmClass: 'btn-secondary',
+          onConfirm: async () => {
+            try {
+              const response = await fetch('/api/profile/picture/delete', {
+                method: 'DELETE'
+              });
+
+              if (!response.ok) {
+                throw new Error('Failed to delete profile picture');
+              }
+
+              const data = await response.json();
+              showToast('✅ Profile picture removed', 'success');
+              
+              // Update UI with initials
+              profilePictureContainer.innerHTML = `
+                <div class="profile-picture-initials" id="profile-picture-initials">
+                  ${data.initials}
+                </div>
+                <label class="profile-picture-upload" title="Change profile picture">
+                  <i class="fas fa-camera"></i>
+                  <input type="file" id="profile-picture-input" accept="image/*">
+                </label>
+              `;
+              
+              // Reattach event listeners
+              attachProfilePictureListeners();
+            } catch (error) {
+              console.error('Delete error:', error);
+              showToast('❌ Failed to remove profile picture', 'error');
+            }
+          }
+        });
+      });
+    }
+
+    function attachProfilePictureListeners() {
+      const newInput = document.getElementById('profile-picture-input');
+      const newDeleteBtn = document.getElementById('delete-profile-picture');
+      
+      if (newInput) {
+        newInput.addEventListener('change', profilePictureInput.onchange);
+      }
+      
+      if (newDeleteBtn) {
+        newDeleteBtn.addEventListener('click', deleteProfilePictureBtn.onclick);
+      }
     }
 
     // Make session cards and notifications clickable

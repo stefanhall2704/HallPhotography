@@ -7,14 +7,15 @@ import (
 
 type User struct {
 	gorm.Model
-	FirstName    string `gorm:"not null"`
-	LastName     string `gorm:"not null"`
-	Username     string `gorm:"not null"`
-	PasswordHash string `gorm:"not null"`
-	Email        string `gorm:"not null"`
-	PhoneNumber  string `gorm:"not null"`
-	IsAdmin      bool   `gorm:"default:false"`
-	MinisSessions string `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
+	FirstName       string `gorm:"not null"`
+	LastName        string `gorm:"not null"`
+	Username        string `gorm:"not null"`
+	PasswordHash    string `gorm:"not null"`
+	Email           string `gorm:"not null"`
+	PhoneNumber     string `gorm:"not null"`
+	IsAdmin         bool   `gorm:"default:false"`
+	ProfilePicture  string `gorm:"default:''"` // Path to profile picture
+	MinisSessions   string `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 }
 
 type Notification struct {
@@ -46,14 +47,20 @@ type MinisDay struct {
 
 type BookMinis struct {
 	gorm.Model
-	MinisID         uint      `gorm:"not null"`
-	UserID          uint      `gorm:"not null"`
-	TimeSlot        string    `gorm:"not null"`
-	Status          string    `gorm:"default:'pending'"` // "pending", "confirmed", "cancelled"
-	ProposedTimeSlot string   // Admin can propose alternative time
-	User            User      `gorm:"foreignKey:UserID"`
-	Minis           Minis     `gorm:"foreignKey:MinisID"`
-	Messages        []BookingMessage `gorm:"foreignKey:BookingID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	MinisID              uint      `gorm:"not null"`
+	UserID               uint      `gorm:"not null"`
+	TimeSlot             string    `gorm:"not null"`
+	Status               string    `gorm:"default:'pending'"` // "pending", "confirmed", "cancelled"
+	ProposedTimeSlot     string    // Admin can propose alternative time
+	ProposedPrice        float64   `gorm:"default:0"` // Price proposed by photographer
+	PriceApprovalStatus  string    `gorm:"default:'pending'"` // "pending", "approved", "declined"
+	HasPaid              bool      `gorm:"default:false"` // Payment status
+	PaidAmount           float64   `gorm:"default:0"` // Amount paid
+	PaymentDate          *time.Time // When payment was made
+	PhotosUploaded       bool      `gorm:"default:false"` // Track if photos are uploaded
+	User                 User      `gorm:"foreignKey:UserID"`
+	Minis                Minis     `gorm:"foreignKey:MinisID"`
+	Messages             []BookingMessage `gorm:"foreignKey:BookingID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
 
 type Package struct {
@@ -93,10 +100,14 @@ type BookSession struct {
 	SessionID           uint    `gorm:"not null"`
 	UserID              uint    `gorm:"not null"`
 	TimeSlot            string  `gorm:"not null"`
-	Status              string  `gorm:"default:'pending'"` // "pending", "confirmed", "cancelled", "awaiting_payment_approval"
+	Status              string  `gorm:"default:'pending'"` // "pending", "confirmed", "cancelled", "awaiting_price_approval"
 	ProposedTimeSlot    string  // Admin can propose alternative time
 	ProposedPrice       float64 `gorm:"default:0"` // Price proposed by photographer
 	PriceApprovalStatus string  `gorm:"default:'pending'"` // "pending", "approved", "declined"
+	HasPaid             bool    `gorm:"default:false"` // Payment status
+	PaidAmount          float64 `gorm:"default:0"` // Amount paid
+	PaymentDate         *time.Time // When payment was made
+	PhotosUploaded      bool    `gorm:"default:false"` // Track if photos are uploaded
 	User                User    `gorm:"foreignKey:UserID"`
 	Session             Session `gorm:"foreignKey:SessionID"`
 	Messages            []BookingMessage `gorm:"foreignKey:BookingID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
@@ -111,4 +122,17 @@ type BookingMessage struct {
 	Message     string `gorm:"not null;type:text"`
 	IsAdmin     bool   `gorm:"default:false"` // Track if message is from admin
 	User        User   `gorm:"foreignKey:UserID"`
+}
+
+// SessionPhoto represents a photo uploaded by photographer for a booking
+type SessionPhoto struct {
+	gorm.Model
+	BookingID       uint   `gorm:"not null;index"`
+	BookingType     string `gorm:"not null"` // "minis" or "session"
+	FileName        string `gorm:"not null"`
+	FilePath        string `gorm:"not null"` // Path to file on disk
+	FileSize        int64  `gorm:"not null"` // Size in bytes
+	MimeType        string `gorm:"not null"` // image/jpeg, image/png, etc.
+	IsDownloaded    bool   `gorm:"default:false"` // Track if downloaded by user
+	DownloadedAt    *time.Time // When it was downloaded
 }

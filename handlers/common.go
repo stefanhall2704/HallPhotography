@@ -72,12 +72,35 @@ func UserProfile(w http.ResponseWriter, r *http.Request) {
 
 	fullName := firstName + " " + lastName
 
+	// Get user from database to fetch profile picture
+	database := db.ConnectDatabase()
+	var user model.User
+	if err := database.First(&user, userID).Error; err != nil {
+		log.Printf("Error fetching user: %v", err)
+		http.Error(w, "Error fetching user data", http.StatusInternalServerError)
+		return
+	}
+
+	// Generate initials
+	initials := ""
+	if len(firstName) > 0 {
+		initials += string(firstName[0])
+	}
+	if len(lastName) > 0 {
+		initials += string(lastName[0])
+	}
+	if initials == "" {
+		initials = "?"
+	}
+
 	data := map[string]interface{}{
-		"UserID":        userID,
-		"Name":          fullName,
-		"Email":         email,
-		"IsAdmin":       isAdmin,
-		"Authenticated": true,
+		"UserID":         userID,
+		"Name":           fullName,
+		"Email":          email,
+		"IsAdmin":        isAdmin,
+		"Authenticated":  true,
+		"ProfilePicture": user.ProfilePicture,
+		"Initials":       initials,
 	}
 
 	t, err := template.ParseFiles("templates/user_profile.html")

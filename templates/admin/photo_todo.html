@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photo Upload Todo - Hall Photography</title>
+    <link rel="stylesheet" href="/css/main.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .section h2 {
+            color: #667eea;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .booking-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .booking-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .booking-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .info-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            font-size: 16px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .upload-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .empty-state i {
+            font-size: 64px;
+            margin-bottom: 20px;
+            color: #ddd;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-confirmed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .back-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        .back-btn:hover {
+            background: #5a6268;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/profile" class="back-btn">← Back to Profile</a>
+        
+        <h1>📸 Photo Upload Todo</h1>
+        <p class="subtitle">Sessions ready for photo uploads</p>
+
+        <div id="loading" class="loading">
+            <p>Loading bookings...</p>
+        </div>
+
+        <div id="content" style="display: none;">
+            <div class="section">
+                <h2>Regular Sessions</h2>
+                <div id="sessions-list"></div>
+            </div>
+
+            <div class="section">
+                <h2>Mini Sessions</h2>
+                <div id="minis-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function loadBookings() {
+            try {
+                const response = await fetch('/admin/bookings-without-photos');
+                if (!response.ok) throw new Error('Failed to fetch bookings');
+                
+                const data = await response.json();
+                
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('content').style.display = 'block';
+                
+                renderSessions(data.sessions || []);
+                renderMinis(data.minis || []);
+            } catch (error) {
+                console.error('Error loading bookings:', error);
+                document.getElementById('loading').innerHTML = '<p style="color: red;">Error loading bookings. Please try again.</p>';
+            }
+        }
+
+        function renderSessions(sessions) {
+            const container = document.getElementById('sessions-list');
+            
+            if (sessions.length === 0) {
+                container.innerHTML = '<div class="empty-state"><p>✅ All done! No sessions need photos uploaded.</p></div>';
+                return;
+            }
+
+            container.innerHTML = sessions.map(session => `
+                <div class="booking-card">
+                    <div class="booking-info">
+                        <div class="info-item">
+                            <span class="info-label">Client</span>
+                            <span class="info-value">${session.UserName || 'Unknown'}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Session Date</span>
+                            <span class="info-value">${formatDate(session.SessionDate)}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Time Slot</span>
+                            <span class="info-value">${session.TimeSlot}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Price</span>
+                            <span class="info-value">$${session.ProposedPrice.toFixed(2)}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Payment</span>
+                            <span class="info-value">${session.HasPaid ? '✅ Paid' : '⏳ Pending'}</span>
+                        </div>
+                    </div>
+                    <a href="/admin/booking/session/${session.ID}/upload-photos-view" class="upload-btn">
+                        📤 Upload Photos
+                    </a>
+                </div>
+            `).join('');
+        }
+
+        function renderMinis(minis) {
+            const container = document.getElementById('minis-list');
+            
+            if (minis.length === 0) {
+                container.innerHTML = '<div class="empty-state"><p>✅ All done! No mini sessions need photos uploaded.</p></div>';
+                return;
+            }
+
+            container.innerHTML = minis.map(mini => `
+                <div class="booking-card">
+                    <div class="booking-info">
+                        <div class="info-item">
+                            <span class="info-label">Client</span>
+                            <span class="info-value">${mini.UserName || 'Unknown'}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Session Date</span>
+                            <span class="info-value">${formatDate(mini.MinisDate)}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Time Slot</span>
+                            <span class="info-value">${mini.TimeSlot}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Price</span>
+                            <span class="info-value">$${mini.ProposedPrice.toFixed(2)}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Payment</span>
+                            <span class="info-value">${mini.HasPaid ? '✅ Paid' : '⏳ Pending'}</span>
+                        </div>
+                    </div>
+                    <a href="/admin/booking/minis/${mini.ID}/upload-photos-view" class="upload-btn">
+                        📤 Upload Photos
+                    </a>
+                </div>
+            `).join('');
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return 'N/A';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+        }
+
+        // Load bookings on page load
+        loadBookings();
+    </script>
+</body>
+</html>
+

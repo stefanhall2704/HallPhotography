@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Hall Photography</title>
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .stat-number {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .filters {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 10px 20px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .session-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .session-table th {
+            background: #f8f9fa;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .session-table td {
+            padding: 15px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .session-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-confirmed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-cancelled {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-awaiting_price_approval {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .action-btn {
+            padding: 6px 12px;
+            border: none;
+            background: #667eea;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .action-btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+
+        .action-btn.secondary {
+            background: #6c757d;
+        }
+
+        .action-btn.secondary:hover {
+            background: #5a6268;
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .section h2 {
+            color: #667eea;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .back-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        .back-btn:hover {
+            background: #5a6268;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .search-box {
+            flex: 1;
+            max-width: 400px;
+            padding: 10px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .payment-status {
+            font-size: 11px;
+            margin-left: 5px;
+        }
+
+        .payment-paid {
+            color: #155724;
+        }
+
+        .payment-unpaid {
+            color: #856404;
+        }
+
+        .photo-status {
+            font-size: 11px;
+            margin-left: 5px;
+        }
+
+        .photo-uploaded {
+            color: #155724;
+        }
+
+        .photo-pending {
+            color: #856404;
+        }
+
+        @media (max-width: 768px) {
+            .session-table {
+                font-size: 12px;
+            }
+
+            .session-table th, .session-table td {
+                padding: 10px 5px;
+            }
+        }
+
+        /* Modal Styles */
+        .confirmation-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .confirmation-modal.show {
+            opacity: 1;
+        }
+
+        .confirmation-modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+        }
+
+        .confirmation-modal-content {
+            position: relative;
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .confirmation-modal.show .confirmation-modal-content {
+            transform: scale(1);
+        }
+
+        .confirmation-modal-title {
+            margin: 0 0 12px 0;
+            font-size: 24px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .confirmation-modal-message {
+            margin: 0 0 24px 0;
+            font-size: 16px;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .price-input-group {
+            margin-bottom: 24px;
+        }
+
+        .price-input-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .price-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .price-input-prefix {
+            position: absolute;
+            left: 16px;
+            font-size: 18px;
+            color: #666;
+            font-weight: 600;
+        }
+
+        .price-input-field {
+            width: 100%;
+            padding: 14px 16px 14px 36px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .price-input-field:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .price-input-field.error {
+            border-color: #dc3545;
+        }
+
+        .price-input-error {
+            margin-top: 8px;
+            color: #dc3545;
+            font-size: 13px;
+            display: none;
+        }
+
+        .price-input-error.show {
+            display: block;
+        }
+
+        .price-input-hint {
+            margin-top: 8px;
+            color: #6c757d;
+            font-size: 13px;
+        }
+
+        .confirmation-modal-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/profile" class="back-btn">← Back to Profile</a>
+        
+        <h1>📊 Admin Dashboard</h1>
+        <p class="subtitle">Comprehensive session management</p>
+
+        <div class="stats-grid" id="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="stat-total">0</div>
+                <div class="stat-label">Total Sessions</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="stat-confirmed">0</div>
+                <div class="stat-label">Confirmed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="stat-pending">0</div>
+                <div class="stat-label">Pending Approval</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="stat-photos">0</div>
+                <div class="stat-label">Need Photos</div>
+            </div>
+        </div>
+
+        <div class="filters">
+            <input type="text" class="search-box" id="search-box" placeholder="Search by client name...">
+            <button class="filter-btn active" data-filter="all">All</button>
+            <button class="filter-btn" data-filter="confirmed">Confirmed</button>
+            <button class="filter-btn" data-filter="pending">Pending</button>
+            <button class="filter-btn" data-filter="needs_photos">Needs Photos</button>
+            <button class="filter-btn" data-filter="unpaid">Unpaid</button>
+        </div>
+
+        <div id="loading" class="loading">
+            <p>Loading sessions...</p>
+        </div>
+
+        <div id="content" style="display: none;">
+            <div class="section">
+                <h2>Regular Sessions</h2>
+                <div id="sessions-table-container"></div>
+            </div>
+
+            <div class="section">
+                <h2>Mini Sessions</h2>
+                <div id="minis-table-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <script>
+        let allSessions = [];
+        let allMinis = [];
+        let currentFilter = 'all';
+        let searchQuery = '';
+
+        async function loadAllSessions() {
+            try {
+                const response = await fetch('/admin/sessions/all');
+                if (!response.ok) throw new Error('Failed to fetch sessions');
+                
+                const data = await response.json();
+                allSessions = data.sessions || [];
+                allMinis = data.minis || [];
+                
+                updateStats();
+                renderSessions();
+                
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('content').style.display = 'block';
+            } catch (error) {
+                console.error('Error loading sessions:', error);
+                document.getElementById('loading').innerHTML = '<p style="color: red;">Error loading sessions. Please try again.</p>';
+            }
+        }
+
+        function updateStats() {
+            const total = allSessions.length + allMinis.length;
+            const confirmed = [...allSessions, ...allMinis].filter(s => s.Status === 'confirmed').length;
+            const pending = [...allSessions, ...allMinis].filter(s => s.Status === 'pending' || s.Status === 'awaiting_price_approval').length;
+            const needsPhotos = [...allSessions, ...allMinis].filter(s => s.Status === 'confirmed' && !s.PhotosUploaded).length;
+
+            document.getElementById('stat-total').textContent = total;
+            document.getElementById('stat-confirmed').textContent = confirmed;
+            document.getElementById('stat-pending').textContent = pending;
+            document.getElementById('stat-photos').textContent = needsPhotos;
+        }
+
+        function filterSessions(sessions) {
+            let filtered = sessions;
+
+            // Apply status filter
+            if (currentFilter !== 'all') {
+                filtered = filtered.filter(s => {
+                    if (currentFilter === 'confirmed') return s.Status === 'confirmed';
+                    if (currentFilter === 'pending') return s.Status === 'pending' || s.Status === 'awaiting_price_approval';
+                    if (currentFilter === 'needs_photos') return s.Status === 'confirmed' && !s.PhotosUploaded;
+                    if (currentFilter === 'unpaid') return !s.HasPaid;
+                    return true;
+                });
+            }
+
+            // Apply search filter
+            if (searchQuery) {
+                filtered = filtered.filter(s => 
+                    (s.UserName || '').toLowerCase().includes(searchQuery.toLowerCase())
+                );
+            }
+
+            return filtered;
+        }
+
+        function renderSessions() {
+            const sessionsContainer = document.getElementById('sessions-table-container');
+            const filteredSessions = filterSessions(allSessions);
+
+            if (filteredSessions.length === 0) {
+                sessionsContainer.innerHTML = '<div class="empty-state"><p>No sessions found.</p></div>';
+            } else {
+                sessionsContainer.innerHTML = `
+                    <table class="session-table">
+                        <thead>
+                            <tr>
+                                <th>Client</th>
+                                <th>Session</th>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Status</th>
+                                <th>Price</th>
+                                <th>Payment</th>
+                                <th>Photos</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${filteredSessions.map(s => `
+                                <tr>
+                                    <td>${s.UserName || 'Unknown'}</td>
+                                    <td>${s.SessionName || 'Session'}</td>
+                                    <td>${formatDate(s.SessionDate)}</td>
+                                    <td>${s.TimeSlot}</td>
+                                    <td><span class="status-badge status-${s.Status}">${formatStatus(s.Status)}</span></td>
+                                    <td>$${(s.ProposedPrice || 0).toFixed(2)}</td>
+                                    <td>
+                                        ${s.HasPaid ? 
+                                            '<span class="payment-status payment-paid">✓ Paid</span>' : 
+                                            '<span class="payment-status payment-unpaid">⏳ Unpaid</span>'}
+                                    </td>
+                                    <td>
+                                        ${s.PhotosUploaded ? 
+                                            '<span class="photo-status photo-uploaded">✓ Uploaded</span>' : 
+                                            '<span class="photo-status photo-pending">⏳ Pending</span>'}
+                                    </td>
+                                    <td style="white-space: nowrap;">
+                                        ${!s.HasPaid ? 
+                                            `<button onclick="markAsPaid('session', ${s.ID}, ${s.ProposedPrice || 0}); return false;" class="action-btn" style="background: #28a745; margin-bottom: 5px;">💰 Mark Paid</button><br>` : 
+                                            ''}
+                                        ${s.Status === 'confirmed' ? 
+                                            `<a href="/admin/booking/session/${s.ID}/upload-photos-view" class="action-btn" style="background: #667eea; margin-bottom: 5px;">📤 ${s.PhotosUploaded ? 'Upload More' : 'Upload Photos'}</a><br>` : 
+                                            ''}
+                                        <a href="#" onclick="viewDetails('session', ${s.ID}); return false;" class="action-btn secondary">View</a>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            }
+
+            const minisContainer = document.getElementById('minis-table-container');
+            const filteredMinis = filterSessions(allMinis);
+
+            if (filteredMinis.length === 0) {
+                minisContainer.innerHTML = '<div class="empty-state"><p>No mini sessions found.</p></div>';
+            } else {
+                minisContainer.innerHTML = `
+                    <table class="session-table">
+                        <thead>
+                            <tr>
+                                <th>Client</th>
+                                <th>Session</th>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Status</th>
+                                <th>Price</th>
+                                <th>Payment</th>
+                                <th>Photos</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${filteredMinis.map(m => `
+                                <tr>
+                                    <td>${m.UserName || 'Unknown'}</td>
+                                    <td>${m.MinisName || 'Mini Session'}</td>
+                                    <td>${formatDate(m.MinisDate)}</td>
+                                    <td>${m.TimeSlot}</td>
+                                    <td><span class="status-badge status-${m.Status}">${formatStatus(m.Status)}</span></td>
+                                    <td>$${(m.ProposedPrice || 0).toFixed(2)}</td>
+                                    <td>
+                                        ${m.HasPaid ? 
+                                            '<span class="payment-status payment-paid">✓ Paid</span>' : 
+                                            '<span class="payment-status payment-unpaid">⏳ Unpaid</span>'}
+                                    </td>
+                                    <td>
+                                        ${m.PhotosUploaded ? 
+                                            '<span class="photo-status photo-uploaded">✓ Uploaded</span>' : 
+                                            '<span class="photo-status photo-pending">⏳ Pending</span>'}
+                                    </td>
+                                    <td style="white-space: nowrap;">
+                                        ${!m.HasPaid ? 
+                                            `<button onclick="markAsPaid('minis', ${m.ID}, ${m.ProposedPrice || 0}); return false;" class="action-btn" style="background: #28a745; margin-bottom: 5px;">💰 Mark Paid</button><br>` : 
+                                            ''}
+                                        ${m.Status === 'confirmed' ? 
+                                            `<a href="/admin/booking/minis/${m.ID}/upload-photos-view" class="action-btn" style="background: #667eea; margin-bottom: 5px;">📤 ${m.PhotosUploaded ? 'Upload More' : 'Upload Photos'}</a><br>` : 
+                                            ''}
+                                        <a href="#" onclick="viewDetails('minis', ${m.ID}); return false;" class="action-btn secondary">View</a>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            }
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return 'N/A';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+            });
+        }
+
+        function formatStatus(status) {
+            if (status === 'awaiting_price_approval') return 'Awaiting Price';
+            return status.charAt(0).toUpperCase() + status.slice(1);
+        }
+
+        function viewDetails(type, id) {
+            // Redirect to profile page with booking details
+            window.location.href = `/profile?booking=${type}:${id}`;
+        }
+
+        // Toast notification utility
+        function showToast(message, type = 'info') {
+            const colors = {
+                success: '#28a745',
+                error: '#dc3545',
+                warning: '#ffc107',
+                info: '#17a2b8'
+            };
+
+            Toastify({
+                text: message,
+                duration: 4000,
+                gravity: 'top',
+                position: 'right',
+                style: {
+                    background: colors[type] || colors.info,
+                },
+                stopOnFocus: true
+            }).showToast();
+        }
+
+        // Price input modal
+        function showPriceInputModal(options) {
+            const modal = document.createElement('div');
+            modal.className = 'confirmation-modal';
+            modal.innerHTML = `
+                <div class="confirmation-modal-overlay"></div>
+                <div class="confirmation-modal-content">
+                    <h3 class="confirmation-modal-title">${options.title || 'Set Price'}</h3>
+                    <p class="confirmation-modal-message">${options.message || 'Enter the session price:'}</p>
+                    
+                    <div class="price-input-group">
+                        <label class="price-input-label">Price (USD)</label>
+                        <div class="price-input-wrapper">
+                            <span class="price-input-prefix">$</span>
+                            <input 
+                                type="number" 
+                                class="price-input-field" 
+                                id="priceInput" 
+                                placeholder="0.00" 
+                                step="0.01" 
+                                min="0"
+                                value="${options.defaultValue || ''}"
+                            >
+                        </div>
+                        <div class="price-input-error" id="priceError">Please enter a valid price greater than $0</div>
+                        ${options.hint ? `<div class="price-input-hint">${options.hint}</div>` : ''}
+                    </div>
+                    
+                    <div class="confirmation-modal-actions">
+                        <button class="btn btn-primary" id="confirmPriceBtn" style="background: #28a745; color: white; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
+                            ✓ Confirm
+                        </button>
+                        <button class="btn btn-outline" id="cancelPriceBtn" style="background: #6c757d; color: white; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; margin-left: 10px;">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            setTimeout(() => modal.classList.add('show'), 10);
+            
+            const priceInput = modal.querySelector('#priceInput');
+            const priceError = modal.querySelector('#priceError');
+            const confirmBtn = modal.querySelector('#confirmPriceBtn');
+            
+            // Focus on input
+            setTimeout(() => priceInput.focus(), 100);
+            
+            // Validate price
+            function validatePrice() {
+                const value = parseFloat(priceInput.value);
+                if (isNaN(value) || value <= 0) {
+                    priceInput.classList.add('error');
+                    priceError.classList.add('show');
+                    return false;
+                }
+                priceInput.classList.remove('error');
+                priceError.classList.remove('show');
+                return true;
+            }
+            
+            // Handle input changes
+            priceInput.addEventListener('input', () => {
+                if (priceInput.value) {
+                    validatePrice();
+                } else {
+                    priceInput.classList.remove('error');
+                    priceError.classList.remove('show');
+                }
+            });
+            
+            // Handle Enter key
+            priceInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    confirmBtn.click();
+                }
+            });
+            
+            // Handle confirm
+            confirmBtn.onclick = () => {
+                if (validatePrice()) {
+                    const price = parseFloat(priceInput.value);
+                    modal.classList.remove('show');
+                    setTimeout(() => modal.remove(), 300);
+                    if (options.onConfirm) options.onConfirm(price);
+                }
+            };
+            
+            // Handle cancel
+            const cancelHandler = () => {
+                modal.classList.remove('show');
+                setTimeout(() => modal.remove(), 300);
+                if (options.onCancel) options.onCancel();
+            };
+            
+            modal.querySelector('#cancelPriceBtn').onclick = cancelHandler;
+            modal.querySelector('.confirmation-modal-overlay').onclick = cancelHandler;
+        }
+
+        async function markAsPaid(bookingType, bookingId, proposedPrice) {
+            showPriceInputModal({
+                title: '💰 Mark as Paid',
+                message: 'Enter the payment amount received:',
+                hint: `Proposed price was $${proposedPrice.toFixed(2)}`,
+                defaultValue: proposedPrice.toFixed(2),
+                onConfirm: async (paidAmount) => {
+                    try {
+                        const formData = new FormData();
+                        formData.append('amount', paidAmount.toString());
+                        
+                        const response = await fetch(`/admin/booking/${bookingType}/${bookingId}/payment`, {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        if (!response.ok) {
+                            const text = await response.text();
+                            throw new Error(text);
+                        }
+
+                        showToast(`✅ Payment of $${paidAmount.toFixed(2)} marked as received!`, 'success');
+                        
+                        // Reload the dashboard
+                        loadAllSessions();
+                    } catch (error) {
+                        console.error('Error marking payment:', error);
+                        showToast('❌ Failed to mark payment: ' + error.message, 'error');
+                    }
+                }
+            });
+        }
+
+        // Filter buttons
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentFilter = btn.dataset.filter;
+                renderSessions();
+            });
+        });
+
+        // Search box
+        document.getElementById('search-box').addEventListener('input', (e) => {
+            searchQuery = e.target.value;
+            renderSessions();
+        });
+
+        // Load sessions on page load
+        loadAllSessions();
+    </script>
+</body>
+</html>
+

@@ -25,7 +25,7 @@ func serverErrorHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	auth.Google_auth_consent()
 	database := db.ConnectDatabase()
-	if err := database.AutoMigrate(&model.User{}, &model.Notification{}, &model.Minis{}, &model.MinisDay{}, &model.Package{}, &model.Photo{}, &model.BookMinis{}, &model.Session{}, &model.SessionDay{}, &model.BookSession{}, &model.BookingMessage{}); err != nil {
+	if err := database.AutoMigrate(&model.User{}, &model.Notification{}, &model.Minis{}, &model.MinisDay{}, &model.Package{}, &model.Photo{}, &model.BookMinis{}, &model.Session{}, &model.SessionDay{}, &model.BookSession{}, &model.BookingMessage{}, &model.SessionPhoto{}); err != nil {
 		log.Fatalf("Failed to auto-migrate database: %v", err)
 	}
 	log.Println("Database migrated successfully")
@@ -83,23 +83,46 @@ func main() {
 	request.Handle("/notifications/mark_all_read", auth.AuthMiddleware(http.HandlerFunc(handlers.MarkAllNotificationsAsRead))).Methods("POST")
 	
 	// Admin routes
+	request.Handle("/admin/dashboard", auth.AdminAuthMiddleware(http.HandlerFunc(handlers.AdminDashboardView))).Methods("GET")
 	request.Handle("/admin/bookings", auth.AdminAuthMiddleware(http.HandlerFunc(handlers.GetAllBookings))).Methods("GET")
 	request.Handle("/admin/bookings/pending", auth.AdminAuthMiddleware(http.HandlerFunc(handlers.GetPendingBookings))).Methods("GET")
+	request.Handle("/admin/sessions/all", auth.AdminAuthMiddleware(http.HandlerFunc(handlers.GetAllSessionsForAdmin))).Methods("GET")
 	request.Handle("/admin/booking/{type}/{id}/status", auth.AuthMiddleware(http.HandlerFunc(handlers.UpdateBookingStatus))).Methods("POST") // Auth only - checks ownership inside
 	request.Handle("/admin/session/{id}/price", auth.AdminAuthMiddleware(http.HandlerFunc(handlers.UpdateSessionPrice))).Methods("POST")
 	request.Handle("/admin/user/{id}/toggle_admin", auth.AdminAuthMiddleware(http.HandlerFunc(handlers.ToggleUserAdmin))).Methods("POST")
 	
 	// User approval routes
 	request.Handle("/booking/session/{id}/approve_price", auth.AuthMiddleware(http.HandlerFunc(handlers.ApprovePriceForSession))).Methods("POST")
+	request.Handle("/booking/minis/{id}/approve_price", auth.AuthMiddleware(http.HandlerFunc(handlers.ApprovePriceForMinis))).Methods("POST")
+	
+	// Payment routes
+	request.Handle("/admin/booking/{type}/{id}/payment", auth.AdminAuthMiddleware(http.HandlerFunc(handlers.MarkPaymentReceived))).Methods("POST")
+	
+	// Photo management routes
+	request.Handle("/admin/photo-todo", auth.AdminAuthMiddleware(http.HandlerFunc(handlers.AdminTodoView))).Methods("GET")
+	request.Handle("/admin/bookings-without-photos", auth.AdminAuthMiddleware(http.HandlerFunc(handlers.GetBookingsWithoutPhotos))).Methods("GET")
+	request.Handle("/admin/booking/{type}/{id}/upload-photos-view", auth.AdminAuthMiddleware(http.HandlerFunc(handlers.PhotoUploadView))).Methods("GET")
+	request.Handle("/admin/booking/{type}/{id}/upload-photos", auth.AdminAuthMiddleware(http.HandlerFunc(handlers.UploadPhotos))).Methods("POST")
+	request.Handle("/booking/{type}/{id}/photos", auth.AuthMiddleware(http.HandlerFunc(handlers.GetBookingPhotos))).Methods("GET")
+	request.Handle("/booking/{type}/{id}/photos-view", auth.AuthMiddleware(http.HandlerFunc(handlers.PhotoGalleryView))).Methods("GET")
+	request.Handle("/photo/{photoId}/view", auth.AuthMiddleware(http.HandlerFunc(handlers.ViewPhoto))).Methods("GET")
+	request.Handle("/photo/{photoId}/download", auth.AuthMiddleware(http.HandlerFunc(handlers.DownloadPhoto))).Methods("GET")
+	request.Handle("/booking/photos/download-multiple", auth.AuthMiddleware(http.HandlerFunc(handlers.DownloadMultiplePhotos))).Methods("POST")
+	request.Handle("/booking/{type}/{id}/photos/download-all", auth.AuthMiddleware(http.HandlerFunc(handlers.DownloadAllPhotos))).Methods("GET")
 	
 	// Messaging routes
 	request.Handle("/booking/{type}/{id}", auth.AuthMiddleware(http.HandlerFunc(handlers.GetBookingDetails))).Methods("GET")
 	request.Handle("/booking/{type}/{id}/messages", auth.AuthMiddleware(http.HandlerFunc(handlers.GetBookingMessages))).Methods("GET")
 	request.Handle("/booking/{type}/{id}/message", auth.AuthMiddleware(http.HandlerFunc(handlers.CreateBookingMessage))).Methods("POST")
 
+	// Profile picture routes
+	request.Handle("/api/profile/picture/upload", auth.AuthMiddleware(http.HandlerFunc(handlers.UploadProfilePicture))).Methods("POST")
+	request.Handle("/api/profile/picture/delete", auth.AuthMiddleware(http.HandlerFunc(handlers.DeleteProfilePicture))).Methods("DELETE")
+	
 	// Serve static files (CSS, JS, images)
 	request.PathPrefix("/css/").Handler(http.StripPrefix("/css/", http.FileServer(http.Dir("templates/css/"))))
 	request.PathPrefix("/js/").Handler(http.StripPrefix("/js/", http.FileServer(http.Dir("templates/js/"))))
+	request.PathPrefix("/uploads/").Handler(http.StripPrefix("/uploads/", http.FileServer(http.Dir("uploads/"))))
 
 	loggedHandler := middleware.LoggingMiddleware(request)
 
