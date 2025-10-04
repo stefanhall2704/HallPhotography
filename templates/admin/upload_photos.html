@@ -93,6 +93,13 @@
             object-fit: cover;
             border-radius: 8px;
             margin-right: 15px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .file-preview:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
         }
 
         .file-info {
@@ -209,6 +216,88 @@
             color: #666;
             margin-bottom: 20px;
         }
+
+        /* Preview Modal */
+        .preview-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .preview-modal.active {
+            display: flex;
+        }
+
+        .preview-modal-content {
+            position: relative;
+            max-width: 90vw;
+            max-height: 90vh;
+        }
+
+        .preview-modal-img {
+            max-width: 100%;
+            max-height: 90vh;
+            object-fit: contain;
+        }
+
+        .preview-modal-close {
+            position: absolute;
+            top: 20px;
+            right: 40px;
+            color: white;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 1001;
+        }
+
+        .preview-modal-close:hover {
+            color: #667eea;
+        }
+
+        .preview-modal-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.3);
+            color: white;
+            font-size: 40px;
+            padding: 20px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+        }
+
+        .preview-modal-nav:hover {
+            background: rgba(255,255,255,0.5);
+        }
+
+        .preview-modal-prev {
+            left: 20px;
+        }
+
+        .preview-modal-next {
+            right: 20px;
+        }
+
+        .preview-modal-info {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -240,6 +329,17 @@
         <button class="upload-btn" id="upload-btn" disabled>Upload Photos</button>
     </div>
 
+    <!-- Preview Modal -->
+    <div class="preview-modal" id="preview-modal">
+        <span class="preview-modal-close" id="preview-close">&times;</span>
+        <button class="preview-modal-nav preview-modal-prev" id="preview-prev">‹</button>
+        <div class="preview-modal-content">
+            <img class="preview-modal-img" id="preview-img" src="" alt="Preview">
+            <div class="preview-modal-info" id="preview-info"></div>
+        </div>
+        <button class="preview-modal-nav preview-modal-next" id="preview-next">›</button>
+    </div>
+
     <script>
         const dropZone = document.getElementById('drop-zone');
         const fileInput = document.getElementById('file-input');
@@ -250,8 +350,16 @@
         const progressFill = document.getElementById('progress-fill');
         const successMessage = document.getElementById('success-message');
         const errorMessage = document.getElementById('error-message');
+        const previewModal = document.getElementById('preview-modal');
+        const previewImg = document.getElementById('preview-img');
+        const previewInfo = document.getElementById('preview-info');
+        const previewClose = document.getElementById('preview-close');
+        const previewPrev = document.getElementById('preview-prev');
+        const previewNext = document.getElementById('preview-next');
 
         let selectedFiles = [];
+        let currentPreviewIndex = 0;
+        let previewUrls = [];
 
         const bookingType = '{{.BookingType}}';
         const bookingID = '{{.BookingID}}';
@@ -296,14 +404,24 @@
             if (selectedFiles.length === 0) {
                 fileList.innerHTML = '';
                 fileCount.textContent = 'No files selected';
+                // Clean up preview URLs
+                previewUrls.forEach(url => URL.revokeObjectURL(url));
+                previewUrls = [];
                 return;
             }
 
             fileCount.textContent = `${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''} selected`;
 
+            // Clean up old preview URLs
+            previewUrls.forEach(url => URL.revokeObjectURL(url));
+            previewUrls = [];
+
+            // Create new preview URLs
+            previewUrls = selectedFiles.map(file => URL.createObjectURL(file));
+
             fileList.innerHTML = selectedFiles.map((file, index) => `
                 <div class="file-item">
-                    <img class="file-preview" src="${URL.createObjectURL(file)}" alt="Preview">
+                    <img class="file-preview" src="${previewUrls[index]}" alt="Preview" onclick="openPreview(${index})" title="Click to preview">
                     <div class="file-info">
                         <div class="file-name">${file.name}</div>
                         <div class="file-size">${formatFileSize(file.size)}</div>
@@ -410,8 +528,48 @@
             }
         });
 
-        // Expose removeFile to global scope for onclick handler
+        // Preview modal functions
+        function openPreview(index) {
+            currentPreviewIndex = index;
+            const file = selectedFiles[index];
+            previewImg.src = previewUrls[index];
+            previewInfo.textContent = `${file.name} (${formatFileSize(file.size)}) - ${index + 1} of ${selectedFiles.length}`;
+            previewModal.classList.add('active');
+        }
+
+        function closePreview() {
+            previewModal.classList.remove('active');
+        }
+
+        function nextPreview() {
+            currentPreviewIndex = (currentPreviewIndex + 1) % selectedFiles.length;
+            openPreview(currentPreviewIndex);
+        }
+
+        function prevPreview() {
+            currentPreviewIndex = (currentPreviewIndex - 1 + selectedFiles.length) % selectedFiles.length;
+            openPreview(currentPreviewIndex);
+        }
+
+        previewClose.addEventListener('click', closePreview);
+        previewNext.addEventListener('click', nextPreview);
+        previewPrev.addEventListener('click', prevPreview);
+
+        previewModal.addEventListener('click', (e) => {
+            if (e.target === previewModal) closePreview();
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (!previewModal.classList.contains('active')) return;
+            
+            if (e.key === 'Escape') closePreview();
+            if (e.key === 'ArrowRight') nextPreview();
+            if (e.key === 'ArrowLeft') prevPreview();
+        });
+
+        // Expose functions to global scope for onclick handlers
         window.removeFile = removeFile;
+        window.openPreview = openPreview;
     </script>
 </body>
 </html>

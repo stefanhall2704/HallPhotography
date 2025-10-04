@@ -180,7 +180,7 @@ func BookMinisSession(w http.ResponseWriter, r *http.Request) {
 
 	database := db.ConnectDatabase()
 
-	// Validate that the booking is at least 2 weeks in the future
+	// Validate that the minis session hasn't ended yet (users can book during the session)
 	sessionDate, err := services.GetMinisSessionDate(database, minisSessionId)
 	if err != nil {
 		log.Printf("Error retrieving session date: %v", err)
@@ -188,9 +188,10 @@ func BookMinisSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := services.ValidateBookingDate(sessionDate); err != nil {
-		log.Printf("Booking date validation failed: %v", err)
-		http.Error(w, fmt.Sprintf("Invalid booking date: %s", err.Error()), http.StatusBadRequest)
+	// For minis, only check that the session hasn't passed (users can book during the session)
+	if sessionDate.Before(time.Now()) {
+		log.Printf("Minis session date validation failed: session date %s is in the past", sessionDate.Format("2006-01-02"))
+		http.Error(w, "This minis session has already passed", http.StatusBadRequest)
 		return
 	}
 
@@ -262,9 +263,24 @@ func GetMinisSessions(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateMinisSession(w http.ResponseWriter, r *http.Request) {
-	if err := r.ParseForm(); err != nil {
-		http.Error(w, "Error parsing form data", http.StatusBadRequest)
-		return
+	// Try parsing as multipart form first, then as regular form
+	if err := r.ParseMultipartForm(10 << 20); err != nil {
+		log.Printf("⚠️ ParseMultipartForm failed: %v, trying ParseForm", err)
+		if err := r.ParseForm(); err != nil {
+			log.Printf("❌ ParseForm also failed: %v", err)
+			http.Error(w, "Error parsing form data", http.StatusBadRequest)
+			return
+		}
+	}
+
+	log.Printf("🔍 Raw form data received:")
+	for key, values := range r.Form {
+		log.Printf("  %s: %v", key, values)
+	}
+	if r.MultipartForm != nil {
+		for key, values := range r.MultipartForm.Value {
+			log.Printf("  (multipart) %s: %v", key, values)
+		}
 	}
 
 	name := r.Form.Get("name")
@@ -272,21 +288,31 @@ func CreateMinisSession(w http.ResponseWriter, r *http.Request) {
 	timeIntervals := r.Form.Get("time_intervals")
 	sessionDays := r.Form.Get("session_days") // format needs to be like this: 2025-06-23T00:00,10:30 - 12:00,2025-06-28T00:00,11:30 - 14:00
 
+	log.Printf("📝 Creating minis session: name=%s, description=%s, timeIntervals=%s, sessionDays=%s", 
+		name, description, timeIntervals, sessionDays)
+
 	var minisDays []DateTimeRange = parseDateTimes(sessionDays)
+	log.Printf("🔍 Parsed %d date ranges", len(minisDays))
 	var miniDays []model.MinisDay
 
-	for _, dayStr := range minisDays {
+	for i, dayStr := range minisDays {
 		layout := "2006-01-02T15:04"
+		log.Printf("  Day %d: Start=%s, End=%s", i+1, dayStr.Start, dayStr.End)
+		
 		parsedStartTime, err := time.Parse(layout, dayStr.Start)
 		if err != nil {
-			http.Error(w, "Invalid time format", http.StatusBadRequest)
+			log.Printf("❌ Failed to parse start time '%s': %v", dayStr.Start, err)
+			http.Error(w, fmt.Sprintf("Invalid start time format: %s", dayStr.Start), http.StatusBadRequest)
 			return
 		}
 		parsedEndTime, err := time.Parse(layout, dayStr.End)
 		if err != nil {
-			http.Error(w, "Invalid time format", http.StatusBadRequest)
+			log.Printf("❌ Failed to parse end time '%s': %v", dayStr.End, err)
+			http.Error(w, fmt.Sprintf("Invalid end time format: %s", dayStr.End), http.StatusBadRequest)
 			return
 		}
+
+		log.Printf("  ✅ Parsed: Start=%s, End=%s", parsedStartTime.Format("2006-01-02 15:04"), parsedEndTime.Format("2006-01-02 15:04"))
 
 		miniDays = append(miniDays, model.MinisDay{
 			Start: parsedStartTime,
@@ -303,8 +329,19 @@ func CreateMinisSession(w http.ResponseWriter, r *http.Request) {
 
 	database := db.ConnectDatabase()
 	if err := database.Create(&minisSession).Error; err != nil {
+		log.Printf("❌ Failed to create mini session: %v", err)
 		http.Error(w, "Error creating mini session", http.StatusInternalServerError)
 		return
+	}
+
+	log.Printf("✅ Mini session created successfully: %s (ID: %d) with %d days", name, minisSession.ID, len(miniDays))
+
+	// Verify what was saved to the database
+	var savedMinis model.Minis
+	database.Preload("Days").First(&savedMinis, minisSession.ID)
+	log.Printf("🔍 Verification: Saved session has %d days", len(savedMinis.Days))
+	for i, day := range savedMinis.Days {
+		log.Printf("  Day %d: Start=%s, End=%s", i+1, day.Start.Format("2006-01-02 15:04"), day.End.Format("2006-01-02 15:04"))
 	}
 
 	// Notify all users about the new mini session availability
@@ -312,8 +349,6 @@ func CreateMinisSession(w http.ResponseWriter, r *http.Request) {
 		log.Printf("⚠️  Failed to notify users of new mini session: %v", err)
 		// Don't fail the request if notifications fail
 	}
-
-	log.Printf("✅ Mini session created successfully: %s (ID: %d)", name, minisSession.ID)
 	w.WriteHeader(http.StatusCreated)
 }
 
@@ -382,10 +417,10 @@ func GetMinisSessionsInRange(w http.ResponseWriter, r *http.Request) {
 
 	database := db.ConnectDatabase()
 
-	// Calculate minimum bookable date (2 weeks from now)
-	minimumDate := time.Now().AddDate(0, 0, services.MinimumBookingNoticeDays)
-	log.Printf("📅 GetMinisSessionsInRange: Querying range %s to %s (minimum date: %s)", 
-		startTime.Format("2006-01-02"), endTime.Format("2006-01-02"), minimumDate.Format("2006-01-02"))
+	// For minis, show all future sessions (no minimum booking notice required)
+	now := time.Now()
+	log.Printf("📅 GetMinisSessionsInRange: Querying range %s to %s (showing all future sessions)", 
+		startTime.Format("2006-01-02"), endTime.Format("2006-01-02"))
 
 	// Debug: Check all MinisDay entries in the database
 	var allMinisDays []model.MinisDay
@@ -398,10 +433,10 @@ func GetMinisSessionsInRange(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Step 1: Get all MinisDay entries within range that are at least 7 days out
+	// Step 1: Get all MinisDay entries within range that haven't ended yet
 	var minisDays []model.MinisDay
 	if err := database.
-		Where("start >= ? AND start <= ? AND start >= ?", startTime, endTime, minimumDate).
+		Where("start >= ? AND start <= ? AND start >= ?", startTime, endTime, now).
 		Find(&minisDays).Error; err != nil {
 		http.Error(w, "error fetching minis days", http.StatusInternalServerError)
 		return
@@ -416,7 +451,7 @@ func GetMinisSessionsInRange(w http.ResponseWriter, r *http.Request) {
 
 	if len(minisIDSet) == 0 {
 		// No sessions found in range
-		log.Printf("⚠️  No minis sessions found in range (possibly none meet 2-week minimum)")
+		log.Printf("⚠️  No minis sessions found in range")
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode([]model.Minis{})
 		return
@@ -479,13 +514,13 @@ func GetBookedMinisSessions(w http.ResponseWriter, r *http.Request) {
 
 	database := db.ConnectDatabase()
 
-	// Calculate minimum bookable date (7 days from now)
-	minimumDate := time.Now().AddDate(0, 0, services.MinimumBookingNoticeDays)
+	// For minis, show all future sessions (no minimum booking notice required)
+	now := time.Now()
 
-	// Fetch all MinisDay records within the range that are at least 7 days out
+	// Fetch all MinisDay records within the range that haven't ended yet
 	var days []model.MinisDay
 	if err := database.
-		Where("start >= ? AND start <= ? AND start >= ?", startTime, endTime, minimumDate).
+		Where("start >= ? AND start <= ? AND start >= ?", startTime, endTime, now).
 		Find(&days).Error; err != nil {
 		http.Error(w, "error fetching days", http.StatusInternalServerError)
 		return

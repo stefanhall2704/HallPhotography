@@ -628,12 +628,12 @@
     // Close modal on close button click
     document.getElementById('closeModal')?.addEventListener('click', closeModal);
 
-    // Check if a date is at least 2 weeks in the future
+    // Check if a date hasn't passed yet (minis can be booked up until the session)
     function isDateBookable(dateStr) {
       const date = new Date(dateStr);
-      const twoWeeksFromNow = new Date();
-      twoWeeksFromNow.setDate(twoWeeksFromNow.getDate() + 14);
-      return date >= twoWeeksFromNow;
+      const now = new Date();
+      now.setHours(0, 0, 0, 0); // Reset to start of day for comparison
+      return date >= now;
     }
     
     document.addEventListener('DOMContentLoaded', async function () {
@@ -743,11 +743,11 @@
           // Build slot tags with click handlers
           const slotTags = slots.map(slot => `<span class="slot-tag" data-slot="${slot}">${slot}</span>`).join('');
           
-          // Add warning banner if date is too soon
+          // Add warning banner if date has passed
           const warningBanner = !dateIsBookable ? `
             <div class="alert alert-warning" role="alert">
               <i class="fas fa-exclamation-triangle"></i>
-              <strong>Notice:</strong> This session is within the next 2 weeks. Bookings must be made at least 14 days in advance.
+              <strong>Notice:</strong> This session has already passed and cannot be booked.
             </div>
           ` : '';
           
@@ -759,7 +759,7 @@
               <i class="fas fa-calendar"></i> <strong>${dateDisplay}</strong>
             </p>
             <form id="booking-form">
-              <input type="hidden" name="session_id" value="${sessionID}">
+              <input type="hidden" name="minis_session_id" value="${sessionID}">
               <input type="hidden" name="time_slot" value="">
               <div id="slot-container" style="margin-bottom: var(--space-lg);">${slotTags}</div>
               <button type="submit" class="btn btn-primary" disabled id="book-now-btn">
@@ -792,7 +792,7 @@
 
             // Check if the date is bookable (frontend validation)
             if (!isDateBookable(clickedDate)) {
-              showToast('⚠️ Mini sessions must be booked at least 2 weeks in advance!', 'warning');
+              showToast('⚠️ This mini session has already passed and cannot be booked!', 'warning');
               return;
             }
 

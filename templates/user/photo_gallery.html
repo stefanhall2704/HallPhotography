@@ -274,6 +274,40 @@
             border-radius: 20px;
             font-weight: 600;
         }
+
+        .warning-banner {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border: 3px solid #ff4757;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+        }
+
+        .warning-banner h3 {
+            margin: 0 0 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 20px;
+        }
+
+        .warning-banner p {
+            margin: 0;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .warning-icon {
+            font-size: 24px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
     </style>
 </head>
 <body>
@@ -294,6 +328,15 @@
 
         <h1>📸 Your Photos</h1>
         <p class="subtitle">{{.BookingType}} booking #{{.BookingID}}</p>
+
+        <div class="warning-banner">
+            <h3><span class="warning-icon">⚠️</span> Important: One-Time Download Only!</h3>
+            <p>
+                <strong>Please read carefully:</strong> When you download your photos, they will be <strong>permanently deleted</strong> from our servers immediately after download. 
+                You will <strong>NOT be able to re-download them again</strong>. Please ensure you save the downloaded photos to a safe location (external drive, cloud storage, etc.) 
+                before closing or refreshing this page.
+            </p>
+        </div>
 
         <div id="loading" class="loading">
             <p>Loading photos...</p>
@@ -476,6 +519,17 @@
         downloadSelectedBtn.addEventListener('click', async () => {
             if (selectedPhotos.size === 0) return;
 
+            // Confirmation dialog
+            const confirmed = confirm(
+                `⚠️ IMPORTANT WARNING ⚠️\n\n` +
+                `You are about to download ${selectedPhotos.size} photo(s).\n\n` +
+                `Once downloaded, these photos will be PERMANENTLY DELETED from our servers and you will NOT be able to re-download them.\n\n` +
+                `Make sure you save them to a safe location!\n\n` +
+                `Do you want to proceed with the download?`
+            );
+
+            if (!confirmed) return;
+
             try {
                 const response = await fetch('/booking/photos/download-multiple', {
                     method: 'POST',
@@ -515,6 +569,17 @@
         });
 
         downloadAllBtn.addEventListener('click', async () => {
+            // Confirmation dialog
+            const confirmed = confirm(
+                `⚠️ IMPORTANT WARNING ⚠️\n\n` +
+                `You are about to download ALL photos from this booking.\n\n` +
+                `Once downloaded, these photos will be PERMANENTLY DELETED from our servers and you will NOT be able to re-download them.\n\n` +
+                `Make sure you save them to a safe location!\n\n` +
+                `Do you want to proceed with the download?`
+            );
+
+            if (!confirmed) return;
+
             try {
                 const response = await fetch(`/booking/${bookingType}/${bookingID}/photos/download-all`);
                 

@@ -575,6 +575,9 @@
           </small>
         </div>
 
+        <!-- Hidden input for session days - will be populated by calendar -->
+        <input type="hidden" id="session_days" name="session_days" />
+
         <div class="form-actions">
           <button id="myBtn" class="btn-admin" type="button">
             <i class="fas fa-calendar-plus"></i>
@@ -612,7 +615,6 @@
           </div>
           
           <div id="timePickerContainer"></div>
-          <input type="hidden" id="session_days" name="session_days" />
         </div>
         
         <div class="modal-footer">
@@ -673,7 +675,14 @@
     const sessionDaysInput = document.getElementById('session_days');
 
     function updateHighlights() {
-      sessionDaysInput.value = JSON.stringify(Object.fromEntries(selectedDates));
+      // Convert selectedDates Map to the format backend expects:
+      // "2025-06-23T00:00,10:30 - 12:00,2025-06-28T00:00,11:30 - 14:00"
+      let formattedDates = [];
+      for (const [dateStr, times] of selectedDates) {
+        formattedDates.push(`${dateStr}T00:00`);
+        formattedDates.push(`${times.start} - ${times.end}`);
+      }
+      sessionDaysInput.value = formattedDates.join(',');
       calendar.refetchEvents();
       updateSelectedDatesList();
     }
@@ -765,10 +774,8 @@
           return;
         }
 
-        const startDateTime = `${dateStr}T${start}`;
-        const endDateTime = `${dateStr}T${end}`;
-
-        selectedDates.set(dateStr, { start: startDateTime, end: endDateTime });
+        // Store just the time portion (HH:MM), not the full datetime
+        selectedDates.set(dateStr, { start: start, end: end });
         updateHighlights();
         container.innerHTML = '';
         pendingDate = null;
