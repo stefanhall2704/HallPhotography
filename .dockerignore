@@ -1,0 +1,71 @@
+# Binaries
+server
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Utility scripts (separate main functions)
+check_admin.go
+set_admin.go
+
+# Test files
+*_test.go
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Database files (should be mounted as volume)
+*.db
+*.db-shm
+*.db-wal
+
+# Environment files
+.env
+*.env
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Uploads and downloads (should be mounted as volumes)
+uploads/*
+downloads/*
+
+# SSL certificates (should be mounted as secrets/volumes)
+*.crt
+*.key
+*.pem
+
+# Tokens and credentials
+token.json
+calendar/token.json
+
+# Documentation
+README.md
+*.md
+
+# Images and screenshots
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+Screenshot*
+
+# Keep directory structure
+!uploads/.gitkeep
+!downloads/.gitkeep
+

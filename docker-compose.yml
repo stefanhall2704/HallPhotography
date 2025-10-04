@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  hallphotography:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hallphotography
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - SESSION_SECRET=${SESSION_SECRET}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GOOGLE_CALLBACK_URL=${GOOGLE_CALLBACK_URL}
+    volumes:
+      # Persistent data
+      - ./photography.db:/root/photography.db
+      - ./uploads:/root/uploads
+      - ./downloads:/root/downloads
+      # SSL certificates (required for HTTPS)
+      - ./server.crt:/root/server.crt:ro
+      - ./server.key:/root/server.key:ro
+      # Calendar token (if using Google Calendar integration)
+      - ./calendar/token.json:/root/calendar/token.json
+      - ./token.json:/root/token.json
+    networks:
+      - hallphotography-network
+
+networks:
+  hallphotography-network:
+    driver: bridge
+
