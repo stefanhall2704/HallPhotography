@@ -214,8 +214,8 @@ func UpdateBookingStatus(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			// Set status to awaiting payment approval and store the proposed price
-			booking.Status = "awaiting_payment_approval"
+			// Set status to awaiting price approval and store the proposed price
+			booking.Status = "awaiting_price_approval"
 			booking.ProposedPrice = proposedPrice
 			booking.PriceApprovalStatus = "pending"
 			
@@ -515,8 +515,9 @@ func ApprovePriceForSession(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Verify booking is in the correct state
-	if booking.Status != "awaiting_payment_approval" {
-		http.Error(w, "This booking is not awaiting payment approval", http.StatusBadRequest)
+	if booking.Status != "awaiting_price_approval" {
+		log.Printf("❌ Booking %d is not awaiting price approval (current status: %s)", booking.ID, booking.Status)
+		http.Error(w, "This booking is not awaiting price approval", http.StatusBadRequest)
 		return
 	}
 

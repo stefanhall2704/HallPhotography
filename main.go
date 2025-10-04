@@ -12,7 +12,6 @@ import (
 	"github.com/stefanhall2704/GoPhotography/db"
 	"github.com/stefanhall2704/GoPhotography/handlers"
 	"github.com/stefanhall2704/GoPhotography/middleware"
-	"github.com/stefanhall2704/GoPhotography/model"
 )
 
 
@@ -24,11 +23,22 @@ func serverErrorHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	auth.Google_auth_consent()
-	database := db.ConnectDatabase()
-	if err := database.AutoMigrate(&model.User{}, &model.Notification{}, &model.Minis{}, &model.MinisDay{}, &model.Package{}, &model.Photo{}, &model.BookMinis{}, &model.Session{}, &model.SessionDay{}, &model.BookSession{}, &model.BookingMessage{}, &model.SessionPhoto{}); err != nil {
+	
+	// Initialize database connection (singleton pattern)
+	db.GetDB()
+	
+	// Run database migrations
+	if err := db.MigrateDatabase(); err != nil {
 		log.Fatalf("Failed to auto-migrate database: %v", err)
 	}
 	log.Println("Database migrated successfully")
+	
+	// Ensure database connection is closed on exit
+	defer func() {
+		if err := db.CloseDatabase(); err != nil {
+			log.Printf("Error closing database: %v", err)
+		}
+	}()
 	
 	request := mux.NewRouter()
 	

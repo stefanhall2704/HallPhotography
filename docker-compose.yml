@@ -1,6 +1,26 @@
 version: '3.8'
 
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: hallphotography-db
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=${DB_USER:-hallphotography}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-changeme}
+      - POSTGRES_DB=${DB_NAME:-hallphotography}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - hallphotography-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-hallphotography}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   hallphotography:
     build:
       context: .
@@ -14,9 +34,14 @@ services:
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       - GOOGLE_CALLBACK_URL=${GOOGLE_CALLBACK_URL}
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=${DB_USER:-hallphotography}
+      - DB_PASSWORD=${DB_PASSWORD:-changeme}
+      - DB_NAME=${DB_NAME:-hallphotography}
+      - DB_SSLMODE=disable
     volumes:
       # Persistent data
-      - ./photography.db:/root/photography.db
       - ./uploads:/root/uploads
       - ./downloads:/root/downloads
       # SSL certificates (required for HTTPS)
@@ -25,8 +50,15 @@ services:
       # Calendar token (if using Google Calendar integration)
       - ./calendar/token.json:/root/calendar/token.json
       - ./token.json:/root/token.json
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - hallphotography-network
+
+volumes:
+  postgres-data:
+    driver: local
 
 networks:
   hallphotography-network:

@@ -142,11 +142,15 @@ func BookSession(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check if this exact time slot is already booked for this date
+	// Using database-agnostic date comparison (works with PostgreSQL, MySQL, SQLite)
 	var existingBooking model.BookSession
+	startOfDay := time.Date(sessionDate.Year(), sessionDate.Month(), sessionDate.Day(), 0, 0, 0, 0, sessionDate.Location())
+	endOfDay := startOfDay.Add(24 * time.Hour)
+	
 	err = database.
 		Joins("JOIN sessions ON book_sessions.session_id = sessions.id").
 		Joins("JOIN session_days ON sessions.id = session_days.session_id").
-		Where("DATE(session_days.start) = ? AND book_sessions.time_slot = ?", sessionDate.Format("2006-01-02"), timeSlot).
+		Where("session_days.start >= ? AND session_days.start < ? AND book_sessions.time_slot = ?", startOfDay, endOfDay, timeSlot).
 		First(&existingBooking).Error
 	
 	if err == nil {

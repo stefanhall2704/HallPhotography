@@ -1,8 +1,8 @@
 # Build stage
 FROM golang:1.24-alpine AS builder
 
-# Install build dependencies
-RUN apk add --no-cache git gcc musl-dev sqlite-dev
+# Install build dependencies (no SQLite needed anymore)
+RUN apk add --no-cache git gcc musl-dev
 
 # Set working directory
 WORKDIR /app
@@ -17,13 +17,13 @@ RUN go mod download
 COPY . .
 
 # Build the application
-RUN CGO_ENABLED=1 GOOS=linux go build -a -installsuffix cgo -o main .
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
 
 # Runtime stage
 FROM alpine:latest
 
 # Install runtime dependencies
-RUN apk --no-cache add ca-certificates sqlite-libs tzdata
+RUN apk --no-cache add ca-certificates tzdata
 
 # Set working directory
 WORKDIR /root/
@@ -40,6 +40,10 @@ RUN mkdir -p uploads/profile_pictures uploads/session_photos downloads
 
 # Expose port
 EXPOSE 8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider https://localhost:8080/ || exit 1
 
 # Run the application
 CMD ["./main"]

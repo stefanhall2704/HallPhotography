@@ -1350,14 +1350,15 @@
         document.getElementById('user-actions').style.display = 'none';
         document.getElementById('price-approval-actions').style.display = 'none';
       } 
-      // Show price approval actions if not admin, booking is for session, and awaiting payment approval
-      else if (!isAdmin && bookingType === 'session' && booking.Status === 'awaiting_payment_approval') {
+      // Show price approval actions if not admin, booking is awaiting price approval (for both sessions and minis)
+      else if (!isAdmin && booking.Status === 'awaiting_price_approval') {
         document.getElementById('admin-actions').style.display = 'none';
         document.getElementById('user-actions').style.display = 'none';
         document.getElementById('price-approval-actions').style.display = 'block';
         document.getElementById('proposed-price-text').textContent = `$${booking.ProposedPrice.toFixed(2)}`;
         const timeDisplay = booking.ProposedTimeSlot || booking.TimeSlot;
-        document.getElementById('proposed-price-details').textContent = `For session on ${timeDisplay}`;
+        const sessionTypeLabel = bookingType === 'minis' ? 'mini session' : 'session';
+        document.getElementById('proposed-price-details').textContent = `For ${sessionTypeLabel} on ${timeDisplay}`;
       }
       // Show user actions if not admin, booking is pending, and there's a proposed time
       else if (!isAdmin && booking.Status === 'pending' && booking.ProposedTimeSlot) {
@@ -1698,9 +1699,10 @@
     function approvePriceAction(approvalStatus) {
       if (!currentBooking) return;
       
+      const bookingTypeLabel = currentBooking.type === 'minis' ? 'mini session' : 'session';
       const action = approvalStatus === 'approved' ? 'approve' : 'decline';
       const actionText = approvalStatus === 'approved' ? 
-        'approve this price and confirm your session' : 
+        `approve this price and confirm your ${bookingTypeLabel}` : 
         'decline this price';
       
       // Show custom confirmation modal
@@ -1714,7 +1716,7 @@
           const formData = new FormData();
           formData.append('approval_status', approvalStatus);
           
-          fetch(`/booking/session/${currentBooking.id}/approve_price`, {
+          fetch(`/booking/${currentBooking.type}/${currentBooking.id}/approve_price`, {
             method: 'POST',
             body: formData
           })
@@ -1726,7 +1728,7 @@
             })
             .then((data) => {
               if (approvalStatus === 'approved') {
-                showToast('🎉 Price approved! Your session is now confirmed.', 'success');
+                showToast(`🎉 Price approved! Your ${bookingTypeLabel} is now confirmed.`, 'success');
               } else {
                 showToast('Price declined. The photographer will be notified.', 'info');
               }
@@ -2016,8 +2018,8 @@
       const statusClass = `status-${booking.Status || 'pending'}`;
       let statusDisplay = booking.Status || 'pending';
       
-      // Special display for awaiting_payment_approval
-      if (booking.Status === 'awaiting_payment_approval') {
+      // Special display for awaiting_price_approval
+      if (booking.Status === 'awaiting_price_approval') {
         statusDisplay = 'Price Approval Needed';
       }
       
@@ -2036,7 +2038,7 @@
             <i class="fas fa-calendar"></i>
             <span>Booked on ${new Date(booking.CreatedAt).toLocaleDateString()}</span>
           </div>
-          ${type === 'session' && booking.ProposedPrice && booking.Status === 'awaiting_payment_approval' ? `
+          ${type === 'session' && booking.ProposedPrice && booking.Status === 'awaiting_price_approval' ? `
           <div class="session-detail" style="color: #4CAF50; font-weight: 600;">
             <i class="fas fa-dollar-sign"></i>
             <span>$${booking.ProposedPrice.toFixed(2)} (Pending Your Approval)</span>
@@ -2048,7 +2050,7 @@
           </div>
           ` : ''}
         </div>
-        ${booking.Status === 'awaiting_payment_approval' ? `
+        ${booking.Status === 'awaiting_price_approval' ? `
         <div style="margin-top: 15px; padding: 12px; background: linear-gradient(135deg, #4CAF50, #8BC34A); color: white; border-radius: 8px; font-weight: 600; text-align: center;">
           <i class="fas fa-exclamation-circle"></i> Action Required: Approve Price
         </div>

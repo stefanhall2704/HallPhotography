@@ -262,8 +262,9 @@ func Google_auth_consent() {
 	googleClientSecret := os.Getenv("GOOGLE_CLIENT_SECRET")
 	googleCallbackURL := os.Getenv("GOOGLE_CALLBACK_URL")
 
-	if key == "" || googleClientID == "" || googleClientSecret == "" || googleCallbackURL == "" {
-		log.Fatal("Environment variables are not set properly")
+	// SESSION_SECRET is required
+	if key == "" {
+		log.Fatal("SESSION_SECRET environment variable is required")
 	}
 
 	maxAge := 86400 * 30
@@ -277,14 +278,18 @@ func Google_auth_consent() {
 
 	gothic.Store = store
 
-	goth.UseProviders(
-		google.New(
-			googleClientID,
-			googleClientSecret,
-			googleCallbackURL,
-			"email", "profile", "https://www.googleapis.com/auth/calendar.readonly",
-		),
-	)
-
-	log.Println("Google OAuth provider registered")
+	// Google OAuth is optional - only configure if credentials are provided
+	if googleClientID != "" && googleClientSecret != "" && googleCallbackURL != "" {
+		goth.UseProviders(
+			google.New(
+				googleClientID,
+				googleClientSecret,
+				googleCallbackURL,
+				"email", "profile", "https://www.googleapis.com/auth/calendar.readonly",
+			),
+		)
+		log.Println("Google OAuth provider registered")
+	} else {
+		log.Println("Google OAuth not configured (optional)")
+	}
 }
