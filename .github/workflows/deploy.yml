@@ -55,24 +55,35 @@ jobs:
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
 
-    - name: Deploy to Kubernetes
-      uses: azure/k8s-deploy@v1
+    - name: Set up kubectl
+      uses: azure/setup-kubectl@v3
       with:
-        manifests: |
-          k8s/photography-deployment.yaml
-          k8s/photography-service.yaml
-        images: |
-          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
-        namespace: ${{ env.NAMESPACE }}
-        kubeconfig: ${{ secrets.KUBE_CONFIG }}
+        version: 'latest'
+
+    - name: Configure kubectl
+      run: |
+        echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > kubeconfig
+        export KUBECONFIG=kubeconfig
+        kubectl config use-context ${{ secrets.KUBE_CONTEXT || 'default' }}
+
+    - name: Deploy to Kubernetes
+      run: |
+        export KUBECONFIG=kubeconfig
+        # Update image in deployment
+        sed -i "s|image: .*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}|g" k8s/photography-deployment.yaml
+        # Apply manifests
+        kubectl apply -f k8s/photography-deployment.yaml -n ${{ env.NAMESPACE }}
+        kubectl apply -f k8s/photography-service.yaml -n ${{ env.NAMESPACE }}
 
     - name: Wait for rollout
       run: |
+        export KUBECONFIG=kubeconfig
         echo "Waiting for deployment to complete..."
         kubectl rollout status deployment/${{ env.DEPLOYMENT_NAME }} -n ${{ env.NAMESPACE }} --timeout=300s
 
     - name: Verify deployment
       run: |
+        export KUBECONFIG=kubeconfig
         echo "✅ Photography app deployed successfully!"
         echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
         echo "Namespace: ${{ env.NAMESPACE }}"
