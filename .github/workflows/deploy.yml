@@ -55,44 +55,53 @@ jobs:
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
 
-    - name: Set up kubectl
-      uses: azure/setup-kubectl@v3
-      with:
-        version: 'latest'
-
-    - name: Configure kubectl
+    - name: Create deployment script
       run: |
-        echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > kubeconfig
-        export KUBECONFIG=kubeconfig
-        kubectl config use-context ${{ secrets.KUBE_CONTEXT || 'default' }}
-        kubectl config current-context
-        kubectl cluster-info
-
-    - name: Validate Kubernetes connection
-      run: |
-        export KUBECONFIG=kubeconfig
-        kubectl get nodes
-        kubectl get namespaces
-
-    - name: Deploy to Kubernetes
-      run: |
-        export KUBECONFIG=kubeconfig
+        cat > deploy-locally.sh << 'EOF'
+        #!/bin/bash
+        echo "🚀 Deploying Photography App to local Kubernetes cluster..."
+        echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
+        
         # Update image in deployment
         sed -i "s|image: .*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}|g" k8s/photography-deployment.yaml
+        
         # Apply manifests
         kubectl apply -f k8s/photography-deployment.yaml -n ${{ env.NAMESPACE }}
         kubectl apply -f k8s/photography-service.yaml -n ${{ env.NAMESPACE }}
-
-    - name: Wait for rollout
-      run: |
-        export KUBECONFIG=kubeconfig
+        
+        # Wait for rollout
         echo "Waiting for deployment to complete..."
         kubectl rollout status deployment/${{ env.DEPLOYMENT_NAME }} -n ${{ env.NAMESPACE }} --timeout=300s
-
-    - name: Verify deployment
-      run: |
-        export KUBECONFIG=kubeconfig
+        
+        # Verify deployment
         echo "✅ Photography app deployed successfully!"
         echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
         echo "Namespace: ${{ env.NAMESPACE }}"
         kubectl get pods -n ${{ env.NAMESPACE }} -l app=photography
+        EOF
+        chmod +x deploy-locally.sh
+
+    - name: Upload deployment script
+      uses: actions/upload-artifact@v4
+      with:
+        name: deployment-script
+        path: deploy-locally.sh
+
+    - name: Deployment Instructions
+      run: |
+        echo "🎉 Docker image built and pushed successfully!"
+        echo ""
+        echo "📋 To deploy to your local cluster, run these commands:"
+        echo "1. Download the deployment script:"
+        echo "   curl -L -o deploy-locally.sh https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts"
+        echo ""
+        echo "2. Run the deployment script:"
+        echo "   chmod +x deploy-locally.sh"
+        echo "   ./deploy-locally.sh"
+        echo ""
+        echo "🐳 Or manually update and deploy:"
+        echo "   # Update the image in your deployment:"
+        echo "   sed -i \"s|image: .*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}|g\" k8s/photography-deployment.yaml"
+        echo "   # Deploy to your cluster:"
+        echo "   kubectl apply -f k8s/photography-deployment.yaml -n ${{ env.NAMESPACE }}"
+        echo "   kubectl apply -f k8s/photography-service.yaml -n ${{ env.NAMESPACE }}"
