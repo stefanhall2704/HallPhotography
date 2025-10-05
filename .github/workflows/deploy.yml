@@ -65,6 +65,14 @@ jobs:
         echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > kubeconfig
         export KUBECONFIG=kubeconfig
         kubectl config use-context ${{ secrets.KUBE_CONTEXT || 'default' }}
+        kubectl config current-context
+        kubectl cluster-info
+
+    - name: Validate Kubernetes connection
+      run: |
+        export KUBECONFIG=kubeconfig
+        kubectl get nodes
+        kubectl get namespaces
 
     - name: Deploy to Kubernetes
       run: |
