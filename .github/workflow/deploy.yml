@@ -4,8 +4,15 @@ on:
   push:
     branches: [ main, master ]
     paths:
-      - 'photography/**'
-      - 'k8s/photography-*.yaml'
+      - '**'
+      - '!*.md'
+      - '!*.png'
+      - '!*.jpg'
+      - '!*.jpeg'
+      - '!*.gif'
+      - '!*.db'
+      - '!downloads/**'
+      - '!uploads/**'
   workflow_dispatch:
     inputs:
       image_tag:
