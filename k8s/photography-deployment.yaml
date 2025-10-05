@@ -1,0 +1,119 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: photography
+  namespace: hallphotography
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: photography
+  template:
+    metadata:
+      labels:
+        app: photography
+    spec:
+      # Schedule on the laptop node
+      nodeSelector:
+        node-role: worker
+      containers:
+      - name: photography
+        image: stefanmhall/photography:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+        env:
+        - name: SESSION_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: photography-secrets
+              key: SESSION_SECRET
+        - name: GOOGLE_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: photography-secrets
+              key: GOOGLE_CLIENT_ID
+        - name: GOOGLE_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: photography-secrets
+              key: GOOGLE_CLIENT_SECRET
+        - name: GOOGLE_CALLBACK_URL
+          valueFrom:
+            secretKeyRef:
+              name: photography-secrets
+              key: GOOGLE_CALLBACK_URL
+        - name: DB_HOST
+          value: "postgres"
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: db-secrets
+              key: DB_USER
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-secrets
+              key: DB_PASSWORD
+        - name: DB_NAME
+          valueFrom:
+            secretKeyRef:
+              name: db-secrets
+              key: DB_NAME
+        - name: DB_SSLMODE
+          value: "disable"
+        volumeMounts:
+        - name: uploads
+          mountPath: /root/uploads
+        - name: downloads
+          mountPath: /root/downloads
+        - name: server-crt
+          mountPath: /root/server.crt
+          subPath: server.crt
+          readOnly: true
+        - name: server-key
+          mountPath: /root/server.key
+          subPath: server.key
+          readOnly: true
+        - name: calendar-token
+          mountPath: /root/calendar/token.json
+          subPath: calendar-token.json
+          readOnly: true
+        - name: token
+          mountPath: /root/token.json
+          subPath: token.json
+          readOnly: true
+      volumes:
+      - name: uploads
+        persistentVolumeClaim:
+          claimName: photography-uploads
+      - name: downloads
+        persistentVolumeClaim:
+          claimName: photography-downloads
+      - name: server-crt
+        secret:
+          secretName: tls-certs
+          items:
+          - key: server.crt
+            path: server.crt
+      - name: server-key
+        secret:
+          secretName: tls-certs
+          items:
+          - key: server.key
+            path: server.key
+      - name: calendar-token
+        secret:
+          secretName: calendar-secrets
+          items:
+          - key: calendar-token.json
+            path: calendar-token.json
+      - name: token
+        secret:
+          secretName: calendar-secrets
+          items:
+          - key: token.json
+            path: token.json
+

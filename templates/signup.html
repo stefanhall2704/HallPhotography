@@ -18,7 +18,8 @@ body {
   justify-content: center;
   min-height: 100vh;
   position: relative;
-  overflow: hidden;
+  overflow-y: auto;
+  padding: var(--space-lg) 0;
 }
 
 /* Background Pattern */
@@ -64,6 +65,10 @@ body::after {
 
 /* Responsive Design */
 @media (max-width: 480px) {
+  body {
+    padding: var(--space-md) 0;
+  }
+  
   .signup-container {
     margin: var(--space-md);
     padding: var(--space-xl);
