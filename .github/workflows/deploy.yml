@@ -55,48 +55,12 @@ jobs:
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
 
-    - name: Create deployment script
-      run: |
-        cat > deploy-locally.sh << 'EOF'
-        #!/bin/bash
-        echo "🚀 Deploying Photography App to local Kubernetes cluster..."
-        echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
-        
-        # Update image in deployment
-        sed -i "s|image: .*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}|g" k8s/photography-deployment.yaml
-        
-        # Apply manifests
-        kubectl apply -f k8s/photography-deployment.yaml -n ${{ env.NAMESPACE }}
-        kubectl apply -f k8s/photography-service.yaml -n ${{ env.NAMESPACE }}
-        
-        # Wait for rollout
-        echo "Waiting for deployment to complete..."
-        kubectl rollout status deployment/${{ env.DEPLOYMENT_NAME }} -n ${{ env.NAMESPACE }} --timeout=300s
-        
-        # Verify deployment
-        echo "✅ Photography app deployed successfully!"
-        echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
-        echo "Namespace: ${{ env.NAMESPACE }}"
-        kubectl get pods -n ${{ env.NAMESPACE }} -l app=photography
-        EOF
-        chmod +x deploy-locally.sh
-
-    - name: Upload deployment script
-      uses: actions/upload-artifact@v4
-      with:
-        name: deployment-script
-        path: deploy-locally.sh
-
-    - name: Deployment Instructions
+    - name: Build Complete
       run: |
         echo "🎉 Docker image built and pushed successfully!"
+        echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
         echo ""
-        echo "📋 To deploy to your local cluster, run these commands:"
-        echo "1. Download the deployment script:"
-        echo "   curl -L -o deploy-locally.sh https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts"
-        echo ""
-        echo "2. Run the deployment script:"
-        echo "   chmod +x deploy-locally.sh"
+        echo "📋 To deploy to your local cluster, run:"
         echo "   ./deploy-locally.sh"
         echo ""
         echo "🐳 Or manually update and deploy:"
