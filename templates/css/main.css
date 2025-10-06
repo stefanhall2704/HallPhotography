@@ -70,6 +70,9 @@ body {
   line-height: 1.6;
   min-height: 100vh;
   overflow-x: hidden;
+  /* Ensure proper mobile viewport handling */
+  -webkit-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
 }
 
 /* Background Pattern */
@@ -505,26 +508,127 @@ p {
   
   .nav-actions {
     gap: var(--space-xs);
+    flex-wrap: wrap;
+    justify-content: flex-end;
   }
   
   .btn {
-    font-size: 0.8rem;
-    padding: var(--space-xs) var(--space-sm);
+    font-size: 0.85rem;
+    padding: var(--space-sm) var(--space-md);
+    min-height: 40px;
+    white-space: nowrap;
+  }
+  
+  /* Ensure dropdowns are visible on mobile */
+  .dropdown-menu {
+    position: fixed !important;
+    top: 60px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 90vw !important;
+    max-width: 300px !important;
+    right: auto !important;
   }
 }
 
 @media (max-width: 480px) {
   .nav-container {
     padding: 0 var(--space-sm);
+    flex-wrap: wrap;
   }
   
   .nav-brand {
     font-size: 1.5rem;
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .nav-actions {
+    gap: var(--space-xs);
+    flex-wrap: wrap;
+    width: 100%;
+    justify-content: center;
+    margin-top: var(--space-sm);
   }
   
   .btn {
-    font-size: 0.75rem;
-    padding: var(--space-xs);
+    font-size: 0.8rem;
+    padding: var(--space-sm) var(--space-md);
+    min-height: 36px;
+    flex: 1;
+    min-width: 0;
+    max-width: 120px;
+  }
+  
+  /* Stack buttons vertically on very small screens */
+  .nav-actions .btn {
+    margin-bottom: var(--space-xs);
+  }
+  
+  /* Mobile-specific button improvements */
+  .btn-primary {
+    background: linear-gradient(135deg, var(--burnt-orange), var(--deep-rust));
+    color: white;
+    border: none;
+  }
+  
+  .btn-outline {
+    background: transparent;
+    color: var(--charcoal);
+    border: 2px solid var(--charcoal);
+  }
+}
+
+/* ========================================
+   Mobile Content Improvements
+   ======================================== */
+@media (max-width: 768px) {
+  /* Ensure all content containers have proper mobile spacing */
+  .card, .signup-container, .login-container {
+    margin: var(--space-md);
+    padding: var(--space-lg);
+  }
+  
+  /* Improve form spacing on mobile */
+  .form-group {
+    margin-bottom: var(--space-md);
+  }
+  
+  /* Better button spacing in content areas */
+  .btn + .btn {
+    margin-left: var(--space-sm);
+  }
+  
+  /* Stack buttons vertically when needed */
+  .btn-stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+  
+  .btn-stack .btn {
+    width: 100%;
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Extra small screen improvements */
+  .card, .signup-container, .login-container {
+    margin: var(--space-sm);
+    padding: var(--space-md);
+  }
+  
+  /* Ensure buttons are always tappable */
+  .btn {
+    min-height: 44px; /* iOS recommended touch target */
+    touch-action: manipulation;
+  }
+  
+  /* Better spacing for form elements */
+  .form-input {
+    padding: var(--space-md);
+    font-size: 16px; /* Prevent zoom on iOS */
   }
 }
 
@@ -554,4 +658,34 @@ p {
 
 .fade-in {
   animation: fadeInUp 0.6s ease-out;
+}
+
+/* Mobile-specific utility classes */
+.mobile-full-width {
+  width: 100% !important;
+}
+
+.mobile-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.mobile-center {
+  text-align: center;
+  justify-content: center;
+}
+
+/* Ensure all interactive elements are properly sized for mobile */
+@media (max-width: 480px) {
+  button, .btn, input[type="submit"], input[type="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Prevent horizontal scrolling on mobile */
+  * {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
 }
