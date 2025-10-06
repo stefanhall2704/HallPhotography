@@ -85,6 +85,10 @@ spec:
           mountPath: /root/token.json
           subPath: token.json
           readOnly: true
+        - name: dns-config
+          mountPath: /etc/resolv.conf
+          subPath: resolv.conf
+          readOnly: true
       volumes:
       - name: uploads
         persistentVolumeClaim:
@@ -116,3 +120,9 @@ spec:
           items:
           - key: token.json
             path: token.json
+      - name: dns-config
+        configMap:
+          name: dns-config
+          items:
+          - key: resolv.conf
+            path: resolv.conf
