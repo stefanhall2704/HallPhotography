@@ -64,18 +64,18 @@ jobs:
           cd /home/stefan/Documents/Personal/kubernetes
           
           # Update the image in the deployment
-          kubectl set image deployment/${{ env.DEPLOYMENT_NAME }} ${{ env.DEPLOYMENT_NAME }}=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main-${{ github.sha }} -n ${{ env.NAMESPACE }}
+          kubectl set image deployment/${{ env.DEPLOYMENT_NAME }} ${{ env.DEPLOYMENT_NAME }}=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest -n ${{ env.NAMESPACE }}
           
           # Wait for rollout
           kubectl rollout status deployment/${{ env.DEPLOYMENT_NAME }} -n ${{ env.NAMESPACE }} --timeout=300s
           
           # Verify deployment
           echo "✅ Photography app deployed successfully!"
-          echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main-${{ github.sha }}"
+          echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
           kubectl get pods -n ${{ env.NAMESPACE }} -l app=photography
 
     - name: Verify deployment
       run: |
         echo "✅ Photography app deployment completed!"
-        echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main-${{ github.sha }}"
+        echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
         echo "Namespace: ${{ env.NAMESPACE }}"
