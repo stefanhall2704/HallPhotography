@@ -1,15 +1,17 @@
-name: Deploy Photography App
+name: Deploy Photography App (SSH Method)
 
 on:
   push:
     branches: [ main, master ]
+    paths:
+      - 'photography/**'
+      - 'k8s/photography-*.yaml'
   workflow_dispatch:
     inputs:
       image_tag:
         description: 'Image tag to deploy'
         required: false
         default: 'latest'
-        
 
 env:
   REGISTRY: docker.io
@@ -55,17 +57,28 @@ jobs:
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
 
-    - name: Build Complete
+    - name: Deploy via SSH
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          cd /home/stefan/Documents/Personal/kubernetes
+          
+          # Update the image in the deployment
+          kubectl set image deployment/${{ env.DEPLOYMENT_NAME }} ${{ env.DEPLOYMENT_NAME }}=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} -n ${{ env.NAMESPACE }}
+          
+          # Wait for rollout
+          kubectl rollout status deployment/${{ env.DEPLOYMENT_NAME }} -n ${{ env.NAMESPACE }} --timeout=300s
+          
+          # Verify deployment
+          echo "✅ Photography app deployed successfully!"
+          echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
+          kubectl get pods -n ${{ env.NAMESPACE }} -l app=photography
+
+    - name: Verify deployment
       run: |
-        echo "🎉 Docker image built and pushed successfully!"
+        echo "✅ Photography app deployment completed!"
         echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
-        echo ""
-        echo "📋 To deploy to your local cluster, run:"
-        echo "   ./deploy-locally.sh"
-        echo ""
-        echo "🐳 Or manually update and deploy:"
-        echo "   # Update the image in your deployment:"
-        echo "   sed -i \"s|image: .*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}|g\" k8s/photography-deployment.yaml"
-        echo "   # Deploy to your cluster:"
-        echo "   kubectl apply -f k8s/photography-deployment.yaml -n ${{ env.NAMESPACE }}"
-        echo "   kubectl apply -f k8s/photography-service.yaml -n ${{ env.NAMESPACE }}"
+        echo "Namespace: ${{ env.NAMESPACE }}"

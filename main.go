@@ -113,9 +113,6 @@ func main() {
 	request.Handle("/admin/bookings-without-photos", auth.AdminAuthMiddleware(http.HandlerFunc(handlers.GetBookingsWithoutPhotos))).Methods("GET")
 	request.Handle("/admin/booking/{type}/{id}/upload-photos-view", auth.AdminAuthMiddleware(http.HandlerFunc(handlers.PhotoUploadView))).Methods("GET")
 	request.Handle("/admin/booking/{type}/{id}/upload-photos", auth.AdminAuthMiddleware(http.HandlerFunc(handlers.UploadPhotos))).Methods("POST")
-	
-	// Webhook routes (no auth required for CI/CD)
-	request.HandleFunc("/webhook/deploy", handlers.WebhookDeploy).Methods("POST")
 	request.Handle("/booking/{type}/{id}/photos", auth.AuthMiddleware(http.HandlerFunc(handlers.GetBookingPhotos))).Methods("GET")
 	request.Handle("/booking/{type}/{id}/photos-view", auth.AuthMiddleware(http.HandlerFunc(handlers.PhotoGalleryView))).Methods("GET")
 	request.Handle("/photo/{photoId}/view", auth.AuthMiddleware(http.HandlerFunc(handlers.ViewPhoto))).Methods("GET")
