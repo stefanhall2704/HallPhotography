@@ -702,7 +702,9 @@
       
       let html = '';
       for (const [dateStr, times] of selectedDates) {
-        const date = new Date(dateStr);
+        // Parse the date string properly to avoid timezone issues
+        const [year, month, day] = dateStr.split('-').map(Number);
+        const date = new Date(year, month - 1, day); // month is 0-indexed
         const formattedDate = date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
         
         html += `
@@ -731,7 +733,9 @@
 
     function openTimePicker(dateStr) {
       const container = document.getElementById('timePickerContainer');
-      const date = new Date(dateStr);
+      // Parse the date string properly to avoid timezone issues
+      const [year, month, day] = dateStr.split('-').map(Number);
+      const date = new Date(year, month - 1, day); // month is 0-indexed
       const formattedDate = date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
       
       container.innerHTML = `

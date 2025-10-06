@@ -630,7 +630,9 @@
 
     // Check if a date hasn't passed yet (minis can be booked up until the session)
     function isDateBookable(dateStr) {
-      const date = new Date(dateStr);
+      // Parse the date string properly to avoid timezone issues
+      const [year, month, day] = dateStr.split('-').map(Number);
+      const date = new Date(year, month - 1, day); // month is 0-indexed
       const now = new Date();
       now.setHours(0, 0, 0, 0); // Reset to start of day for comparison
       return date >= now;
@@ -751,7 +753,8 @@
             </div>
           ` : '';
           
-          const dateDisplay = new Date(clickedDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+          const [year, month, day] = clickedDate.split('-').map(Number);
+          const dateDisplay = new Date(year, month - 1, day).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
           
           const formHtml = `
             ${warningBanner}

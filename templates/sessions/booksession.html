@@ -631,7 +631,9 @@
 
     // Check if a date is at least 2 weeks in the future
     function isDateBookable(dateStr) {
-      const date = new Date(dateStr);
+      // Parse the date string properly to avoid timezone issues
+      const [year, month, day] = dateStr.split('-').map(Number);
+      const date = new Date(year, month - 1, day); // month is 0-indexed
       const twoWeeksFromNow = new Date();
       twoWeeksFromNow.setDate(twoWeeksFromNow.getDate() + 14);
       return date >= twoWeeksFromNow;
@@ -674,7 +676,11 @@
         ${warningBanner}
         <div class="mb-3">
           <p class="text-muted mb-2">
-            <i class="fa fa-calendar"></i> <strong>${new Date(dateStr).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</strong>
+            <i class="fa fa-calendar"></i> <strong>${(() => {
+              const [year, month, day] = dateStr.split('-').map(Number);
+              const date = new Date(year, month - 1, day);
+              return date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            })()}</strong>
           </p>
           <p class="text-info mb-3">
             <i class="fa fa-info-circle"></i> Please select your preferred time for this session. We'll confirm availability with you shortly.
@@ -889,7 +895,11 @@
           const formHtml = `
             ${warningBanner}
             <p class="text-muted mb-3">
-              <i class="fa fa-calendar"></i> ${new Date(clickedDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              <i class="fa fa-calendar"></i> ${(() => {
+                const [year, month, day] = clickedDate.split('-').map(Number);
+                const date = new Date(year, month - 1, day);
+                return date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+              })()}
             </p>
             <form id="booking-form">
               <input type="hidden" name="session_id" value="">
