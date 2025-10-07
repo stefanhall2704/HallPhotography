@@ -1,5 +1,5 @@
 /**
- * Hall Photography - Homepage JavaScript
+ * Hall's Photography - Homepage JavaScript
  * Specific functionality for the homepage
  */
 

@@ -1,5 +1,5 @@
 /**
- * Hall Photography - Profile JavaScript
+ * Hall's Photography - Profile JavaScript
  * Specific functionality for the user profile page
  */
 

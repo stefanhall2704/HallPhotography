@@ -1,5 +1,5 @@
 /**
- * Hall Photography - Authentication JavaScript
+ * Hall's Photography - Authentication JavaScript
  * Specific functionality for login and signup pages
  */
 

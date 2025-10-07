@@ -1,6 +1,6 @@
 # Production Deployment Guide
 
-This guide covers deploying the Hall Photography application to a production Kubernetes cluster.
+This guide covers deploying the Hall's Photography application to a production Kubernetes cluster.
 
 ## What Changed for Production
 

@@ -1,6 +1,6 @@
 # Utility Tools
 
-This directory contains utility scripts for managing the Hall Photography application.
+This directory contains utility scripts for managing the Hall's Photography application.
 
 ## Available Tools
 
