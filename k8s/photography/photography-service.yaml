@@ -3,12 +3,11 @@ kind: Service
 metadata:
   name: photography
   namespace: hallphotography
-  annotations:
-    traefik.ingress.kubernetes.io/service.serversscheme: https
 spec:
   selector:
     app: photography
   ports:
   - port: 8080
     targetPort: 8080
-  type: ClusterIP
+    nodePort: 31055
+  type: NodePort

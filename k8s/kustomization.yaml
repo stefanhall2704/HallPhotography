@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: hallphotography
+
+resources:
+  # Shared components
+  - shared/namespace.yaml
+  - shared/dns-config.yaml
+  
+  # Photography app
+  - photography/
+  
+  # Note: secrets.yaml must be created from secrets-template.yaml
+  # and applied separately: kubectl apply -f shared/secrets.yaml

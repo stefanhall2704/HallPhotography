@@ -13,9 +13,6 @@ spec:
       labels:
         app: photography
     spec:
-      # Schedule on the laptop node
-      nodeSelector:
-        node-role: worker
       containers:
       - name: photography
         image: stefanmhall/photography:latest
@@ -65,10 +62,6 @@ spec:
         - name: DB_SSLMODE
           value: "disable"
         volumeMounts:
-        - name: uploads
-          mountPath: /root/uploads
-        - name: downloads
-          mountPath: /root/downloads
         - name: server-crt
           mountPath: /root/server.crt
           subPath: server.crt
@@ -89,13 +82,11 @@ spec:
           mountPath: /etc/resolv.conf
           subPath: resolv.conf
           readOnly: true
+        - name: uploads
+          mountPath: /app/uploads
+        - name: downloads
+          mountPath: /app/downloads
       volumes:
-      - name: uploads
-        persistentVolumeClaim:
-          claimName: photography-uploads
-      - name: downloads
-        persistentVolumeClaim:
-          claimName: photography-downloads
       - name: server-crt
         secret:
           secretName: tls-certs
@@ -126,3 +117,9 @@ spec:
           items:
           - key: resolv.conf
             path: resolv.conf
+      - name: uploads
+        persistentVolumeClaim:
+          claimName: photography-uploads
+      - name: downloads
+        persistentVolumeClaim:
+          claimName: photography-downloads

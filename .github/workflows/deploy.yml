@@ -61,13 +61,14 @@ jobs:
         username: ${{ secrets.SSH_USERNAME }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
-          cd /home/stefan/Documents/Personal/kubernetes
+          cd /home/stefan/Documents/Personal/HallPhotography
           
-          # Update the image in the deployment
-          kubectl set image deployment/${{ env.DEPLOYMENT_NAME }} ${{ env.DEPLOYMENT_NAME }}=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest -n ${{ env.NAMESPACE }}
+          # Pull latest changes
+          git pull origin main
           
-          # Wait for rollout
-          kubectl rollout status deployment/${{ env.DEPLOYMENT_NAME }} -n ${{ env.NAMESPACE }} --timeout=300s
+          # Deploy using the organized k8s structure
+          chmod +x k8s/deploy-photography.sh
+          ./k8s/deploy-photography.sh
           
           # Verify deployment
           echo "✅ Photography app deployed successfully!"
