@@ -35,8 +35,11 @@ cp shared/secrets-template.yaml shared/secrets.yaml
 ### 2. Deploy Photography App
 
 ```bash
-# Deploy photography app
+# Deploy photography app (basic)
 ./deploy-photography.sh
+
+# Deploy photography app with Cloudflare tunnel update (recommended)
+./deploy-photography-with-cloudflare.sh
 ```
 
 ### 3. Manual Deployment
@@ -103,7 +106,19 @@ kubectl rollout restart deployment/photography -n hallphotography
 ## Network Configuration
 
 - **Photography**: Fixed NodePort 31055 on control plane (192.168.1.102)
-- **Cloudflare Tunnel**: Configured to route external traffic to internal services
+- **Cloudflare Tunnel**: Automatically updated to use fixed NodePort 31055
+- **External Access**: `photography.stefan-sre.com` → `https://192.168.1.102:31055`
+
+## Preventing NodePort Drift
+
+The photography service uses a **fixed NodePort (31055)** to prevent deployment issues. The enhanced deployment script (`deploy-photography-with-cloudflare.sh`) automatically:
+
+1. ✅ Verifies the service has the correct NodePort
+2. ✅ Updates Cloudflare tunnel configuration
+3. ✅ Restarts cloudflared service
+4. ✅ Provides deployment verification
+
+This prevents the 502 errors caused by NodePort/IP mismatches.
 
 ## Security Notes
 

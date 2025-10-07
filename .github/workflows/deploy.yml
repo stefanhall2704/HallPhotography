@@ -66,9 +66,9 @@ jobs:
           # Pull latest changes
           git pull origin main
           
-          # Deploy using the organized k8s structure
-          chmod +x k8s/deploy-photography.sh
-          ./k8s/deploy-photography.sh
+          # Deploy using the organized k8s structure with Cloudflare update
+          chmod +x k8s/deploy-photography-with-cloudflare.sh
+          ./k8s/deploy-photography-with-cloudflare.sh
           
           # Verify deployment
           echo "✅ Photography app deployed successfully!"
