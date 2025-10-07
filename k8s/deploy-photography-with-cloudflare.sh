@@ -68,9 +68,19 @@ if [ -f "$CLOUDFLARE_CONFIG" ]; then
     
     # Restart cloudflared
     echo "Restarting cloudflared service..."
-    sudo systemctl restart cloudflared
-    
-    echo "✅ Cloudflared service restarted"
+    if sudo -n systemctl restart cloudflared 2>/dev/null; then
+        echo "✅ Cloudflared service restarted"
+    else
+        echo "⚠️  Could not restart cloudflared automatically (sudo requires password)"
+        echo ""
+        echo "To fix this for future deployments, run the setup script:"
+        echo "  ./k8s/setup-passwordless-sudo.sh"
+        echo ""
+        echo "Or manually restart cloudflared now:"
+        echo "  sudo systemctl restart cloudflared"
+        echo ""
+        echo "The photography app is deployed but Cloudflare tunnel may need manual restart."
+    fi
 else
     echo "WARNING: Cloudflare config not found at $CLOUDFLARE_CONFIG"
     echo "Please manually update your Cloudflare tunnel to use:"
