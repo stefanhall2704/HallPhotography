@@ -12,7 +12,7 @@ CONTROL_PLANE_IP="192.168.1.102"
 CLOUDFLARE_CONFIG="/etc/cloudflared/config.yml"
 
 # Check if secrets file exists locally, or if secrets already exist in cluster
-if [ ! -f "shared/secrets.yaml" ]; then
+if [ ! -f "k8s/shared/secrets.yaml" ]; then
     echo "secrets.yaml not found locally, checking if secrets exist in cluster..."
     if kubectl get secret photography-secrets -n hallphotography >/dev/null 2>&1; then
         echo "✅ Secrets already exist in cluster, skipping secrets deployment"
@@ -20,9 +20,9 @@ if [ ! -f "shared/secrets.yaml" ]; then
         echo "ERROR: secrets.yaml not found locally AND secrets don't exist in cluster!"
         echo ""
         echo "Please create secrets.yaml from the template:"
-        echo "  cp shared/secrets-template.yaml shared/secrets.yaml"
-        echo "  # Edit shared/secrets.yaml with your actual values"
-        echo "  kubectl apply -f shared/secrets.yaml"
+        echo "  cp k8s/shared/secrets-template.yaml k8s/shared/secrets.yaml"
+        echo "  # Edit k8s/shared/secrets.yaml with your actual values"
+        echo "  kubectl apply -f k8s/shared/secrets.yaml"
         echo ""
         exit 1
     fi
@@ -32,13 +32,13 @@ fi
 
 echo "Deploying Photography app..."
 # Apply secrets if they exist locally
-if [ -f "shared/secrets.yaml" ]; then
+if [ -f "k8s/shared/secrets.yaml" ]; then
     echo "Applying secrets..."
-    kubectl apply -f shared/secrets.yaml
+    kubectl apply -f k8s/shared/secrets.yaml
 fi
 
 # Deploy the photography app
-kubectl apply -k photography/
+kubectl apply -k k8s/photography/
 
 echo ""
 echo "Waiting for Photography app to be ready..."
