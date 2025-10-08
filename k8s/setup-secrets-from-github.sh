@@ -35,10 +35,13 @@ create_secret_if_missing "db-secrets" "hallphotography" \
     --from-literal=DB_PASSWORD="$DB_PASSWORD" \
     --from-literal=DB_NAME="$DB_NAME"
 
-# Create TLS certificates
-create_secret_if_missing "tls-certs" "hallphotography" \
+# Create/update TLS certificates (always update to ensure real certs)
+echo "Updating TLS certificates with real certificates..."
+kubectl delete secret tls-certs -n hallphotography --ignore-not-found=true
+kubectl create secret generic tls-certs -n hallphotography \
     --from-literal=server.crt="$SERVER_CERT" \
     --from-literal=server.key="$SERVER_KEY"
+echo "✅ TLS certificates updated with real certificates"
 
 # Create calendar secrets (with empty values for now)
 create_secret_if_missing "calendar-secrets" "hallphotography" \
