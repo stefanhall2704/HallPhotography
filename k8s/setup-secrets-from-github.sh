@@ -22,12 +22,15 @@ create_secret_if_missing() {
     fi
 }
 
-# Create photography secrets
-create_secret_if_missing "photography-secrets" "hallphotography" \
+# Create/update photography secrets (always update to ensure real values)
+echo "Updating photography secrets with real values..."
+kubectl delete secret photography-secrets -n hallphotography --ignore-not-found=true
+kubectl create secret generic photography-secrets -n hallphotography \
     --from-literal=SESSION_SECRET="$SESSION_SECRET" \
     --from-literal=GOOGLE_CLIENT_ID="$GOOGLE_CLIENT_ID" \
     --from-literal=GOOGLE_CLIENT_SECRET="$GOOGLE_CLIENT_SECRET" \
     --from-literal=GOOGLE_CALLBACK_URL="$GOOGLE_CALLBACK_URL"
+echo "✅ Photography secrets updated with real values"
 
 # Create database secrets
 create_secret_if_missing "db-secrets" "hallphotography" \
