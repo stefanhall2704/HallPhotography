@@ -916,6 +916,20 @@
     <script src="js/main.js"></script>
     <script src="js/home.js"></script>
     
+    <!-- Fallback admin functions -->
+    <script>
+      // Ensure admin functions are available
+      if (typeof window.showAddPortfolioModal === 'undefined') {
+        console.log('Defining fallback admin functions...');
+        window.showAddPortfolioModal = function() {
+          alert('Add Portfolio function not loaded. Please refresh the page.');
+        };
+        window.showPortfolioManagement = function() {
+          alert('Manage Portfolio function not loaded. Please refresh the page.');
+        };
+      }
+    </script>
+    
     {{if .Authenticated}}
     <script>
       // Load notification count if user is authenticated

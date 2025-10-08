@@ -397,7 +397,9 @@ class HomePage {
 }
 
 // Global admin functions for portfolio management
+console.log('Defining global admin functions...');
 window.showAddPortfolioModal = function() {
+  console.log('showAddPortfolioModal called');
   const modal = createPortfolioModal({
     title: 'Add Portfolio Item',
     onSubmit: async (data) => {
@@ -434,6 +436,7 @@ window.showAddPortfolioModal = function() {
 };
 
 window.showPortfolioManagement = function() {
+  console.log('showPortfolioManagement called');
   const modal = createPortfolioManagementModal();
 };
 
@@ -782,4 +785,10 @@ document.addEventListener('DOMContentLoaded', () => {
   if (document.body.classList.contains('home-page')) {
     window.homePage = new HomePage();
   }
+  
+  // Debug: Check if admin functions are available
+  console.log('Admin functions available:', {
+    showAddPortfolioModal: typeof window.showAddPortfolioModal,
+    showPortfolioManagement: typeof window.showPortfolioManagement
+  });
 });
