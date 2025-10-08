@@ -42,6 +42,10 @@ func main() {
 	
 	request := mux.NewRouter()
 	
+	// Health check route (no authentication required)
+	request.HandleFunc("/health", handlers.HealthCheck).Methods("GET")
+	request.HandleFunc("/healthcheck", handlers.HealthCheck).Methods("GET") // Alternative endpoint
+	
 	// Common routes
 	request.HandleFunc("/", handlers.Home).Methods("GET")
 	request.Handle("/profile", auth.AuthMiddleware(http.HandlerFunc(handlers.UserProfile))).Methods("GET")
