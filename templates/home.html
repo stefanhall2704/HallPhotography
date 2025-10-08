@@ -479,13 +479,8 @@
   display: flex;
   gap: 10px;
   z-index: 25;
-  opacity: 0.7;
-  transition: opacity var(--transition-normal);
-}
-
-.portfolio-container:hover .portfolio-admin-overlay,
-.portfolio-admin-overlay:hover {
   opacity: 1;
+  transition: opacity var(--transition-normal);
 }
 
 .portfolio-admin-btn {
@@ -777,6 +772,18 @@
         
         <!-- Portfolio Container with Scroll Controls -->
         <div class="portfolio-container">
+          <!-- Admin Controls (only visible to admins) -->
+          {{if .IsAdmin}}
+          <div class="portfolio-admin-overlay" id="portfolio-admin-overlay">
+            <button class="portfolio-admin-btn portfolio-admin-add" onclick="showAddPortfolioModal()" title="Add Portfolio Item">
+              <i class="fas fa-plus"></i>
+            </button>
+            <button class="portfolio-admin-btn portfolio-admin-manage" onclick="showPortfolioManagement()" title="Manage Portfolio">
+              <i class="fas fa-cog"></i>
+            </button>
+          </div>
+          {{end}}
+          
           <button class="portfolio-nav portfolio-nav-left" id="portfolio-left" aria-label="Scroll left">
             <i class="fas fa-chevron-left"></i>
           </button>
@@ -797,18 +804,6 @@
             <i class="fas fa-chevron-right"></i>
           </button>
         </div>
-        
-        <!-- Admin Controls (only visible to admins) -->
-        {{if .IsAdmin}}
-        <div class="portfolio-admin-overlay" id="portfolio-admin-overlay">
-          <button class="portfolio-admin-btn portfolio-admin-add" onclick="showAddPortfolioModal()" title="Add Portfolio Item">
-            <i class="fas fa-plus"></i>
-          </button>
-          <button class="portfolio-admin-btn portfolio-admin-manage" onclick="showPortfolioManagement()" title="Manage Portfolio">
-            <i class="fas fa-cog"></i>
-          </button>
-        </div>
-        {{end}}
       </div>
     </section>
 
