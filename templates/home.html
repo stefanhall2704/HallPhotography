@@ -471,16 +471,59 @@
   color: var(--charcoal);
 }
 
-/* Admin Controls */
-.portfolio-admin-controls {
-  padding: 20px;
-  background: rgba(210, 105, 30, 0.05);
-  border-radius: 15px;
-  border: 2px dashed rgba(210, 105, 30, 0.2);
+/* Admin Controls Overlay */
+.portfolio-admin-overlay {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  gap: 10px;
+  z-index: 25;
+  opacity: 0;
+  transition: opacity var(--transition-normal);
 }
 
-.portfolio-admin-controls .btn {
-  margin: 0 10px;
+.portfolio-container:hover .portfolio-admin-overlay {
+  opacity: 1;
+}
+
+.portfolio-admin-btn {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(210, 105, 30, 0.9);
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(10px);
+}
+
+.portfolio-admin-btn:hover {
+  background: var(--deep-rust);
+  transform: scale(1.1);
+  box-shadow: var(--shadow-medium);
+}
+
+.portfolio-admin-add {
+  background: rgba(40, 167, 69, 0.9);
+}
+
+.portfolio-admin-add:hover {
+  background: #28a745;
+}
+
+.portfolio-admin-manage {
+  background: rgba(102, 126, 234, 0.9);
+}
+
+.portfolio-admin-manage:hover {
+  background: #667eea;
 }
 
 /* Responsive Design */
@@ -554,6 +597,19 @@
   .portfolio-scroll-wrapper::before,
   .portfolio-scroll-wrapper::after {
     width: 30px;
+  }
+  
+  /* Admin overlay mobile adjustments */
+  .portfolio-admin-overlay {
+    top: 10px;
+    right: 10px;
+    gap: 8px;
+  }
+  
+  .portfolio-admin-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 0.9rem;
   }
 }
 
@@ -743,14 +799,12 @@
         
         <!-- Admin Controls (only visible to admins) -->
         {{if .IsAdmin}}
-        <div class="portfolio-admin-controls" id="portfolio-admin-controls" style="margin-top: 30px; text-align: center;">
-          <button class="btn btn-primary" onclick="showAddPortfolioModal()">
+        <div class="portfolio-admin-overlay" id="portfolio-admin-overlay">
+          <button class="portfolio-admin-btn portfolio-admin-add" onclick="showAddPortfolioModal()" title="Add Portfolio Item">
             <i class="fas fa-plus"></i>
-            Add Portfolio Item
           </button>
-          <button class="btn btn-outline" onclick="showPortfolioManagement()">
+          <button class="portfolio-admin-btn portfolio-admin-manage" onclick="showPortfolioManagement()" title="Manage Portfolio">
             <i class="fas fa-cog"></i>
-            Manage Portfolio
           </button>
         </div>
         {{end}}

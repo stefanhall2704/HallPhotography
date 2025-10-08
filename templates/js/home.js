@@ -437,6 +437,165 @@ window.showPortfolioManagement = function() {
   const modal = createPortfolioManagementModal();
 };
 
+function createPortfolioManagementModal() {
+  const modal = document.createElement('div');
+  modal.className = 'portfolio-modal';
+  modal.innerHTML = `
+    <div class="portfolio-modal-overlay"></div>
+    <div class="portfolio-modal-content" style="max-width: 800px; width: 95%;">
+      <h3>Portfolio Management</h3>
+      <div id="portfolio-management-content">
+        <div class="portfolio-loading">
+          <div class="loading-spinner"></div>
+          <p>Loading portfolio items...</p>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  setTimeout(() => modal.classList.add('show'), 10);
+  
+  // Load portfolio items
+  loadPortfolioItems(modal);
+  
+  // Close on overlay click
+  modal.querySelector('.portfolio-modal-overlay').addEventListener('click', () => {
+    modal.classList.remove('show');
+    setTimeout(() => modal.remove(), 300);
+  });
+  
+  return modal;
+}
+
+async function loadPortfolioItems(modal) {
+  try {
+    const response = await fetch('/admin/portfolio');
+    if (!response.ok) throw new Error('Failed to fetch portfolio items');
+    
+    const items = await response.json();
+    renderPortfolioItems(modal, items);
+  } catch (error) {
+    console.error('Error loading portfolio items:', error);
+    modal.querySelector('#portfolio-management-content').innerHTML = `
+      <div class="portfolio-empty">
+        <i class="fas fa-exclamation-triangle"></i>
+        <h3>Error Loading Portfolio</h3>
+        <p>Error: ${error.message}</p>
+      </div>
+    `;
+  }
+}
+
+function renderPortfolioItems(modal, items) {
+  const content = modal.querySelector('#portfolio-management-content');
+  
+  if (items.length === 0) {
+    content.innerHTML = `
+      <div class="portfolio-empty">
+        <i class="fas fa-images"></i>
+        <h3>No Portfolio Items</h3>
+        <p>Add your first portfolio item to showcase your work!</p>
+        <button class="btn btn-primary" onclick="showAddPortfolioModal()" style="margin-top: 15px;">
+          <i class="fas fa-plus"></i> Add Portfolio Item
+        </button>
+      </div>
+    `;
+    return;
+  }
+
+  content.innerHTML = `
+    <div style="margin-bottom: 20px;">
+      <button class="btn btn-primary" onclick="showAddPortfolioModal()">
+        <i class="fas fa-plus"></i> Add New Item
+      </button>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; max-height: 60vh; overflow-y: auto;">
+      ${items.map(item => `
+        <div class="portfolio-item-card" style="border: 1px solid #e9ecef; border-radius: 12px; overflow: hidden; background: white;">
+          <div style="position: relative;">
+            <img src="${item.ImageURL}" alt="${item.Title}" style="width: 100%; height: 200px; object-fit: cover;">
+            <div style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px;">
+              ${item.Category}
+            </div>
+            <div style="position: absolute; top: 10px; left: 10px;">
+              <label style="display: flex; align-items: center; background: rgba(255,255,255,0.9); padding: 4px 8px; border-radius: 12px; font-size: 12px;">
+                <input type="checkbox" ${item.IsActive ? 'checked' : ''} onchange="togglePortfolioItem(${item.ID}, this.checked)" style="margin-right: 5px;">
+                Active
+              </label>
+            </div>
+          </div>
+          <div style="padding: 15px;">
+            <h4 style="margin: 0 0 8px 0; color: #333;">${item.Title}</h4>
+            ${item.Description ? `<p style="margin: 0 0 10px 0; color: #666; font-size: 14px;">${item.Description}</p>` : ''}
+            <div style="display: flex; gap: 8px; margin-top: 15px;">
+              <button class="btn btn-outline" onclick="editPortfolioItem(${item.ID})" style="font-size: 12px; padding: 6px 12px;">
+                <i class="fas fa-edit"></i> Edit
+              </button>
+              <button class="btn btn-outline" onclick="deletePortfolioItem(${item.ID})" style="font-size: 12px; padding: 6px 12px; color: #dc3545; border-color: #dc3545;">
+                <i class="fas fa-trash"></i> Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+window.togglePortfolioItem = async function(itemId, isActive) {
+  try {
+    const formData = new FormData();
+    formData.append('is_active', isActive.toString());
+
+    const response = await fetch(`/admin/portfolio/${itemId}`, {
+      method: 'PUT',
+      body: formData
+    });
+
+    if (!response.ok) throw new Error('Failed to update portfolio item');
+
+    showToast(`Portfolio item ${isActive ? 'activated' : 'deactivated'} successfully!`, 'success');
+  } catch (error) {
+    console.error('Error updating portfolio item:', error);
+    showToast('Failed to update portfolio item: ' + error.message, 'error');
+  }
+};
+
+window.editPortfolioItem = function(itemId) {
+  showToast('Edit functionality coming soon!', 'info');
+};
+
+window.deletePortfolioItem = async function(itemId) {
+  if (!confirm('Are you sure you want to delete this portfolio item? This action cannot be undone.')) {
+    return;
+  }
+
+  try {
+    const response = await fetch(`/admin/portfolio/${itemId}`, {
+      method: 'DELETE'
+    });
+
+    if (!response.ok) throw new Error('Failed to delete portfolio item');
+
+    showToast('Portfolio item deleted successfully!', 'success');
+    
+    // Reload the modal content
+    const modal = document.querySelector('.portfolio-modal');
+    if (modal) {
+      loadPortfolioItems(modal);
+    }
+    
+    // Also reload the homepage portfolio
+    if (window.homePage) {
+      window.homePage.loadPortfolio();
+    }
+  } catch (error) {
+    console.error('Error deleting portfolio item:', error);
+    showToast('Failed to delete portfolio item: ' + error.message, 'error');
+  }
+};
+
 function createPortfolioModal(options) {
   const modal = document.createElement('div');
   modal.className = 'portfolio-modal';
@@ -585,11 +744,6 @@ function createPortfolioModal(options) {
   return modal;
 }
 
-function createPortfolioManagementModal() {
-  // This would be a more complex modal for managing existing portfolio items
-  // For now, we'll show a simple message
-  showToast('Portfolio management feature coming soon!', 'info');
-}
 
 function showToast(message, type = 'info') {
   // Simple toast notification
