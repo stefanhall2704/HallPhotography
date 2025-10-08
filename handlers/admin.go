@@ -794,3 +794,208 @@ func MarkPaymentReceived(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// Portfolio Management Handlers
+
+// GetPortfolioItems retrieves all portfolio items (public endpoint)
+func GetPortfolioItems(w http.ResponseWriter, r *http.Request) {
+	database := db.ConnectDatabase()
+	
+	var items []model.PortfolioItem
+	if err := database.Where("is_active = ?", true).Order("sort_order ASC, created_at DESC").Find(&items).Error; err != nil {
+		http.Error(w, "Error fetching portfolio items", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(items)
+}
+
+// GetAllPortfolioItems retrieves all portfolio items (admin only)
+func GetAllPortfolioItems(w http.ResponseWriter, r *http.Request) {
+	session, err := store.Get(r, "session-name")
+	if err != nil {
+		http.Error(w, "Error retrieving session", http.StatusInternalServerError)
+		return
+	}
+
+	isAdmin, _ := session.Values["isAdmin"].(bool)
+	if !isAdmin {
+		http.Error(w, "Unauthorized: Admin access required", http.StatusForbidden)
+		return
+	}
+
+	database := db.ConnectDatabase()
+	
+	var items []model.PortfolioItem
+	if err := database.Order("sort_order ASC, created_at DESC").Find(&items).Error; err != nil {
+		http.Error(w, "Error fetching portfolio items", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(items)
+}
+
+// AddPortfolioItem adds a new portfolio item (admin only)
+func AddPortfolioItem(w http.ResponseWriter, r *http.Request) {
+	session, err := store.Get(r, "session-name")
+	if err != nil {
+		http.Error(w, "Error retrieving session", http.StatusInternalServerError)
+		return
+	}
+
+	isAdmin, _ := session.Values["isAdmin"].(bool)
+	if !isAdmin {
+		http.Error(w, "Unauthorized: Admin access required", http.StatusForbidden)
+		return
+	}
+
+	if err := r.ParseMultipartForm(10 << 20); err != nil {
+		http.Error(w, "Error parsing form data", http.StatusBadRequest)
+		return
+	}
+
+	title := r.Form.Get("title")
+	description := r.Form.Get("description")
+	category := r.Form.Get("category")
+	imageURL := r.Form.Get("image_url")
+	sortOrderStr := r.Form.Get("sort_order")
+
+	if title == "" || category == "" || imageURL == "" {
+		http.Error(w, "Title, category, and image URL are required", http.StatusBadRequest)
+		return
+	}
+
+	sortOrder := 0
+	if sortOrderStr != "" {
+		if parsed, err := strconv.Atoi(sortOrderStr); err == nil {
+			sortOrder = parsed
+		}
+	}
+
+	database := db.ConnectDatabase()
+	
+	item := model.PortfolioItem{
+		Title:       title,
+		Description: description,
+		ImageURL:    imageURL,
+		Category:    category,
+		IsActive:    true,
+		SortOrder:   sortOrder,
+	}
+
+	if err := database.Create(&item).Error; err != nil {
+		http.Error(w, "Error creating portfolio item", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status": "success",
+		"message": "Portfolio item created successfully",
+		"item": item,
+	})
+}
+
+// UpdatePortfolioItem updates a portfolio item (admin only)
+func UpdatePortfolioItem(w http.ResponseWriter, r *http.Request) {
+	session, err := store.Get(r, "session-name")
+	if err != nil {
+		http.Error(w, "Error retrieving session", http.StatusInternalServerError)
+		return
+	}
+
+	isAdmin, _ := session.Values["isAdmin"].(bool)
+	if !isAdmin {
+		http.Error(w, "Unauthorized: Admin access required", http.StatusForbidden)
+		return
+	}
+
+	vars := mux.Vars(r)
+	itemID := vars["id"]
+
+	if err := r.ParseMultipartForm(10 << 20); err != nil {
+		http.Error(w, "Error parsing form data", http.StatusBadRequest)
+		return
+	}
+
+	database := db.ConnectDatabase()
+	
+	var item model.PortfolioItem
+	if err := database.First(&item, itemID).Error; err != nil {
+		http.Error(w, "Portfolio item not found", http.StatusNotFound)
+		return
+	}
+
+	// Update fields if provided
+	if title := r.Form.Get("title"); title != "" {
+		item.Title = title
+	}
+	if description := r.Form.Get("description"); description != "" {
+		item.Description = description
+	}
+	if category := r.Form.Get("category"); category != "" {
+		item.Category = category
+	}
+	if imageURL := r.Form.Get("image_url"); imageURL != "" {
+		item.ImageURL = imageURL
+	}
+	if sortOrderStr := r.Form.Get("sort_order"); sortOrderStr != "" {
+		if sortOrder, err := strconv.Atoi(sortOrderStr); err == nil {
+			item.SortOrder = sortOrder
+		}
+	}
+	if isActiveStr := r.Form.Get("is_active"); isActiveStr != "" {
+		item.IsActive = isActiveStr == "true"
+	}
+
+	if err := database.Save(&item).Error; err != nil {
+		http.Error(w, "Error updating portfolio item", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status": "success",
+		"message": "Portfolio item updated successfully",
+		"item": item,
+	})
+}
+
+// DeletePortfolioItem deletes a portfolio item (admin only)
+func DeletePortfolioItem(w http.ResponseWriter, r *http.Request) {
+	session, err := store.Get(r, "session-name")
+	if err != nil {
+		http.Error(w, "Error retrieving session", http.StatusInternalServerError)
+		return
+	}
+
+	isAdmin, _ := session.Values["isAdmin"].(bool)
+	if !isAdmin {
+		http.Error(w, "Unauthorized: Admin access required", http.StatusForbidden)
+		return
+	}
+
+	vars := mux.Vars(r)
+	itemID := vars["id"]
+
+	database := db.ConnectDatabase()
+	
+	var item model.PortfolioItem
+	if err := database.First(&item, itemID).Error; err != nil {
+		http.Error(w, "Portfolio item not found", http.StatusNotFound)
+		return
+	}
+
+	if err := database.Delete(&item).Error; err != nil {
+		http.Error(w, "Error deleting portfolio item", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{
+		"status": "success",
+		"message": "Portfolio item deleted successfully",
+	})
+}
+

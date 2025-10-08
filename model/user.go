@@ -136,3 +136,14 @@ type SessionPhoto struct {
 	IsDownloaded    bool   `gorm:"default:false"` // Track if downloaded by user
 	DownloadedAt    *time.Time // When it was downloaded
 }
+
+// PortfolioItem represents a portfolio item for the homepage gallery
+type PortfolioItem struct {
+	gorm.Model
+	Title       string `gorm:"not null"`
+	Description string `gorm:"type:text"`
+	ImageURL    string `gorm:"not null"` // URL or path to the image
+	Category    string `gorm:"not null"` // "portraits", "families", "events", etc.
+	IsActive    bool   `gorm:"default:true"` // Whether to show on homepage
+	SortOrder   int    `gorm:"default:0"` // For ordering items
+}

@@ -415,6 +415,9 @@
             <button class="filter-btn" data-filter="pending">Pending</button>
             <button class="filter-btn" data-filter="needs_photos">Needs Photos</button>
             <button class="filter-btn" data-filter="unpaid">Unpaid</button>
+            <button class="filter-btn" data-filter="portfolio" onclick="showPortfolioManagement()" style="background: #28a745; color: white;">
+                <i class="fas fa-images"></i> Portfolio
+            </button>
         </div>
 
         <div id="loading" class="loading">
@@ -800,6 +803,244 @@
             searchQuery = e.target.value;
             renderSessions();
         });
+
+        // Portfolio management function
+        window.showPortfolioManagement = function() {
+            const modal = createPortfolioManagementModal();
+        };
+
+        function createPortfolioManagementModal() {
+            const modal = document.createElement('div');
+            modal.className = 'confirmation-modal';
+            modal.innerHTML = `
+                <div class="confirmation-modal-overlay"></div>
+                <div class="confirmation-modal-content" style="max-width: 800px; width: 95%;">
+                    <h3 class="confirmation-modal-title">Portfolio Management</h3>
+                    <div id="portfolio-management-content">
+                        <div class="loading">
+                            <div class="loading-spinner"></div>
+                            <p>Loading portfolio items...</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            setTimeout(() => modal.classList.add('show'), 10);
+            
+            // Load portfolio items
+            loadPortfolioItems(modal);
+            
+            // Close on overlay click
+            modal.querySelector('.confirmation-modal-overlay').addEventListener('click', () => {
+                modal.classList.remove('show');
+                setTimeout(() => modal.remove(), 300);
+            });
+            
+            return modal;
+        }
+
+        async function loadPortfolioItems(modal) {
+            try {
+                const response = await fetch('/admin/portfolio');
+                if (!response.ok) throw new Error('Failed to fetch portfolio items');
+                
+                const items = await response.json();
+                renderPortfolioItems(modal, items);
+            } catch (error) {
+                console.error('Error loading portfolio items:', error);
+                modal.querySelector('#portfolio-management-content').innerHTML = `
+                    <div class="empty-state">
+                        <p style="color: red;">Error loading portfolio items: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function renderPortfolioItems(modal, items) {
+            const content = modal.querySelector('#portfolio-management-content');
+            
+            if (items.length === 0) {
+                content.innerHTML = `
+                    <div class="empty-state">
+                        <h3>No Portfolio Items</h3>
+                        <p>Add your first portfolio item to showcase your work!</p>
+                        <button class="action-btn" onclick="showAddPortfolioModal()" style="background: #28a745; margin-top: 15px;">
+                            <i class="fas fa-plus"></i> Add Portfolio Item
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            content.innerHTML = `
+                <div style="margin-bottom: 20px;">
+                    <button class="action-btn" onclick="showAddPortfolioModal()" style="background: #28a745;">
+                        <i class="fas fa-plus"></i> Add New Item
+                    </button>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; max-height: 60vh; overflow-y: auto;">
+                    ${items.map(item => `
+                        <div class="portfolio-item-card" style="border: 1px solid #e9ecef; border-radius: 12px; overflow: hidden; background: white;">
+                            <div style="position: relative;">
+                                <img src="${item.ImageURL}" alt="${item.Title}" style="width: 100%; height: 200px; object-fit: cover;">
+                                <div style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px;">
+                                    ${item.Category}
+                                </div>
+                                <div style="position: absolute; top: 10px; left: 10px;">
+                                    <label style="display: flex; align-items: center; background: rgba(255,255,255,0.9); padding: 4px 8px; border-radius: 12px; font-size: 12px;">
+                                        <input type="checkbox" ${item.IsActive ? 'checked' : ''} onchange="togglePortfolioItem(${item.ID}, this.checked)" style="margin-right: 5px;">
+                                        Active
+                                    </label>
+                                </div>
+                            </div>
+                            <div style="padding: 15px;">
+                                <h4 style="margin: 0 0 8px 0; color: #333;">${item.Title}</h4>
+                                ${item.Description ? `<p style="margin: 0 0 10px 0; color: #666; font-size: 14px;">${item.Description}</p>` : ''}
+                                <div style="display: flex; gap: 8px; margin-top: 15px;">
+                                    <button class="action-btn" onclick="editPortfolioItem(${item.ID})" style="background: #667eea; font-size: 12px; padding: 6px 12px;">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </button>
+                                    <button class="action-btn" onclick="deletePortfolioItem(${item.ID})" style="background: #dc3545; font-size: 12px; padding: 6px 12px;">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        async function togglePortfolioItem(itemId, isActive) {
+            try {
+                const formData = new FormData();
+                formData.append('is_active', isActive.toString());
+
+                const response = await fetch(`/admin/portfolio/${itemId}`, {
+                    method: 'PUT',
+                    body: formData
+                });
+
+                if (!response.ok) throw new Error('Failed to update portfolio item');
+
+                showToast(`Portfolio item ${isActive ? 'activated' : 'deactivated'} successfully!`, 'success');
+            } catch (error) {
+                console.error('Error updating portfolio item:', error);
+                showToast('Failed to update portfolio item: ' + error.message, 'error');
+            }
+        }
+
+        function editPortfolioItem(itemId) {
+            showToast('Edit functionality coming soon!', 'info');
+        }
+
+        async function deletePortfolioItem(itemId) {
+            if (!confirm('Are you sure you want to delete this portfolio item? This action cannot be undone.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/admin/portfolio/${itemId}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) throw new Error('Failed to delete portfolio item');
+
+                showToast('Portfolio item deleted successfully!', 'success');
+                
+                // Reload the modal content
+                const modal = document.querySelector('.confirmation-modal');
+                if (modal) {
+                    loadPortfolioItems(modal);
+                }
+            } catch (error) {
+                console.error('Error deleting portfolio item:', error);
+                showToast('Failed to delete portfolio item: ' + error.message, 'error');
+            }
+        }
+
+        function showAddPortfolioModal() {
+            const modal = document.createElement('div');
+            modal.className = 'confirmation-modal';
+            modal.innerHTML = `
+                <div class="confirmation-modal-overlay"></div>
+                <div class="confirmation-modal-content">
+                    <h3 class="confirmation-modal-title">Add Portfolio Item</h3>
+                    <form id="add-portfolio-form">
+                        <div class="price-input-group">
+                            <label class="price-input-label">Title *</label>
+                            <input type="text" class="price-input-field" name="title" required>
+                        </div>
+                        <div class="price-input-group">
+                            <label class="price-input-label">Description</label>
+                            <textarea class="price-input-field" name="description" rows="3"></textarea>
+                        </div>
+                        <div class="price-input-group">
+                            <label class="price-input-label">Category *</label>
+                            <select class="price-input-field" name="category" required>
+                                <option value="">Select Category</option>
+                                <option value="portraits">Portraits</option>
+                                <option value="families">Families</option>
+                                <option value="events">Events</option>
+                                <option value="weddings">Weddings</option>
+                                <option value="maternity">Maternity</option>
+                                <option value="newborn">Newborn</option>
+                                <option value="seniors">Seniors</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="price-input-group">
+                            <label class="price-input-label">Image URL *</label>
+                            <input type="url" class="price-input-field" name="image_url" required placeholder="https://example.com/image.jpg">
+                        </div>
+                        <div class="price-input-group">
+                            <label class="price-input-label">Sort Order</label>
+                            <input type="number" class="price-input-field" name="sort_order" value="0" min="0">
+                        </div>
+                        <div class="confirmation-modal-actions">
+                            <button type="button" class="btn btn-outline" onclick="this.closest('.confirmation-modal').remove()">Cancel</button>
+                            <button type="submit" class="btn btn-primary" style="background: #28a745;">Add Item</button>
+                        </div>
+                    </form>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            setTimeout(() => modal.classList.add('show'), 10);
+            
+            // Handle form submission
+            modal.querySelector('#add-portfolio-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                
+                try {
+                    const response = await fetch('/admin/portfolio', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!response.ok) throw new Error('Failed to add portfolio item');
+
+                    showToast('Portfolio item added successfully!', 'success');
+                    modal.remove();
+                    
+                    // Reload portfolio management if it's open
+                    const portfolioModal = document.querySelector('.confirmation-modal');
+                    if (portfolioModal && portfolioModal.querySelector('#portfolio-management-content')) {
+                        loadPortfolioItems(portfolioModal);
+                    }
+                } catch (error) {
+                    console.error('Error adding portfolio item:', error);
+                    showToast('Failed to add portfolio item: ' + error.message, 'error');
+                }
+            });
+            
+            // Close on overlay click
+            modal.querySelector('.confirmation-modal-overlay').addEventListener('click', () => {
+                modal.remove();
+            });
+        }
 
         // Load sessions on page load
         loadAllSessions();

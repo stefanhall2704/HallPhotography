@@ -106,6 +106,7 @@ func MigrateDatabase() error {
 		&model.BookSession{},
 		&model.BookingMessage{},
 		&model.SessionPhoto{},
+		&model.PortfolioItem{},
 	)
 }
 

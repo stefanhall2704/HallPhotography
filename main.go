@@ -133,6 +133,13 @@ func main() {
 	request.Handle("/api/profile/picture/upload", auth.AuthMiddleware(http.HandlerFunc(handlers.UploadProfilePicture))).Methods("POST")
 	request.Handle("/api/profile/picture/delete", auth.AuthMiddleware(http.HandlerFunc(handlers.DeleteProfilePicture))).Methods("DELETE")
 	
+	// Portfolio routes
+	request.HandleFunc("/api/portfolio", handlers.GetPortfolioItems).Methods("GET") // Public endpoint
+	request.Handle("/admin/portfolio", auth.AdminAuthMiddleware(http.HandlerFunc(handlers.GetAllPortfolioItems))).Methods("GET")
+	request.Handle("/admin/portfolio", auth.AdminAuthMiddleware(http.HandlerFunc(handlers.AddPortfolioItem))).Methods("POST")
+	request.Handle("/admin/portfolio/{id}", auth.AdminAuthMiddleware(http.HandlerFunc(handlers.UpdatePortfolioItem))).Methods("PUT")
+	request.Handle("/admin/portfolio/{id}", auth.AdminAuthMiddleware(http.HandlerFunc(handlers.DeletePortfolioItem))).Methods("DELETE")
+	
 	// Serve static files (CSS, JS, images)
 	request.PathPrefix("/css/").Handler(http.StripPrefix("/css/", http.FileServer(http.Dir("templates/css/"))))
 	request.PathPrefix("/js/").Handler(http.StripPrefix("/js/", http.FileServer(http.Dir("templates/js/"))))

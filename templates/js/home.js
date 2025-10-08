@@ -5,12 +5,17 @@
 
 class HomePage {
   constructor() {
+    this.portfolioItems = [];
+    this.currentScrollIndex = 0;
+    this.itemsPerView = 3;
     this.init();
   }
 
   init() {
     this.loadMinisSessions();
     this.setupGalleryInteractions();
+    this.loadPortfolio();
+    this.setupPortfolioNavigation();
   }
 
   /**
@@ -170,11 +175,457 @@ class HomePage {
       });
     });
   }
+
+  /**
+   * Load portfolio items from API
+   */
+  async loadPortfolio() {
+    try {
+      const response = await fetch('/api/portfolio');
+      if (!response.ok) {
+        throw new Error('Failed to load portfolio');
+      }
+      this.portfolioItems = await response.json();
+      this.renderPortfolio();
+    } catch (error) {
+      console.error('Error loading portfolio:', error);
+      this.showPortfolioError();
+    }
+  }
+
+  /**
+   * Render portfolio items
+   */
+  renderPortfolio() {
+    const loadingEl = document.getElementById('portfolio-loading');
+    const itemsEl = document.getElementById('portfolio-items');
+    
+    if (!loadingEl || !itemsEl) return;
+
+    // Hide loading
+    loadingEl.style.display = 'none';
+
+    if (this.portfolioItems.length === 0) {
+      this.showPortfolioEmpty();
+      return;
+    }
+
+    // Render items
+    itemsEl.innerHTML = this.portfolioItems.map(item => `
+      <div class="portfolio-item" data-id="${item.ID}">
+        <img src="${item.ImageURL}" alt="${item.Title}" loading="lazy">
+        <div class="portfolio-item-category">${item.Category}</div>
+        <div class="portfolio-item-overlay">
+          <h3 class="portfolio-item-title">${item.Title}</h3>
+          ${item.Description ? `<p class="portfolio-item-description">${item.Description}</p>` : ''}
+        </div>
+      </div>
+    `).join('');
+
+    // Update navigation state
+    this.updatePortfolioNavigation();
+  }
+
+  /**
+   * Show portfolio empty state
+   */
+  showPortfolioEmpty() {
+    const itemsEl = document.getElementById('portfolio-items');
+    if (!itemsEl) return;
+
+    itemsEl.innerHTML = `
+      <div class="portfolio-empty">
+        <i class="fas fa-images"></i>
+        <h3>No Portfolio Items Yet</h3>
+        <p>Check back soon for amazing photography work!</p>
+      </div>
+    `;
+  }
+
+  /**
+   * Show portfolio error state
+   */
+  showPortfolioError() {
+    const loadingEl = document.getElementById('portfolio-loading');
+    const itemsEl = document.getElementById('portfolio-items');
+    
+    if (loadingEl) loadingEl.style.display = 'none';
+    if (itemsEl) {
+      itemsEl.innerHTML = `
+        <div class="portfolio-empty">
+          <i class="fas fa-exclamation-triangle"></i>
+          <h3>Unable to Load Portfolio</h3>
+          <p>Please refresh the page or try again later.</p>
+        </div>
+      `;
+    }
+  }
+
+  /**
+   * Setup portfolio navigation
+   */
+  setupPortfolioNavigation() {
+    const leftBtn = document.getElementById('portfolio-left');
+    const rightBtn = document.getElementById('portfolio-right');
+    const scrollEl = document.getElementById('portfolio-scroll');
+    const wrapperEl = document.querySelector('.portfolio-scroll-wrapper');
+
+    if (!leftBtn || !rightBtn || !scrollEl || !wrapperEl) return;
+
+    // Calculate items per view based on screen size
+    this.updateItemsPerView();
+
+    // Navigation button handlers
+    leftBtn.addEventListener('click', () => this.scrollPortfolio('left'));
+    rightBtn.addEventListener('click', () => this.scrollPortfolio('right'));
+
+    // Touch/swipe support
+    let startX = 0;
+    let isDragging = false;
+
+    scrollEl.addEventListener('touchstart', (e) => {
+      startX = e.touches[0].clientX;
+      isDragging = true;
+    });
+
+    scrollEl.addEventListener('touchmove', (e) => {
+      if (!isDragging) return;
+      e.preventDefault();
+    });
+
+    scrollEl.addEventListener('touchend', (e) => {
+      if (!isDragging) return;
+      isDragging = false;
+      
+      const endX = e.changedTouches[0].clientX;
+      const diff = startX - endX;
+      
+      if (Math.abs(diff) > 50) {
+        if (diff > 0) {
+          this.scrollPortfolio('right');
+        } else {
+          this.scrollPortfolio('left');
+        }
+      }
+    });
+
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+      if (e.target.closest('.portfolio-container')) {
+        if (e.key === 'ArrowLeft') {
+          e.preventDefault();
+          this.scrollPortfolio('left');
+        } else if (e.key === 'ArrowRight') {
+          e.preventDefault();
+          this.scrollPortfolio('right');
+        }
+      }
+    });
+
+    // Update on resize
+    window.addEventListener('resize', () => {
+      this.updateItemsPerView();
+      this.updatePortfolioNavigation();
+    });
+  }
+
+  /**
+   * Update items per view based on screen size
+   */
+  updateItemsPerView() {
+    const width = window.innerWidth;
+    if (width < 768) {
+      this.itemsPerView = 1;
+    } else if (width < 1200) {
+      this.itemsPerView = 2;
+    } else {
+      this.itemsPerView = 3;
+    }
+  }
+
+  /**
+   * Scroll portfolio in specified direction
+   */
+  scrollPortfolio(direction) {
+    if (this.portfolioItems.length === 0) return;
+
+    const maxIndex = Math.max(0, this.portfolioItems.length - this.itemsPerView);
+    
+    if (direction === 'left') {
+      this.currentScrollIndex = Math.max(0, this.currentScrollIndex - 1);
+    } else {
+      this.currentScrollIndex = Math.min(maxIndex, this.currentScrollIndex + 1);
+    }
+
+    this.updatePortfolioScroll();
+    this.updatePortfolioNavigation();
+  }
+
+  /**
+   * Update portfolio scroll position
+   */
+  updatePortfolioScroll() {
+    const scrollEl = document.getElementById('portfolio-scroll');
+    const wrapperEl = document.querySelector('.portfolio-scroll-wrapper');
+    
+    if (!scrollEl || !wrapperEl) return;
+
+    const itemWidth = 320 + 20; // item width + gap
+    const translateX = -this.currentScrollIndex * itemWidth;
+    
+    scrollEl.style.transform = `translateX(${translateX}px)`;
+
+    // Update fade effects
+    wrapperEl.classList.toggle('fade-left', this.currentScrollIndex > 0);
+    wrapperEl.classList.toggle('fade-right', this.currentScrollIndex < Math.max(0, this.portfolioItems.length - this.itemsPerView));
+  }
+
+  /**
+   * Update portfolio navigation buttons
+   */
+  updatePortfolioNavigation() {
+    const leftBtn = document.getElementById('portfolio-left');
+    const rightBtn = document.getElementById('portfolio-right');
+    
+    if (!leftBtn || !rightBtn) return;
+
+    const maxIndex = Math.max(0, this.portfolioItems.length - this.itemsPerView);
+    
+    leftBtn.disabled = this.currentScrollIndex <= 0;
+    rightBtn.disabled = this.currentScrollIndex >= maxIndex;
+  }
+}
+
+// Global admin functions for portfolio management
+window.showAddPortfolioModal = function() {
+  const modal = createPortfolioModal({
+    title: 'Add Portfolio Item',
+    onSubmit: async (data) => {
+      try {
+        const formData = new FormData();
+        formData.append('title', data.title);
+        formData.append('description', data.description);
+        formData.append('category', data.category);
+        formData.append('image_url', data.imageURL);
+        formData.append('sort_order', data.sortOrder);
+
+        const response = await fetch('/admin/portfolio', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to add portfolio item');
+        }
+
+        showToast('Portfolio item added successfully!', 'success');
+        modal.remove();
+        
+        // Reload portfolio
+        if (window.homePage) {
+          window.homePage.loadPortfolio();
+        }
+      } catch (error) {
+        console.error('Error adding portfolio item:', error);
+        showToast('Failed to add portfolio item: ' + error.message, 'error');
+      }
+    }
+  });
+};
+
+window.showPortfolioManagement = function() {
+  const modal = createPortfolioManagementModal();
+};
+
+function createPortfolioModal(options) {
+  const modal = document.createElement('div');
+  modal.className = 'portfolio-modal';
+  modal.innerHTML = `
+    <div class="portfolio-modal-overlay"></div>
+    <div class="portfolio-modal-content">
+      <h3>${options.title}</h3>
+      <form id="portfolio-form">
+        <div class="form-group">
+          <label for="portfolio-title">Title *</label>
+          <input type="text" id="portfolio-title" name="title" required>
+        </div>
+        <div class="form-group">
+          <label for="portfolio-description">Description</label>
+          <textarea id="portfolio-description" name="description" rows="3"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="portfolio-category">Category *</label>
+          <select id="portfolio-category" name="category" required>
+            <option value="">Select Category</option>
+            <option value="portraits">Portraits</option>
+            <option value="families">Families</option>
+            <option value="events">Events</option>
+            <option value="weddings">Weddings</option>
+            <option value="maternity">Maternity</option>
+            <option value="newborn">Newborn</option>
+            <option value="seniors">Seniors</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="portfolio-image-url">Image URL *</label>
+          <input type="url" id="portfolio-image-url" name="image_url" required placeholder="https://example.com/image.jpg">
+        </div>
+        <div class="form-group">
+          <label for="portfolio-sort-order">Sort Order</label>
+          <input type="number" id="portfolio-sort-order" name="sort_order" value="0" min="0">
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn btn-outline" onclick="this.closest('.portfolio-modal').remove()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Add Item</button>
+        </div>
+      </form>
+    </div>
+  `;
+
+  // Add modal styles
+  const style = document.createElement('style');
+  style.textContent = `
+    .portfolio-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .portfolio-modal.show {
+      opacity: 1;
+    }
+    .portfolio-modal-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+    }
+    .portfolio-modal-content {
+      position: relative;
+      background: white;
+      border-radius: 16px;
+      padding: 32px;
+      max-width: 500px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      transform: scale(0.9);
+      transition: transform 0.3s ease;
+    }
+    .portfolio-modal.show .portfolio-modal-content {
+      transform: scale(1);
+    }
+    .portfolio-modal-content h3 {
+      margin: 0 0 24px 0;
+      color: var(--charcoal);
+      font-size: 24px;
+    }
+    .portfolio-modal .form-group {
+      margin-bottom: 20px;
+    }
+    .portfolio-modal .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: var(--charcoal);
+    }
+    .portfolio-modal .form-group input,
+    .portfolio-modal .form-group textarea,
+    .portfolio-modal .form-group select {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e9ecef;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: border-color 0.3s;
+    }
+    .portfolio-modal .form-group input:focus,
+    .portfolio-modal .form-group textarea:focus,
+    .portfolio-modal .form-group select:focus {
+      outline: none;
+      border-color: var(--burnt-orange);
+    }
+    .portfolio-modal .form-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      margin-top: 24px;
+    }
+  `;
+  document.head.appendChild(style);
+
+  document.body.appendChild(modal);
+  setTimeout(() => modal.classList.add('show'), 10);
+
+  // Handle form submission
+  modal.querySelector('#portfolio-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData.entries());
+    options.onSubmit(data);
+  });
+
+  // Close on overlay click
+  modal.querySelector('.portfolio-modal-overlay').addEventListener('click', () => {
+    modal.remove();
+  });
+
+  return modal;
+}
+
+function createPortfolioManagementModal() {
+  // This would be a more complex modal for managing existing portfolio items
+  // For now, we'll show a simple message
+  showToast('Portfolio management feature coming soon!', 'info');
+}
+
+function showToast(message, type = 'info') {
+  // Simple toast notification
+  const toast = document.createElement('div');
+  toast.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: ${type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#17a2b8'};
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 10001;
+    font-size: 14px;
+    font-weight: 500;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+  `;
+  toast.textContent = message;
+  
+  document.body.appendChild(toast);
+  
+  setTimeout(() => {
+    toast.style.transform = 'translateX(0)';
+  }, 10);
+  
+  setTimeout(() => {
+    toast.style.transform = 'translateX(100%)';
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
 }
 
 // Initialize homepage when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
   if (document.body.classList.contains('home-page')) {
-    new HomePage();
+    window.homePage = new HomePage();
   }
 });
