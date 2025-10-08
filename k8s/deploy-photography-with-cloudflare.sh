@@ -47,6 +47,10 @@ fi
 kubectl apply -k k8s/photography/
 
 echo ""
+echo "Forcing deployment rollout to ensure new image is pulled..."
+kubectl rollout restart deployment/photography -n hallphotography
+
+echo ""
 echo "Waiting for Photography app to be ready..."
 kubectl wait --for=condition=available --timeout=300s deployment/photography -n hallphotography
 
