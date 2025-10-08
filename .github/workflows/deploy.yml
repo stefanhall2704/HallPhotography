@@ -92,17 +92,10 @@ jobs:
           fi
           
           if ! kubectl get secret calendar-secrets -n hallphotography >/dev/null 2>&1; then
-            echo "Creating calendar secrets..."
-            if [ -n "${{ secrets.CALENDAR_TOKEN_JSON }}" ] && [ -n "${{ secrets.TOKEN_JSON }}" ]; then
-              kubectl create secret generic calendar-secrets -n hallphotography \
-                --from-literal=calendar-token.json="${{ secrets.CALENDAR_TOKEN_JSON }}" \
-                --from-literal=token.json="${{ secrets.TOKEN_JSON }}"
-            else
-              echo "Calendar secrets not provided, creating with empty values..."
-              kubectl create secret generic calendar-secrets -n hallphotography \
-                --from-literal=calendar-token.json='{}' \
-                --from-literal=token.json='{}'
-            fi
+            echo "Creating calendar secrets with empty values..."
+            kubectl create secret generic calendar-secrets -n hallphotography \
+              --from-literal=calendar-token.json='{}' \
+              --from-literal=token.json='{}'
           fi
           
           # Deploy using the organized k8s structure with Cloudflare update
