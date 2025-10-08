@@ -402,14 +402,22 @@ window.showAddPortfolioModal = function() {
   console.log('showAddPortfolioModal called');
   const modal = createPortfolioModal({
     title: 'Add Portfolio Item',
-    onSubmit: async (data) => {
+    onSubmit: async (data, modal) => {
       try {
         const formData = new FormData();
         formData.append('title', data.title);
         formData.append('description', data.description);
         formData.append('category', data.category);
-        formData.append('image_url', data.imageURL);
         formData.append('sort_order', data.sortOrder);
+        
+        // Handle file upload
+        const fileInput = modal.querySelector('#portfolio-image-file');
+        if (fileInput.files.length > 0) {
+          formData.append('image', fileInput.files[0]);
+        } else {
+          showToast('Please select an image file', 'error');
+          return;
+        }
 
         const response = await fetch('/admin/portfolio', {
           method: 'POST',
@@ -630,8 +638,11 @@ function createPortfolioModal(options) {
           </select>
         </div>
         <div class="form-group">
-          <label for="portfolio-image-url">Image URL *</label>
-          <input type="url" id="portfolio-image-url" name="image_url" required placeholder="https://example.com/image.jpg">
+          <label for="portfolio-image-file">Image File *</label>
+          <input type="file" id="portfolio-image-file" name="image" accept="image/*" required>
+          <small style="color: #666; font-size: 12px; margin-top: 5px; display: block;">
+            Supported formats: JPEG, PNG, WebP (Max 10MB)
+          </small>
         </div>
         <div class="form-group">
           <label for="portfolio-sort-order">Sort Order</label>
@@ -735,8 +746,13 @@ function createPortfolioModal(options) {
   modal.querySelector('#portfolio-form').addEventListener('submit', (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
-    const data = Object.fromEntries(formData.entries());
-    options.onSubmit(data);
+    const data = {
+      title: formData.get('title'),
+      description: formData.get('description'),
+      category: formData.get('category'),
+      sortOrder: formData.get('sort_order')
+    };
+    options.onSubmit(data, modal);
   });
 
   // Close on overlay click

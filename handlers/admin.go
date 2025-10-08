@@ -4,8 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"io"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 
@@ -858,11 +861,55 @@ func AddPortfolioItem(w http.ResponseWriter, r *http.Request) {
 	title := r.Form.Get("title")
 	description := r.Form.Get("description")
 	category := r.Form.Get("category")
-	imageURL := r.Form.Get("image_url")
 	sortOrderStr := r.Form.Get("sort_order")
 
-	if title == "" || category == "" || imageURL == "" {
-		http.Error(w, "Title, category, and image URL are required", http.StatusBadRequest)
+	if title == "" || category == "" {
+		http.Error(w, "Title and category are required", http.StatusBadRequest)
+		return
+	}
+
+	// Handle file upload
+	file, header, err := r.FormFile("image")
+	if err != nil {
+		http.Error(w, "Image file is required", http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	// Validate file type
+	allowedTypes := map[string]bool{
+		"image/jpeg": true,
+		"image/jpg":  true,
+		"image/png":  true,
+		"image/webp": true,
+	}
+	if !allowedTypes[header.Header.Get("Content-Type")] {
+		http.Error(w, "Invalid file type. Only JPEG, PNG, and WebP images are allowed", http.StatusBadRequest)
+		return
+	}
+
+	// Create uploads directory if it doesn't exist
+	uploadDir := "uploads/portfolio/"
+	if err := os.MkdirAll(uploadDir, 0755); err != nil {
+		http.Error(w, "Error creating upload directory", http.StatusInternalServerError)
+		return
+	}
+
+	// Generate unique filename
+	ext := filepath.Ext(header.Filename)
+	filename := fmt.Sprintf("portfolio_%d%s", time.Now().Unix(), ext)
+	filepath := uploadDir + filename
+
+	// Save file
+	dst, err := os.Create(filepath)
+	if err != nil {
+		http.Error(w, "Error saving file", http.StatusInternalServerError)
+		return
+	}
+	defer dst.Close()
+
+	if _, err := io.Copy(dst, file); err != nil {
+		http.Error(w, "Error copying file", http.StatusInternalServerError)
 		return
 	}
 
@@ -878,13 +925,15 @@ func AddPortfolioItem(w http.ResponseWriter, r *http.Request) {
 	item := model.PortfolioItem{
 		Title:       title,
 		Description: description,
-		ImageURL:    imageURL,
+		ImageURL:    "/uploads/portfolio/" + filename, // Store relative path
 		Category:    category,
 		IsActive:    true,
 		SortOrder:   sortOrder,
 	}
 
 	if err := database.Create(&item).Error; err != nil {
+		// Clean up uploaded file if database save fails
+		os.Remove(filepath)
 		http.Error(w, "Error creating portfolio item", http.StatusInternalServerError)
 		return
 	}

@@ -991,8 +991,9 @@
                             </select>
                         </div>
                         <div class="price-input-group">
-                            <label class="price-input-label">Image URL *</label>
-                            <input type="url" class="price-input-field" name="image_url" required placeholder="https://example.com/image.jpg">
+                            <label class="price-input-label">Image File *</label>
+                            <input type="file" class="price-input-field" name="image" accept="image/*" required>
+                            <div class="price-input-hint">Supported formats: JPEG, PNG, WebP (Max 10MB)</div>
                         </div>
                         <div class="price-input-group">
                             <label class="price-input-label">Sort Order</label>
@@ -1013,6 +1014,13 @@
             modal.querySelector('#add-portfolio-form').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const formData = new FormData(e.target);
+                
+                // Validate file upload
+                const fileInput = modal.querySelector('input[name="image"]');
+                if (!fileInput.files.length) {
+                    showToast('Please select an image file', 'error');
+                    return;
+                }
                 
                 try {
                     const response = await fetch('/admin/portfolio', {
