@@ -639,10 +639,17 @@ function createPortfolioModal(options) {
         </div>
         <div class="form-group">
           <label for="portfolio-image-file">Image File *</label>
-          <input type="file" id="portfolio-image-file" name="image" accept="image/*" required>
-          <small style="color: #666; font-size: 12px; margin-top: 5px; display: block;">
-            Supported formats: JPEG, PNG, WebP (Max 10MB)
-          </small>
+          <div style="position: relative;">
+            <input type="file" id="portfolio-image-file" name="image" accept="image/*" required style="opacity: 0; position: absolute; z-index: -1;">
+            <label for="portfolio-image-file" style="display: block; padding: 12px; border: 2px dashed #dee2e6; border-radius: 8px; background: #f8f9fa; cursor: pointer; text-align: center; transition: all 0.3s;">
+              <i class="fas fa-cloud-upload-alt" style="font-size: 24px; color: #667eea; margin-bottom: 8px; display: block;"></i>
+              <span style="color: #667eea; font-weight: 500;">Click to select image file</span>
+              <div style="color: #666; font-size: 12px; margin-top: 4px;">JPEG, PNG, WebP (Max 10MB)</div>
+            </label>
+          </div>
+          <div id="file-selected" style="margin-top: 8px; color: #28a745; font-size: 14px; display: none;">
+            <i class="fas fa-check-circle"></i> <span id="file-name"></span>
+          </div>
         </div>
         <div class="form-group">
           <label for="portfolio-sort-order">Sort Order</label>
@@ -730,6 +737,16 @@ function createPortfolioModal(options) {
       outline: none;
       border-color: var(--burnt-orange);
     }
+    .portfolio-modal .form-group input[type="file"] {
+      padding: 8px;
+      background: #f8f9fa;
+      border: 2px dashed #dee2e6;
+      cursor: pointer;
+    }
+    .portfolio-modal .form-group input[type="file"]:hover {
+      border-color: var(--burnt-orange);
+      background: #fff;
+    }
     .portfolio-modal .form-actions {
       display: flex;
       gap: 12px;
@@ -753,6 +770,29 @@ function createPortfolioModal(options) {
       sortOrder: formData.get('sort_order')
     };
     options.onSubmit(data, modal);
+  });
+
+  // Handle file selection feedback
+  const fileInput = modal.querySelector('#portfolio-image-file');
+  const fileSelected = modal.querySelector('#file-selected');
+  const fileName = modal.querySelector('#file-name');
+  
+  fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+      const file = e.target.files[0];
+      fileName.textContent = file.name;
+      fileSelected.style.display = 'block';
+      
+      // Update the label to show file is selected
+      const label = modal.querySelector('label[for="portfolio-image-file"]');
+      label.style.borderColor = '#28a745';
+      label.style.background = '#f8fff9';
+      label.innerHTML = `
+        <i class="fas fa-check-circle" style="font-size: 24px; color: #28a745; margin-bottom: 8px; display: block;"></i>
+        <span style="color: #28a745; font-weight: 500;">File selected: ${file.name}</span>
+        <div style="color: #666; font-size: 12px; margin-top: 4px;">Click to change file</div>
+      `;
+    }
   });
 
   // Close on overlay click
