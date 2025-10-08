@@ -69,37 +69,20 @@ jobs:
           # Pull latest changes
           git pull origin main
           
-          # Create secrets from GitHub secrets if they don't exist
-          if ! kubectl get secret photography-secrets -n hallphotography >/dev/null 2>&1; then
-            echo "Creating secrets from GitHub secrets..."
-            kubectl create secret generic photography-secrets -n hallphotography \
-              --from-literal=SESSION_SECRET="${{ secrets.SESSION_SECRET }}" \
-              --from-literal=GOOGLE_CLIENT_ID="${{ secrets.GOOGLE_CLIENT_ID }}" \
-              --from-literal=GOOGLE_CLIENT_SECRET="${{ secrets.GOOGLE_CLIENT_SECRET }}" \
-              --from-literal=GOOGLE_CALLBACK_URL="${{ secrets.GOOGLE_CALLBACK_URL }}"
-          fi
+          # Set environment variables for the secrets script
+          export SESSION_SECRET="${{ secrets.SESSION_SECRET }}"
+          export GOOGLE_CLIENT_ID="${{ secrets.GOOGLE_CLIENT_ID }}"
+          export GOOGLE_CLIENT_SECRET="${{ secrets.GOOGLE_CLIENT_SECRET }}"
+          export GOOGLE_CALLBACK_URL="${{ secrets.GOOGLE_CALLBACK_URL }}"
+          export DB_USER="${{ secrets.DB_USER }}"
+          export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
+          export DB_NAME="${{ secrets.DB_NAME }}"
+          export SERVER_CERT="${{ secrets.SERVER_CERT }}"
+          export SERVER_KEY="${{ secrets.SERVER_KEY }}"
           
-          if ! kubectl get secret db-secrets -n hallphotography >/dev/null 2>&1; then
-            echo "Creating database secrets..."
-            kubectl create secret generic db-secrets -n hallphotography \
-              --from-literal=DB_USER="${{ secrets.DB_USER }}" \
-              --from-literal=DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
-              --from-literal=DB_NAME="${{ secrets.DB_NAME }}"
-          fi
-          
-          if ! kubectl get secret tls-certs -n hallphotography >/dev/null 2>&1; then
-            echo "Creating TLS certificates..."
-            kubectl create secret generic tls-certs -n hallphotography \
-              --from-literal=server.crt="${{ secrets.SERVER_CERT }}" \
-              --from-literal=server.key="${{ secrets.SERVER_KEY }}"
-          fi
-          
-          if ! kubectl get secret calendar-secrets -n hallphotography >/dev/null 2>&1; then
-            echo "Creating calendar secrets with empty values..."
-            kubectl create secret generic calendar-secrets -n hallphotography \
-              --from-literal=calendar-token.json='{}' \
-              --from-literal=token.json='{}'
-          fi
+          # Setup secrets using dedicated script
+          chmod +x k8s/setup-secrets-from-github.sh
+          ./k8s/setup-secrets-from-github.sh
           
           # Deploy using the organized k8s structure with Cloudflare update
           chmod +x k8s/deploy-photography-with-cloudflare.sh
