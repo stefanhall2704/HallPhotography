@@ -26,11 +26,16 @@ k8s/
 
 ### 1. Setup Secrets
 
+**For Local Development:**
 ```bash
 # Copy the template and fill in your values
 cp shared/secrets-template.yaml shared/secrets.yaml
-# Edit shared/secrets.yaml with your actual values
+# Edit shared/secrets.yaml with your actual values (TLS certs, DB creds, etc.)
+kubectl apply -f shared/secrets.yaml
 ```
+
+**For CI/CD Deployments:**
+Secrets should be pre-configured in the cluster. The deployment script will skip secrets if they already exist.
 
 ### 2. Deploy Photography App
 
@@ -78,11 +83,31 @@ The GitHub Actions workflow (`deploy.yml`) handles:
 
 ### Required GitHub Secrets
 
+**Deployment Secrets:**
 - `DOCKER_USERNAME`: Your Docker Hub username
 - `DOCKER_PASSWORD`: Your Docker Hub password/token
 - `SSH_HOST`: Your server IP/hostname
 - `SSH_USERNAME`: SSH username
 - `SSH_PRIVATE_KEY`: SSH private key
+
+**Application Secrets:**
+- `SESSION_SECRET`: Your session secret key
+- `GOOGLE_CLIENT_ID`: Google OAuth client ID
+- `GOOGLE_CLIENT_SECRET`: Google OAuth client secret
+- `GOOGLE_CALLBACK_URL`: Google OAuth callback URL
+- `DB_USER`: Database username
+- `DB_PASSWORD`: Database password
+- `DB_NAME`: Database name
+- `SERVER_CERT`: TLS certificate (full certificate including BEGIN/END lines)
+- `SERVER_KEY`: TLS private key (full key including BEGIN/END lines)
+- `CALENDAR_TOKEN_JSON`: Google Calendar token JSON (optional)
+- `TOKEN_JSON`: Additional token JSON (optional)
+
+**To add secrets:**
+1. Go to your GitHub repository
+2. Settings → Secrets and variables → Actions
+3. Click "New repository secret"
+4. Add each secret with the exact name listed above
 
 ## Troubleshooting
 

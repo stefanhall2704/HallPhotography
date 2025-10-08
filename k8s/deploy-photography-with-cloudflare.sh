@@ -11,30 +11,36 @@ PHOTOGRAPHY_NODEPORT=31055
 CONTROL_PLANE_IP="192.168.1.102"
 CLOUDFLARE_CONFIG="/etc/cloudflared/config.yml"
 
-# Check if secrets file exists locally, or if secrets already exist in cluster
-if [ ! -f "k8s/shared/secrets.yaml" ]; then
-    echo "secrets.yaml not found locally, checking if secrets exist in cluster..."
-    if kubectl get secret photography-secrets -n hallphotography >/dev/null 2>&1; then
-        echo "✅ Secrets already exist in cluster, skipping secrets deployment"
+# Check if secrets exist in cluster (don't require local secrets.yaml for CI/CD)
+echo "Checking if secrets exist in cluster..."
+if kubectl get secret photography-secrets -n hallphotography >/dev/null 2>&1; then
+    echo "✅ Secrets already exist in cluster, skipping secrets deployment"
+    SKIP_SECRETS=true
+else
+    echo "⚠️  Secrets not found in cluster"
+    if [ -f "k8s/shared/secrets.yaml" ]; then
+        echo "✅ Found secrets.yaml locally, will apply it"
+        SKIP_SECRETS=false
     else
-        echo "ERROR: secrets.yaml not found locally AND secrets don't exist in cluster!"
+        echo "ERROR: No secrets found in cluster AND no local secrets.yaml file!"
         echo ""
-        echo "Please create secrets.yaml from the template:"
+        echo "For CI/CD deployments, secrets should be pre-configured in the cluster."
+        echo "For local development, create secrets.yaml from the template:"
         echo "  cp k8s/shared/secrets-template.yaml k8s/shared/secrets.yaml"
         echo "  # Edit k8s/shared/secrets.yaml with your actual values"
         echo "  kubectl apply -f k8s/shared/secrets.yaml"
         echo ""
         exit 1
     fi
-else
-    echo "✅ Found secrets.yaml locally"
 fi
 
 echo "Deploying Photography app..."
-# Apply secrets if they exist locally
-if [ -f "k8s/shared/secrets.yaml" ]; then
+# Apply secrets only if we determined we should
+if [ "$SKIP_SECRETS" = "false" ]; then
     echo "Applying secrets..."
     kubectl apply -f k8s/shared/secrets.yaml
+else
+    echo "Skipping secrets deployment (already exist in cluster)"
 fi
 
 # Deploy the photography app
