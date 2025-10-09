@@ -889,7 +889,7 @@ func AddPortfolioItem(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create uploads directory if it doesn't exist
-	uploadDir := "uploads/portfolio/"
+	uploadDir := "/app/uploads/portfolio/"
 	if err := os.MkdirAll(uploadDir, 0755); err != nil {
 		http.Error(w, "Error creating upload directory", http.StatusInternalServerError)
 		return

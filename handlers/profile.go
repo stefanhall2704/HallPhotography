@@ -17,7 +17,7 @@ import (
 
 const (
 	MaxProfilePictureSize = 10 << 20 // 10 MB
-	ProfilePictureDir     = "./uploads/profile_pictures"
+	ProfilePictureDir     = "/app/uploads/profile_pictures"
 )
 
 // Ensure profile picture directory exists

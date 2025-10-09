@@ -23,7 +23,7 @@ import (
 
 const (
 	MaxUploadSize = 100 << 20 // 100 MB per file
-	UploadDir     = "./uploads/session_photos"
+	UploadDir     = "/app/uploads/session_photos"
 )
 
 // Ensure upload directory exists
