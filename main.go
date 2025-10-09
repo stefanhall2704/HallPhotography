@@ -143,7 +143,7 @@ func main() {
 	// Serve static files (CSS, JS, images)
 	request.PathPrefix("/css/").Handler(http.StripPrefix("/css/", http.FileServer(http.Dir("templates/css/"))))
 	request.PathPrefix("/js/").Handler(http.StripPrefix("/js/", http.FileServer(http.Dir("templates/js/"))))
-	request.PathPrefix("/uploads/").Handler(http.StripPrefix("/uploads/", http.FileServer(http.Dir("uploads/"))))
+	request.PathPrefix("/uploads/").Handler(http.StripPrefix("/uploads/", http.FileServer(http.Dir("/app/uploads/"))))
 
 	loggedHandler := middleware.LoggingMiddleware(request)
 

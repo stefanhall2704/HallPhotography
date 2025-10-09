@@ -27,6 +27,8 @@ spec:
           echo "Creating required upload directories..."
           mkdir -p /app/uploads/portfolio
           mkdir -p /app/uploads/photography
+          mkdir -p /app/uploads/profile_pictures
+          mkdir -p /app/uploads/session_photos
           mkdir -p /app/downloads
           echo "Setting proper permissions..."
           chmod -R 755 /app/uploads
