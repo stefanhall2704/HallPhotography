@@ -47,8 +47,15 @@ fi
 kubectl apply -k k8s/photography/
 
 echo ""
-echo "Forcing deployment rollout to ensure new image is pulled..."
-kubectl rollout restart deployment/photography -n hallphotography
+echo "Checking if deployment needs update..."
+# Only restart if the image has actually changed
+CURRENT_IMAGE=$(kubectl get deployment photography -n hallphotography -o jsonpath='{.spec.template.spec.containers[0].image}')
+if [[ "$CURRENT_IMAGE" != "stefanmhall/photography:latest" ]]; then
+    echo "Image changed, forcing rollout restart..."
+    kubectl rollout restart deployment/photography -n hallphotography
+else
+    echo "Image unchanged, skipping restart to preserve data"
+fi
 
 echo ""
 echo "Waiting for Photography app to be ready..."
