@@ -210,17 +210,21 @@ class HomePage {
       return;
     }
 
-    // Render items
-    itemsEl.innerHTML = this.portfolioItems.map(item => `
-      <div class="portfolio-item" data-id="${item.ID}">
-        <img src="${item.ImageURL}" alt="${item.Title}" loading="lazy">
-        <div class="portfolio-item-category">${item.Category}</div>
-        <div class="portfolio-item-overlay">
-          <h3 class="portfolio-item-title">${item.Title}</h3>
-          ${item.Description ? `<p class="portfolio-item-description">${item.Description}</p>` : ''}
+    // Render items with overlap effect
+    itemsEl.innerHTML = this.portfolioItems.map((item, index) => {
+      // Add active class to center items for better visibility
+      const isActive = index >= 2 && index <= 4;
+      return `
+        <div class="portfolio-item ${isActive ? 'active' : ''}" data-id="${item.ID}">
+          <img src="${item.ImageURL}" alt="${item.Title}" loading="lazy">
+          <div class="portfolio-item-category">${item.Category}</div>
+          <div class="portfolio-item-overlay">
+            <h3 class="portfolio-item-title">${item.Title}</h3>
+            ${item.Description ? `<p class="portfolio-item-description">${item.Description}</p>` : ''}
+          </div>
         </div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
 
     // Update navigation state
     this.updatePortfolioNavigation();
@@ -339,7 +343,7 @@ class HomePage {
     } else if (width < 1200) {
       this.itemsPerView = 2;
     } else {
-      this.itemsPerView = 3;
+      this.itemsPerView = 5; // Show more items due to overlap effect
     }
   }
 
@@ -370,10 +374,17 @@ class HomePage {
     
     if (!scrollEl || !wrapperEl) return;
 
-    const itemWidth = 320 + 20; // item width + gap
+    const itemWidth = 300 - 30; // item width minus overlap (270px effective width)
     const translateX = -this.currentScrollIndex * itemWidth;
     
     scrollEl.style.transform = `translateX(${translateX}px)`;
+
+    // Update active states for center items
+    const items = document.querySelectorAll('.portfolio-item');
+    items.forEach((item, index) => {
+      const isActive = index >= this.currentScrollIndex + 2 && index <= this.currentScrollIndex + 4;
+      item.classList.toggle('active', isActive);
+    });
 
     // Update fade effects
     wrapperEl.classList.toggle('fade-left', this.currentScrollIndex > 0);

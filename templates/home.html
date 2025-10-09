@@ -275,8 +275,8 @@
   flex: 1;
   position: relative;
   overflow: hidden;
-  border-radius: 20px;
-  box-shadow: var(--shadow-medium);
+  /* Removed white background and border for organic look */
+  padding: 20px 0;
 }
 
 .portfolio-scroll {
@@ -287,25 +287,51 @@
 
 .portfolio-items {
   display: flex;
-  gap: 20px;
-  padding: 20px;
+  gap: 0; /* No gap for overlap effect */
+  padding: 0; /* Removed padding */
   min-width: 100%;
 }
 
 .portfolio-item {
-  flex: 0 0 320px;
+  flex: 0 0 300px; /* Slightly smaller for better overlap */
   height: 400px;
   position: relative;
   border-radius: 20px;
   overflow: hidden;
-  box-shadow: var(--shadow-soft);
+  box-shadow: var(--shadow-medium);
   transition: all var(--transition-slow);
   cursor: pointer;
-  background: var(--warm-cream);
+  background: white;
+  margin-left: -30px; /* Overlap effect - each card overlaps the previous by 30px */
+  z-index: 1;
+  opacity: 0.8;
+  transform: scale(0.95) rotate(-1deg); /* Slight rotation for organic feel */
+}
+
+/* First item doesn't need left margin */
+.portfolio-item:first-child {
+  margin-left: 0;
+}
+
+/* Alternating rotation for deck-of-cards effect */
+.portfolio-item:nth-child(odd) {
+  transform: scale(0.95) rotate(-1deg);
+}
+
+.portfolio-item:nth-child(even) {
+  transform: scale(0.95) rotate(1deg);
+}
+
+/* Active items (center) get higher z-index and better visibility */
+.portfolio-item.active {
+  opacity: 1;
+  transform: scale(1) rotate(0deg); /* Straighten active items */
+  z-index: 10;
+  box-shadow: var(--shadow-large);
 }
 
 .portfolio-item:hover {
-  transform: translateY(-10px) scale(1.02);
+  transform: translateY(-10px) scale(1.02) rotate(0deg); /* Straighten on hover */
   box-shadow: var(--shadow-strong);
   z-index: 10;
 }
