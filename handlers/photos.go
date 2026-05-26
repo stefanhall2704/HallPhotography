@@ -1016,13 +1016,24 @@ func ToggleFavorite(w http.ResponseWriter, r *http.Request) {
 
 	downloadLimit := getDownloadLimit(database, photo.BookingID, photo.BookingType)
 
-	// Trying to add a new favorite
-	if !photo.IsFavorite && downloadLimit > 0 && int(currentFavCount) >= downloadLimit {
+	// 0 = no limit assigned yet — user cannot select favorites until admin sets one
+	if !isAdmin && downloadLimit == 0 {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"error":          "Download limit not yet set",
+			"download_limit": 0,
+		})
+		return
+	}
+
+	// Trying to add a new favorite when limit is already reached
+	if !photo.IsFavorite && !isAdmin && int(currentFavCount) >= downloadLimit {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusConflict)
 		json.NewEncoder(w).Encode(map[string]interface{}{
-			"error":          "Favorite limit reached",
-			"download_limit": downloadLimit,
+			"error":           "Favorite limit reached",
+			"download_limit":  downloadLimit,
 			"favorites_count": currentFavCount,
 		})
 		return
@@ -1145,6 +1156,12 @@ func DownloadFavorites(w http.ResponseWriter, r *http.Request) {
 
 	if !isAdmin && !hasPaid {
 		http.Error(w, "Payment required to download photos", http.StatusPaymentRequired)
+		return
+	}
+
+	downloadLimit := getDownloadLimit(database, uint(bookingID), bookingType)
+	if !isAdmin && downloadLimit == 0 {
+		http.Error(w, "Downloads not yet available for this booking. Contact Hall's Photography.", http.StatusForbidden)
 		return
 	}
 

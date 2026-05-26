@@ -152,10 +152,18 @@
     </style>
 </head>
 <body>
+    <!-- Admin quick-nav -->
+    <div style="background:linear-gradient(135deg,#1E3A5F,#2C5F8D);padding:10px 20px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:0;">
+        <span style="color:rgba(255,255,255,0.7);font-size:13px;font-weight:600;letter-spacing:1px;">ADMIN</span>
+        <a href="/profile" style="color:white;text-decoration:none;font-size:13px;padding:5px 12px;border-radius:6px;background:rgba(255,255,255,0.15);">&#8962; Profile</a>
+        <a href="/admin/dashboard" style="color:white;text-decoration:none;font-size:13px;padding:5px 12px;border-radius:6px;background:rgba(255,255,255,0.15);">&#128200; Dashboard</a>
+        <a href="/admin/photo-todo" style="color:white;text-decoration:none;font-size:13px;padding:5px 12px;border-radius:6px;background:rgba(255,255,255,0.35);font-weight:700;">&#128247; Photo Uploads</a>
+        <a href="/calendar" style="color:white;text-decoration:none;font-size:13px;padding:5px 12px;border-radius:6px;background:rgba(255,255,255,0.15);">&#128197; Minis Calendar</a>
+        <a href="/session_calendar" style="color:white;text-decoration:none;font-size:13px;padding:5px 12px;border-radius:6px;background:rgba(255,255,255,0.15);">&#128247; Session Calendar</a>
+    </div>
+
     <div class="container">
-        <a href="/profile" class="back-btn">← Back to Profile</a>
-        
-        <h1>📸 Photo Upload Todo</h1>
+        <h1>&#128247; Photo Upload Todo</h1>
         <p class="subtitle">Sessions ready for photo uploads</p>
 
         <div id="loading" class="loading">

@@ -358,6 +358,17 @@
             Photos are shown with a watermark for preview. When you download your favorites you will receive the full-quality originals from Hall's Photography.
         </div>
 
+        <!-- Not yet available banner -->
+        <div id="no-limit-banner" style="display:none; background:linear-gradient(135deg,#f7931e,#f15a24);
+             color:white; border-radius:12px; padding:20px 24px; margin-bottom:20px; text-align:center;">
+            <strong style="font-size:17px;">&#128274; Download Not Yet Available</strong><br>
+            <span style="font-size:14px; opacity:0.95; margin-top:6px; display:block;">
+                Hall's Photography hasn't set your download package yet.
+                You can browse your watermarked photos below, but selecting favorites and downloading
+                will be unlocked once your package is confirmed. Contact us if you have questions!
+            </span>
+        </div>
+
         <!-- States -->
         <div id="loading" class="loading"><p>Loading photos&#8230;</p></div>
 
@@ -454,7 +465,14 @@
                 }
 
                 infoBanner.style.display = 'block';
-                favoritesBar.style.display = 'flex';
+
+                if (!isAdmin && downloadLimit === 0) {
+                    document.getElementById('no-limit-banner').style.display = 'block';
+                    downloadBtn.style.display = 'none';
+                } else {
+                    favoritesBar.style.display = 'flex';
+                }
+
                 renderGrid();
                 updateFavUI();
             } catch (e) {
@@ -485,6 +503,12 @@
         }
 
         function updateFavUI() {
+            // If limit not set yet and not admin, don't show the favorites bar controls
+            if (!isAdmin && downloadLimit === 0) {
+                downloadBtn.disabled = true;
+                return;
+            }
+
             favCounter.textContent = favoritesCount;
 
             if (downloadLimit > 0) {
@@ -502,7 +526,8 @@
                     limitBanner.classList.remove('show');
                 }
             } else {
-                favLabel.textContent = 'favorites selected (no limit set)';
+                // Admin viewing with no limit set — allow unlimited selection
+                favLabel.textContent = 'favorites selected';
                 progressWrap.style.display = 'none';
                 limitBanner.classList.remove('show');
             }
@@ -512,10 +537,14 @@
 
         async function handleHeart(event, photoId) {
             event.stopPropagation();
+            if (!isAdmin && downloadLimit === 0) {
+                toast('Downloads not yet available. Contact Hall\'s Photography to confirm your package.', 'warning');
+                return;
+            }
             const idx   = photos.findIndex(p => p.ID === photoId);
             const photo = photos[idx];
 
-            if (!photo.IsFavorite && downloadLimit > 0 && favoritesCount >= downloadLimit) {
+            if (!photo.IsFavorite && !isAdmin && favoritesCount >= downloadLimit) {
                 toast(`Limit reached (${downloadLimit}). Remove a favorite first, or contact Hall's Photography for more.`, 'warning');
                 return;
             }

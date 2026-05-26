@@ -646,6 +646,37 @@
         
         <div class="nav-actions">
           {{if .Authenticated}}
+            {{if .IsAdmin}}
+            <div class="dropdown" style="position: relative; display: inline-block;">
+              <button style="background:linear-gradient(135deg,#f093fb 0%,#f5576c 100%);color:white;border:none;
+                             padding:10px 18px;border-radius:10px;font-weight:700;cursor:pointer;
+                             display:flex;align-items:center;gap:7px;font-size:0.9rem;letter-spacing:0.3px;"
+                      id="adminNavDropdown">
+                <i class="fas fa-shield-alt"></i> Admin
+                <i class="fas fa-chevron-down" style="font-size:0.75em;"></i>
+              </button>
+              <div id="adminNavMenu" style="display:none;position:absolute;top:110%;right:0;background:white;
+                   box-shadow:0 6px 24px rgba(0,0,0,0.18);border-radius:12px;min-width:220px;z-index:2000;
+                   padding:6px 0;overflow:hidden;">
+                <a href="/admin/dashboard" style="display:flex;align-items:center;gap:10px;padding:12px 18px;
+                   color:#333;text-decoration:none;font-weight:600;transition:background 0.15s;">
+                  <i class="fas fa-chart-line" style="color:#667eea;width:18px;"></i> Dashboard
+                </a>
+                <a href="/admin/photo-todo" style="display:flex;align-items:center;gap:10px;padding:12px 18px;
+                   color:#333;text-decoration:none;font-weight:600;border-top:1px solid #f0f0f0;transition:background 0.15s;">
+                  <i class="fas fa-cloud-upload-alt" style="color:#f5576c;width:18px;"></i> Photo Upload Todo
+                </a>
+                <a href="/calendar" style="display:flex;align-items:center;gap:10px;padding:12px 18px;
+                   color:#333;text-decoration:none;font-weight:600;border-top:1px solid #f0f0f0;transition:background 0.15s;">
+                  <i class="fas fa-calendar-plus" style="color:#28a745;width:18px;"></i> Create Minis
+                </a>
+                <a href="/session_calendar" style="display:flex;align-items:center;gap:10px;padding:12px 18px;
+                   color:#333;text-decoration:none;font-weight:600;border-top:1px solid #f0f0f0;transition:background 0.15s;">
+                  <i class="fas fa-camera" style="color:#fd7e14;width:18px;"></i> Create Session
+                </a>
+              </div>
+            </div>
+            {{end}}
             <div class="dropdown" style="position: relative; display: inline-block;">
               <button class="btn btn-primary dropdown-toggle" id="bookingDropdown" style="cursor: pointer;">
             <i class="fas fa-calendar-plus"></i>
@@ -948,24 +979,43 @@
     // Global variables
     const isAdmin = document.documentElement.getAttribute('data-is-admin') === 'true';
     
-    // Booking dropdown functionality
+    // Booking dropdown + Admin dropdown functionality
     document.addEventListener('DOMContentLoaded', function() {
+      // Admin nav dropdown
+      const adminBtn  = document.getElementById('adminNavDropdown');
+      const adminMenu = document.getElementById('adminNavMenu');
+      if (adminBtn && adminMenu) {
+        adminBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          adminMenu.style.display = adminMenu.style.display === 'block' ? 'none' : 'block';
+        });
+        document.addEventListener('click', function(e) {
+          if (!adminBtn.contains(e.target) && !adminMenu.contains(e.target)) {
+            adminMenu.style.display = 'none';
+          }
+        });
+        adminMenu.querySelectorAll('a').forEach(a => {
+          a.addEventListener('mouseenter', () => a.style.background = '#f5f5ff');
+          a.addEventListener('mouseleave', () => a.style.background = 'white');
+        });
+      }
+
       const dropdownBtn = document.getElementById('bookingDropdown');
       const dropdownMenu = document.getElementById('bookingDropdownMenu');
-      
+
       if (dropdownBtn && dropdownMenu) {
         dropdownBtn.addEventListener('click', function(e) {
           e.stopPropagation();
           const isVisible = dropdownMenu.style.display === 'block';
           dropdownMenu.style.display = isVisible ? 'none' : 'block';
         });
-        
+
         document.addEventListener('click', function(e) {
           if (!dropdownBtn.contains(e.target) && !dropdownMenu.contains(e.target)) {
             dropdownMenu.style.display = 'none';
           }
         });
-        
+
         const dropdownItems = dropdownMenu.querySelectorAll('a');
         dropdownItems.forEach(item => {
           item.addEventListener('mouseenter', function() {
