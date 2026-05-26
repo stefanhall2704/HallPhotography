@@ -384,6 +384,7 @@ func DownloadPhoto(w http.ResponseWriter, r *http.Request) {
 		database.Save(&photo)
 		if !isAdmin {
 			deletePhotoFiles(photo.FilePath, photo.WatermarkedPath, photo.ID)
+			database.Delete(&model.SessionPhoto{}, photo.ID)
 		}
 	}()
 }
@@ -453,7 +454,10 @@ func DownloadMultiplePhotos(w http.ResponseWriter, r *http.Request) {
 	defer zipWriter.Close()
 
 	now := time.Now()
-	filesToDelete := []struct{ orig, wm string }{}
+	filesToDelete := []struct {
+		orig, wm string
+		id       uint
+	}{}
 
 	for _, photo := range photos {
 		file, err := os.Open(photo.FilePath)
@@ -484,7 +488,10 @@ func DownloadMultiplePhotos(w http.ResponseWriter, r *http.Request) {
 		}(photo)
 
 		if !isAdmin {
-			filesToDelete = append(filesToDelete, struct{ orig, wm string }{photo.FilePath, photo.WatermarkedPath})
+			filesToDelete = append(filesToDelete, struct {
+				orig, wm string
+				id       uint
+			}{photo.FilePath, photo.WatermarkedPath, photo.ID})
 		}
 	}
 
@@ -496,6 +503,7 @@ func DownloadMultiplePhotos(w http.ResponseWriter, r *http.Request) {
 				if p.wm != "" {
 					os.Remove(p.wm)
 				}
+				database.Delete(&model.SessionPhoto{}, p.id)
 			}
 		}()
 	}
@@ -564,7 +572,10 @@ func DownloadAllPhotos(w http.ResponseWriter, r *http.Request) {
 	defer zipWriter.Close()
 
 	now := time.Now()
-	filesToDelete := []struct{ orig, wm string }{}
+	filesToDelete := []struct {
+		orig, wm string
+		id       uint
+	}{}
 
 	for _, photo := range photos {
 		file, err := os.Open(photo.FilePath)
@@ -595,7 +606,10 @@ func DownloadAllPhotos(w http.ResponseWriter, r *http.Request) {
 		}(photo)
 
 		if !isAdmin {
-			filesToDelete = append(filesToDelete, struct{ orig, wm string }{photo.FilePath, photo.WatermarkedPath})
+			filesToDelete = append(filesToDelete, struct {
+				orig, wm string
+				id       uint
+			}{photo.FilePath, photo.WatermarkedPath, photo.ID})
 		}
 	}
 
@@ -607,6 +621,7 @@ func DownloadAllPhotos(w http.ResponseWriter, r *http.Request) {
 				if p.wm != "" {
 					os.Remove(p.wm)
 				}
+				database.Delete(&model.SessionPhoto{}, p.id)
 			}
 		}()
 	}
@@ -1209,7 +1224,10 @@ func DownloadFavorites(w http.ResponseWriter, r *http.Request) {
 	defer zipWriter.Close()
 
 	now := time.Now()
-	var pathsToDelete []struct{ orig, wm string }
+	var pathsToDelete []struct {
+		orig, wm string
+		id       uint
+	}
 
 	for _, photo := range photos {
 		file, err := os.Open(photo.FilePath)
@@ -1237,7 +1255,10 @@ func DownloadFavorites(w http.ResponseWriter, r *http.Request) {
 		}(photo)
 
 		if !isAdmin {
-			pathsToDelete = append(pathsToDelete, struct{ orig, wm string }{photo.FilePath, photo.WatermarkedPath})
+			pathsToDelete = append(pathsToDelete, struct {
+				orig, wm string
+				id       uint
+			}{photo.FilePath, photo.WatermarkedPath, photo.ID})
 		}
 	}
 
@@ -1246,7 +1267,10 @@ func DownloadFavorites(w http.ResponseWriter, r *http.Request) {
 		var remaining []model.SessionPhoto
 		database.Where("booking_id = ? AND booking_type = ? AND is_favorite = false", bookingID, bookingType).Find(&remaining)
 		for _, p := range remaining {
-			pathsToDelete = append(pathsToDelete, struct{ orig, wm string }{p.FilePath, p.WatermarkedPath})
+			pathsToDelete = append(pathsToDelete, struct {
+				orig, wm string
+				id       uint
+			}{p.FilePath, p.WatermarkedPath, p.ID})
 		}
 
 		go func() {
@@ -1256,6 +1280,7 @@ func DownloadFavorites(w http.ResponseWriter, r *http.Request) {
 				if p.wm != "" {
 					os.Remove(p.wm)
 				}
+				database.Delete(&model.SessionPhoto{}, p.id)
 			}
 		}()
 	}

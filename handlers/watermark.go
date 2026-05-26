@@ -137,7 +137,7 @@ func dynamicFontSize(w, h int) float64 {
 // shadow beneath it for contrast on any background.
 func drawWatermarkAt(img *image.RGBA, face font.Face, x, baseline int) {
 	// Dark semi-transparent shadow for contrast against light backgrounds
-	shadow := image.NewUniform(color.RGBA{R: 10, G: 5, B: 5, A: 110})
+	shadow := image.NewUniform(color.RGBA{R: 10, G: 5, B: 5, A: 45})
 	offset := 3
 	(&font.Drawer{
 		Dst:  img,
@@ -146,8 +146,8 @@ func drawWatermarkAt(img *image.RGBA, face font.Face, x, baseline int) {
 		Dot:  fixed.P(x+offset, baseline+offset),
 	}).DrawString(watermarkLabel)
 
-	// Main text — bright white at 150/255 opacity
-	main := image.NewUniform(color.RGBA{R: 255, G: 255, B: 255, A: 150})
+	// Main text — bright white at 0.25 opacity (64/255)
+	main := image.NewUniform(color.RGBA{R: 255, G: 255, B: 255, A: 64})
 	(&font.Drawer{
 		Dst:  img,
 		Src:  main,
