@@ -58,7 +58,8 @@ type BookMinis struct {
 	PaidAmount           float64   `gorm:"default:0"` // Amount paid
 	PaymentDate          *time.Time // When payment was made
 	PhotosUploaded       bool      `gorm:"default:false"` // Track if photos are uploaded
-	DownloadLimit        int       `gorm:"default:0"` // How many photos the user can download (0 = all)
+	DownloadLimit        int       `gorm:"default:0"` // How many photos the user can download (0 = not yet set)
+	FavoritesLocked      bool      `gorm:"default:false"` // Locked after user downloads — no re-selection allowed
 	User                 User      `gorm:"foreignKey:UserID"`
 	Minis                Minis     `gorm:"foreignKey:MinisID"`
 	Messages             []BookingMessage `gorm:"foreignKey:BookingID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
@@ -109,7 +110,8 @@ type BookSession struct {
 	PaidAmount          float64 `gorm:"default:0"` // Amount paid
 	PaymentDate         *time.Time // When payment was made
 	PhotosUploaded      bool    `gorm:"default:false"` // Track if photos are uploaded
-	DownloadLimit       int     `gorm:"default:0"` // How many photos the user can download (0 = all)
+	DownloadLimit       int     `gorm:"default:0"` // How many photos the user can download (0 = not yet set)
+	FavoritesLocked     bool    `gorm:"default:false"` // Locked after user downloads — no re-selection allowed
 	User                User    `gorm:"foreignKey:UserID"`
 	Session             Session `gorm:"foreignKey:SessionID"`
 	Messages            []BookingMessage `gorm:"foreignKey:BookingID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`

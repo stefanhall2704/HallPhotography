@@ -358,6 +358,16 @@
             Photos are shown with a watermark for preview. When you download your favorites you will receive the full-quality originals from Hall's Photography.
         </div>
 
+        <!-- Locked banner (after download) -->
+        <div id="locked-banner" style="display:none; background:linear-gradient(135deg,#343a40,#495057);
+             color:white; border-radius:12px; padding:20px 24px; margin-bottom:20px;">
+            <strong style="font-size:17px;">&#128274; Selections Locked</strong><br>
+            <span style="font-size:14px; opacity:0.9; margin-top:6px; display:block;">
+                You've already downloaded your favorites — your selections are now final.
+                If you'd like additional photos, please contact Hall's Photography to discuss upgrading your package.
+            </span>
+        </div>
+
         <!-- Not yet available banner -->
         <div id="no-limit-banner" style="display:none; background:linear-gradient(135deg,#f7931e,#f15a24);
              color:white; border-radius:12px; padding:20px 24px; margin-bottom:20px; text-align:center;">
@@ -410,10 +420,11 @@
         const bookingID   = '{{.BookingID}}';
         const isAdmin     = {{.IsAdmin}};
 
-        let photos = [];
-        let downloadLimit  = 0;
-        let favoritesCount = 0;
-        let currentIndex   = 0;
+        let photos          = [];
+        let downloadLimit   = 0;
+        let favoritesCount  = 0;
+        let favoritesLocked = false;
+        let currentIndex    = 0;
 
         const photoGrid      = document.getElementById('photo-grid');
         const loading        = document.getElementById('loading');
@@ -453,9 +464,10 @@
                 if (!res.ok) throw new Error('Failed to load gallery');
 
                 const data = await res.json();
-                photos         = data.photos || [];
-                downloadLimit  = data.download_limit || 0;
-                favoritesCount = data.favorites_count || 0;
+                photos          = data.photos || [];
+                downloadLimit   = data.download_limit || 0;
+                favoritesCount  = data.favorites_count || 0;
+                favoritesLocked = data.favorites_locked || false;
 
                 loading.style.display = 'none';
 
@@ -466,7 +478,11 @@
 
                 infoBanner.style.display = 'block';
 
-                if (!isAdmin && downloadLimit === 0) {
+                if (!isAdmin && favoritesLocked) {
+                    document.getElementById('locked-banner').style.display = 'block';
+                    downloadBtn.disabled = true;
+                    downloadBtn.textContent = '&#128274; Already Downloaded';
+                } else if (!isAdmin && downloadLimit === 0) {
                     document.getElementById('no-limit-banner').style.display = 'block';
                     downloadBtn.style.display = 'none';
                 } else {
@@ -537,6 +553,10 @@
 
         async function handleHeart(event, photoId) {
             event.stopPropagation();
+            if (!isAdmin && favoritesLocked) {
+                toast('Your selections are locked — you\'ve already downloaded your favorites.', 'warning');
+                return;
+            }
             if (!isAdmin && downloadLimit === 0) {
                 toast('Downloads not yet available. Contact Hall\'s Photography to confirm your package.', 'warning');
                 return;
@@ -550,8 +570,13 @@
             }
 
             const res = await fetch(`/photo/${photoId}/favorite`, { method: 'POST' });
+            if (res.status === 423) {
+                favoritesLocked = true;
+                toast('Your selections are locked — you\'ve already downloaded your favorites.', 'warning');
+                return;
+            }
             if (res.status === 409) {
-                toast(`Favorite limit reached (${downloadLimit}).`, 'warning');
+                toast(`Limit reached (${downloadLimit}). Remove a favorite first, or contact Hall's Photography for more.`, 'warning');
                 return;
             }
             if (!res.ok) { toast('Error updating favorite', 'error'); return; }

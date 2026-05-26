@@ -289,33 +289,35 @@ func ViewPhoto(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Determine which file to serve: admins see originals, users see watermarked
-	servePath := photo.FilePath
-	if !isAdmin && photo.WatermarkedPath != "" {
-		servePath = photo.WatermarkedPath
+	if _, err := os.Stat(photo.FilePath); os.IsNotExist(err) {
+		log.Printf("❌ Original photo file not found: %s", photo.FilePath)
+		http.Error(w, "Photo file not found on server", http.StatusNotFound)
+		return
 	}
 
-	if _, err := os.Stat(servePath); os.IsNotExist(err) {
-		// Fall back to original if watermarked is missing
-		if servePath != photo.FilePath {
-			servePath = photo.FilePath
-		}
-		if _, err2 := os.Stat(servePath); os.IsNotExist(err2) {
-			log.Printf("❌ Photo file not found: %s", servePath)
-			http.Error(w, "Photo file not found on server", http.StatusNotFound)
-			return
-		}
+	if isAdmin {
+		// Admins always see the clean original
+		w.Header().Set("Content-Type", photo.MimeType)
+		w.Header().Set("Cache-Control", "public, max-age=86400")
+		http.ServeFile(w, r, photo.FilePath)
+		return
 	}
 
-	// Always serve watermarked as JPEG; keep original MIME for the original
-	contentType := photo.MimeType
-	if !isAdmin && photo.WatermarkedPath != "" {
-		contentType = "image/jpeg"
+	// Regular users always see a watermarked version — generate it on-demand if
+	// the cached copy is missing (covers photos uploaded before this feature, or
+	// where upload-time generation silently failed).
+	wmPath := ensureWatermarked(database, &photo)
+	if wmPath == "" {
+		// Watermark generation failed — still block the original, return error
+		log.Printf("❌ Could not produce watermarked photo %d, refusing to serve original", photo.ID)
+		http.Error(w, "Photo temporarily unavailable", http.StatusInternalServerError)
+		return
 	}
-	w.Header().Set("Content-Type", contentType)
+
+	w.Header().Set("Content-Type", "image/jpeg")
 	w.Header().Set("Cache-Control", "public, max-age=86400")
-	http.ServeFile(w, r, servePath)
-	log.Printf("📸 Served photo: %s (watermarked=%v)", photo.FileName, !isAdmin && photo.WatermarkedPath != "")
+	http.ServeFile(w, r, wmPath)
+	log.Printf("📸 Served watermarked photo %d: %s", photo.ID, photo.FileName)
 }
 
 // DownloadPhoto downloads a single photo
@@ -961,12 +963,15 @@ func GalleryInfo(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	favoritesLocked := !isAdmin && areFavoritesLocked(database, uint(bookingID), bookingType)
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"photos":          photos,
-		"download_limit":  downloadLimit,
-		"total_photos":    len(photos),
-		"favorites_count": favCount,
+		"photos":           photos,
+		"download_limit":   downloadLimit,
+		"total_photos":     len(photos),
+		"favorites_count":  favCount,
+		"favorites_locked": favoritesLocked,
 	})
 }
 
@@ -1013,6 +1018,16 @@ func ToggleFavorite(w http.ResponseWriter, r *http.Request) {
 	database.Model(&model.SessionPhoto{}).
 		Where("booking_id = ? AND booking_type = ? AND is_favorite = true", photo.BookingID, photo.BookingType).
 		Count(&currentFavCount)
+
+	// Check if favorites are locked (user already downloaded)
+	if !isAdmin && areFavoritesLocked(database, photo.BookingID, photo.BookingType) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusLocked)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"error": "Your photo selections are locked. You have already downloaded your favorites.",
+		})
+		return
+	}
 
 	downloadLimit := getDownloadLimit(database, photo.BookingID, photo.BookingType)
 
@@ -1181,6 +1196,12 @@ func DownloadFavorites(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Lock favorites immediately — before streaming so even a partial download
+	// prevents re-selection on a retry.
+	if !isAdmin {
+		lockFavorites(database, uint(bookingID), bookingType)
+	}
+
 	w.Header().Set("Content-Type", "application/zip")
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=favorites_%s_%d.zip", bookingType, bookingID))
 
@@ -1235,6 +1256,29 @@ func DownloadFavorites(w http.ResponseWriter, r *http.Request) {
 	log.Printf("✅ Downloaded %d favorite photos as zip for %s booking %d", len(photos), bookingType, bookingID)
 }
 
+func areFavoritesLocked(database *gorm.DB, bookingID uint, bookingType string) bool {
+	if bookingType == "session" {
+		var b model.BookSession
+		if err := database.Select("favorites_locked").First(&b, bookingID).Error; err != nil {
+			return false
+		}
+		return b.FavoritesLocked
+	}
+	var b model.BookMinis
+	if err := database.Select("favorites_locked").First(&b, bookingID).Error; err != nil {
+		return false
+	}
+	return b.FavoritesLocked
+}
+
+func lockFavorites(database *gorm.DB, bookingID uint, bookingType string) {
+	if bookingType == "session" {
+		database.Model(&model.BookSession{}).Where("id = ?", bookingID).Update("favorites_locked", true)
+	} else {
+		database.Model(&model.BookMinis{}).Where("id = ?", bookingID).Update("favorites_locked", true)
+	}
+}
+
 func getDownloadLimit(database *gorm.DB, bookingID uint, bookingType string) int {
 	if bookingType == "session" {
 		var b model.BookSession
@@ -1248,6 +1292,35 @@ func getDownloadLimit(database *gorm.DB, bookingID uint, bookingType string) int
 		return 0
 	}
 	return b.DownloadLimit
+}
+
+// ensureWatermarked guarantees a watermarked copy exists for a photo.
+// It returns the path to the watermarked file, generating it if missing.
+// Returns "" only if generation fails — the caller must NOT serve the original.
+func ensureWatermarked(database *gorm.DB, photo *model.SessionPhoto) string {
+	// Fast path: cached watermarked file already exists on disk
+	if photo.WatermarkedPath != "" {
+		if _, err := os.Stat(photo.WatermarkedPath); err == nil {
+			return photo.WatermarkedPath
+		}
+	}
+
+	// Slow path: generate now (covers old photos and failed upload-time attempts)
+	ext := filepath.Ext(photo.FilePath)
+	wmPath := strings.TrimSuffix(photo.FilePath, ext) + "_wm.jpg"
+
+	if err := applyWatermark(photo.FilePath, wmPath, photo.MimeType); err != nil {
+		log.Printf("❌ Watermark generation failed for photo %d: %v", photo.ID, err)
+		return ""
+	}
+
+	// Persist the path so future requests hit the fast path
+	if err := database.Model(photo).Update("watermarked_path", wmPath).Error; err != nil {
+		log.Printf("⚠️  Could not persist watermarked_path for photo %d: %v", photo.ID, err)
+	}
+
+	log.Printf("🖼️  Generated watermark on-demand for photo %d", photo.ID)
+	return wmPath
 }
 
 func deletePhotoFiles(filePath, watermarkedPath string, photoID uint) {
