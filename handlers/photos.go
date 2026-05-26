@@ -126,19 +126,33 @@ func UploadPhotos(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
+		// Apply watermark — store watermarked copy alongside original
+		mime := fileHeader.Header.Get("Content-Type")
+		wmExt := ".jpg"
+		wmFilename := fmt.Sprintf("%s_%d_%d%s_wm%s", bookingType, bookingID, timestamp+int64(uploadedCount), ext, wmExt)
+		wmPath := filepath.Join(UploadDir, wmFilename)
+		if err := applyWatermark(destPath, wmPath, mime); err != nil {
+			log.Printf("Warning: could not apply watermark to %s: %v", fileHeader.Filename, err)
+			wmPath = "" // fall back to serving original
+		}
+
 		// Create database entry
 		photo := model.SessionPhoto{
-			BookingID:   uint(bookingID),
-			BookingType: bookingType,
-			FileName:    fileHeader.Filename,
-			FilePath:    destPath,
-			FileSize:    written,
-			MimeType:    fileHeader.Header.Get("Content-Type"),
+			BookingID:       uint(bookingID),
+			BookingType:     bookingType,
+			FileName:        fileHeader.Filename,
+			FilePath:        destPath,
+			WatermarkedPath: wmPath,
+			FileSize:        written,
+			MimeType:        mime,
 		}
 
 		if err := database.Create(&photo).Error; err != nil {
 			log.Printf("Error saving photo record: %v", err)
 			os.Remove(destPath)
+			if wmPath != "" {
+				os.Remove(wmPath)
+			}
 			continue
 		}
 
@@ -275,20 +289,33 @@ func ViewPhoto(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check if file exists
-	if _, err := os.Stat(photo.FilePath); os.IsNotExist(err) {
-		log.Printf("❌ Photo file not found: %s", photo.FilePath)
-		http.Error(w, "Photo file not found on server", http.StatusNotFound)
-		return
+	// Determine which file to serve: admins see originals, users see watermarked
+	servePath := photo.FilePath
+	if !isAdmin && photo.WatermarkedPath != "" {
+		servePath = photo.WatermarkedPath
 	}
 
-	// Set content type for image display
-	w.Header().Set("Content-Type", photo.MimeType)
+	if _, err := os.Stat(servePath); os.IsNotExist(err) {
+		// Fall back to original if watermarked is missing
+		if servePath != photo.FilePath {
+			servePath = photo.FilePath
+		}
+		if _, err2 := os.Stat(servePath); os.IsNotExist(err2) {
+			log.Printf("❌ Photo file not found: %s", servePath)
+			http.Error(w, "Photo file not found on server", http.StatusNotFound)
+			return
+		}
+	}
+
+	// Always serve watermarked as JPEG; keep original MIME for the original
+	contentType := photo.MimeType
+	if !isAdmin && photo.WatermarkedPath != "" {
+		contentType = "image/jpeg"
+	}
+	w.Header().Set("Content-Type", contentType)
 	w.Header().Set("Cache-Control", "public, max-age=86400")
-	
-	// Serve the file for viewing
-	http.ServeFile(w, r, photo.FilePath)
-	log.Printf("📸 Served photo: %s (type: %s)", photo.FileName, photo.MimeType)
+	http.ServeFile(w, r, servePath)
+	log.Printf("📸 Served photo: %s (watermarked=%v)", photo.FileName, !isAdmin && photo.WatermarkedPath != "")
 }
 
 // DownloadPhoto downloads a single photo
@@ -336,25 +363,25 @@ func DownloadPhoto(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Non-admin users may only download photos they marked as favorites
+	if !isAdmin && !photo.IsFavorite {
+		http.Error(w, "Photo must be marked as a favorite before downloading", http.StatusForbidden)
+		return
+	}
+
 	// Set headers to trigger browser download
 	w.Header().Set("Content-Type", photo.MimeType)
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", photo.FileName))
-	
-	// Serve the file to the client's browser
 	http.ServeFile(w, r, photo.FilePath)
-	
-	log.Printf("✅ Downloaded photo: %s (type: %s)", photo.FileName, photo.MimeType)
+	log.Printf("✅ Downloaded photo: %s", photo.FileName)
 
-	// Mark as downloaded and delete in background
 	go func() {
 		now := time.Now()
 		photo.IsDownloaded = true
 		photo.DownloadedAt = &now
 		database.Save(&photo)
-
-		// Delete original file for non-admin users
 		if !isAdmin {
-			deletePhotoFile(photo.FilePath, photo.ID)
+			deletePhotoFiles(photo.FilePath, photo.WatermarkedPath, photo.ID)
 		}
 	}()
 }
@@ -424,17 +451,15 @@ func DownloadMultiplePhotos(w http.ResponseWriter, r *http.Request) {
 	defer zipWriter.Close()
 
 	now := time.Now()
-	filesToDelete := []string{}
+	filesToDelete := []struct{ orig, wm string }{}
 
 	for _, photo := range photos {
-		// Open photo file
 		file, err := os.Open(photo.FilePath)
 		if err != nil {
 			log.Printf("Error opening file %s: %v", photo.FilePath, err)
 			continue
 		}
 
-		// Add file to zip
 		fileWriter, err := zipWriter.Create(photo.FileName)
 		if err != nil {
 			file.Close()
@@ -450,7 +475,6 @@ func DownloadMultiplePhotos(w http.ResponseWriter, r *http.Request) {
 
 		file.Close()
 
-		// Mark as downloaded in background
 		go func(p model.SessionPhoto) {
 			p.IsDownloaded = true
 			p.DownloadedAt = &now
@@ -458,15 +482,18 @@ func DownloadMultiplePhotos(w http.ResponseWriter, r *http.Request) {
 		}(photo)
 
 		if !isAdmin {
-			filesToDelete = append(filesToDelete, photo.FilePath)
+			filesToDelete = append(filesToDelete, struct{ orig, wm string }{photo.FilePath, photo.WatermarkedPath})
 		}
 	}
 
-	// Delete original files after download for non-admin users
 	if !isAdmin {
 		go func() {
-			for _, filePath := range filesToDelete {
-				deletePhotoFile(filePath, 0)
+			time.Sleep(5 * time.Second)
+			for _, p := range filesToDelete {
+				os.Remove(p.orig)
+				if p.wm != "" {
+					os.Remove(p.wm)
+				}
 			}
 		}()
 	}
@@ -535,17 +562,15 @@ func DownloadAllPhotos(w http.ResponseWriter, r *http.Request) {
 	defer zipWriter.Close()
 
 	now := time.Now()
-	filesToDelete := []string{}
+	filesToDelete := []struct{ orig, wm string }{}
 
 	for _, photo := range photos {
-		// Open photo file
 		file, err := os.Open(photo.FilePath)
 		if err != nil {
 			log.Printf("Error opening file %s: %v", photo.FilePath, err)
 			continue
 		}
 
-		// Add file to zip
 		fileWriter, err := zipWriter.Create(photo.FileName)
 		if err != nil {
 			file.Close()
@@ -561,7 +586,6 @@ func DownloadAllPhotos(w http.ResponseWriter, r *http.Request) {
 
 		file.Close()
 
-		// Mark as downloaded in background
 		go func(p model.SessionPhoto) {
 			p.IsDownloaded = true
 			p.DownloadedAt = &now
@@ -569,15 +593,18 @@ func DownloadAllPhotos(w http.ResponseWriter, r *http.Request) {
 		}(photo)
 
 		if !isAdmin {
-			filesToDelete = append(filesToDelete, photo.FilePath)
+			filesToDelete = append(filesToDelete, struct{ orig, wm string }{photo.FilePath, photo.WatermarkedPath})
 		}
 	}
 
-	// Delete original files after download for non-admin users
 	if !isAdmin {
 		go func() {
-			for _, filePath := range filesToDelete {
-				deletePhotoFile(filePath, 0)
+			time.Sleep(5 * time.Second)
+			for _, p := range filesToDelete {
+				os.Remove(p.orig)
+				if p.wm != "" {
+					os.Remove(p.wm)
+				}
 			}
 		}()
 	}
@@ -872,11 +899,349 @@ func notifyUserPhotosUploaded(db *gorm.DB, bookingID uint, bookingType string) e
 }
 
 func deletePhotoFile(filePath string, photoID uint) {
-	time.Sleep(5 * time.Second) // Wait a bit to ensure download completes
+	time.Sleep(5 * time.Second)
 	if err := os.Remove(filePath); err != nil {
 		log.Printf("Warning: Could not delete photo file %s: %v", filePath, err)
 	} else {
 		log.Printf("✅ Deleted photo file: %s", filePath)
+	}
+}
+
+// GalleryInfo returns photos plus limit/favorites metadata for a booking.
+func GalleryInfo(w http.ResponseWriter, r *http.Request) {
+	session, err := store.Get(r, "session-name")
+	if err != nil {
+		http.Error(w, "Error retrieving session", http.StatusInternalServerError)
+		return
+	}
+
+	userID, _ := session.Values["userID"].(uint)
+	isAdmin, _ := session.Values["isAdmin"].(bool)
+
+	vars := mux.Vars(r)
+	bookingType := vars["type"]
+	bookingIDStr := vars["id"]
+
+	bookingID, err := strconv.ParseUint(bookingIDStr, 10, 32)
+	if err != nil {
+		http.Error(w, "Invalid booking ID", http.StatusBadRequest)
+		return
+	}
+
+	database := db.ConnectDatabase()
+
+	bookingUserID, hasPaid, err := getBookingInfo(database, uint(bookingID), bookingType)
+	if err != nil {
+		http.Error(w, "Booking not found", http.StatusNotFound)
+		return
+	}
+
+	if !isAdmin && bookingUserID != userID {
+		http.Error(w, "Unauthorized", http.StatusForbidden)
+		return
+	}
+
+	if !isAdmin && !hasPaid {
+		http.Error(w, "Payment required to view photos", http.StatusPaymentRequired)
+		return
+	}
+
+	var photos []model.SessionPhoto
+	if err := database.Where("booking_id = ? AND booking_type = ?", bookingID, bookingType).Find(&photos).Error; err != nil {
+		http.Error(w, "Error fetching photos", http.StatusInternalServerError)
+		return
+	}
+
+	downloadLimit := getDownloadLimit(database, uint(bookingID), bookingType)
+
+	favCount := 0
+	for _, p := range photos {
+		if p.IsFavorite {
+			favCount++
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"photos":          photos,
+		"download_limit":  downloadLimit,
+		"total_photos":    len(photos),
+		"favorites_count": favCount,
+	})
+}
+
+// ToggleFavorite marks or unmarks a photo as a favorite.
+func ToggleFavorite(w http.ResponseWriter, r *http.Request) {
+	session, err := store.Get(r, "session-name")
+	if err != nil {
+		http.Error(w, "Error retrieving session", http.StatusInternalServerError)
+		return
+	}
+
+	userID, _ := session.Values["userID"].(uint)
+	isAdmin, _ := session.Values["isAdmin"].(bool)
+
+	vars := mux.Vars(r)
+	photoIDStr := vars["photoId"]
+	photoID, err := strconv.ParseUint(photoIDStr, 10, 32)
+	if err != nil {
+		http.Error(w, "Invalid photo ID", http.StatusBadRequest)
+		return
+	}
+
+	database := db.ConnectDatabase()
+
+	var photo model.SessionPhoto
+	if err := database.First(&photo, photoID).Error; err != nil {
+		http.Error(w, "Photo not found", http.StatusNotFound)
+		return
+	}
+
+	bookingUserID, _, err := getBookingInfo(database, photo.BookingID, photo.BookingType)
+	if err != nil {
+		http.Error(w, "Booking not found", http.StatusNotFound)
+		return
+	}
+
+	if !isAdmin && bookingUserID != userID {
+		http.Error(w, "Unauthorized", http.StatusForbidden)
+		return
+	}
+
+	// Count current favorites for this booking
+	var currentFavCount int64
+	database.Model(&model.SessionPhoto{}).
+		Where("booking_id = ? AND booking_type = ? AND is_favorite = true", photo.BookingID, photo.BookingType).
+		Count(&currentFavCount)
+
+	downloadLimit := getDownloadLimit(database, photo.BookingID, photo.BookingType)
+
+	// Trying to add a new favorite
+	if !photo.IsFavorite && downloadLimit > 0 && int(currentFavCount) >= downloadLimit {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusConflict)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"error":          "Favorite limit reached",
+			"download_limit": downloadLimit,
+			"favorites_count": currentFavCount,
+		})
+		return
+	}
+
+	photo.IsFavorite = !photo.IsFavorite
+	if err := database.Save(&photo).Error; err != nil {
+		http.Error(w, "Error updating photo", http.StatusInternalServerError)
+		return
+	}
+
+	newFavCount := currentFavCount
+	if photo.IsFavorite {
+		newFavCount++
+	} else {
+		newFavCount--
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"is_favorite":     photo.IsFavorite,
+		"favorites_count": newFavCount,
+		"download_limit":  downloadLimit,
+	})
+}
+
+// SetDownloadLimit allows admin to set how many photos a booking's user may download.
+func SetDownloadLimit(w http.ResponseWriter, r *http.Request) {
+	session, err := store.Get(r, "session-name")
+	if err != nil {
+		http.Error(w, "Error retrieving session", http.StatusInternalServerError)
+		return
+	}
+
+	isAdmin, _ := session.Values["isAdmin"].(bool)
+	if !isAdmin {
+		http.Error(w, "Unauthorized", http.StatusForbidden)
+		return
+	}
+
+	vars := mux.Vars(r)
+	bookingType := vars["type"]
+	bookingIDStr := vars["id"]
+
+	bookingID, err := strconv.ParseUint(bookingIDStr, 10, 32)
+	if err != nil {
+		http.Error(w, "Invalid booking ID", http.StatusBadRequest)
+		return
+	}
+
+	var req struct {
+		Limit int `json:"limit"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if req.Limit < 0 {
+		http.Error(w, "Limit must be 0 or greater (0 = all photos)", http.StatusBadRequest)
+		return
+	}
+
+	database := db.ConnectDatabase()
+
+	var dbErr error
+	if bookingType == "session" {
+		dbErr = database.Model(&model.BookSession{}).Where("id = ?", bookingID).Update("download_limit", req.Limit).Error
+	} else {
+		dbErr = database.Model(&model.BookMinis{}).Where("id = ?", bookingID).Update("download_limit", req.Limit).Error
+	}
+
+	if dbErr != nil {
+		http.Error(w, "Error updating limit", http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("✅ Download limit for %s booking %d set to %d", bookingType, bookingID, req.Limit)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"success": true,
+		"limit":   req.Limit,
+	})
+}
+
+// DownloadFavorites downloads all of the user's favorited photos as a zip.
+func DownloadFavorites(w http.ResponseWriter, r *http.Request) {
+	session, err := store.Get(r, "session-name")
+	if err != nil {
+		http.Error(w, "Error retrieving session", http.StatusInternalServerError)
+		return
+	}
+
+	userID, _ := session.Values["userID"].(uint)
+	isAdmin, _ := session.Values["isAdmin"].(bool)
+
+	vars := mux.Vars(r)
+	bookingType := vars["type"]
+	bookingIDStr := vars["id"]
+
+	bookingID, err := strconv.ParseUint(bookingIDStr, 10, 32)
+	if err != nil {
+		http.Error(w, "Invalid booking ID", http.StatusBadRequest)
+		return
+	}
+
+	database := db.ConnectDatabase()
+
+	bookingUserID, hasPaid, err := getBookingInfo(database, uint(bookingID), bookingType)
+	if err != nil {
+		http.Error(w, "Booking not found", http.StatusNotFound)
+		return
+	}
+
+	if !isAdmin && bookingUserID != userID {
+		http.Error(w, "Unauthorized", http.StatusForbidden)
+		return
+	}
+
+	if !isAdmin && !hasPaid {
+		http.Error(w, "Payment required to download photos", http.StatusPaymentRequired)
+		return
+	}
+
+	// Fetch only favorited photos for the booking
+	var photos []model.SessionPhoto
+	query := database.Where("booking_id = ? AND booking_type = ?", bookingID, bookingType)
+	if !isAdmin {
+		query = query.Where("is_favorite = true")
+	}
+	if err := query.Find(&photos).Error; err != nil {
+		http.Error(w, "Error fetching photos", http.StatusInternalServerError)
+		return
+	}
+
+	if len(photos) == 0 {
+		http.Error(w, "No favorited photos to download", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/zip")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=favorites_%s_%d.zip", bookingType, bookingID))
+
+	zipWriter := zip.NewWriter(w)
+	defer zipWriter.Close()
+
+	now := time.Now()
+	var pathsToDelete []struct{ orig, wm string }
+
+	for _, photo := range photos {
+		file, err := os.Open(photo.FilePath)
+		if err != nil {
+			log.Printf("Error opening file %s: %v", photo.FilePath, err)
+			continue
+		}
+
+		fw, err := zipWriter.Create(photo.FileName)
+		if err != nil {
+			file.Close()
+			continue
+		}
+
+		if _, err := io.Copy(fw, file); err != nil {
+			file.Close()
+			continue
+		}
+		file.Close()
+
+		go func(p model.SessionPhoto) {
+			p.IsDownloaded = true
+			p.DownloadedAt = &now
+			database.Save(&p)
+		}(photo)
+
+		if !isAdmin {
+			pathsToDelete = append(pathsToDelete, struct{ orig, wm string }{photo.FilePath, photo.WatermarkedPath})
+		}
+	}
+
+	if !isAdmin {
+		go func() {
+			time.Sleep(5 * time.Second)
+			for _, p := range pathsToDelete {
+				os.Remove(p.orig)
+				if p.wm != "" {
+					os.Remove(p.wm)
+				}
+			}
+		}()
+	}
+
+	log.Printf("✅ Downloaded %d favorite photos as zip for %s booking %d", len(photos), bookingType, bookingID)
+}
+
+func getDownloadLimit(database *gorm.DB, bookingID uint, bookingType string) int {
+	if bookingType == "session" {
+		var b model.BookSession
+		if err := database.Select("download_limit").First(&b, bookingID).Error; err != nil {
+			return 0
+		}
+		return b.DownloadLimit
+	}
+	var b model.BookMinis
+	if err := database.Select("download_limit").First(&b, bookingID).Error; err != nil {
+		return 0
+	}
+	return b.DownloadLimit
+}
+
+func deletePhotoFiles(filePath, watermarkedPath string, photoID uint) {
+	time.Sleep(5 * time.Second)
+	if err := os.Remove(filePath); err != nil {
+		log.Printf("Warning: Could not delete photo file %s: %v", filePath, err)
+	}
+	if watermarkedPath != "" {
+		if err := os.Remove(watermarkedPath); err != nil {
+			log.Printf("Warning: Could not delete watermarked file %s: %v", watermarkedPath, err)
+		}
 	}
 }
 

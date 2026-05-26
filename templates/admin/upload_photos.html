@@ -310,6 +310,25 @@
         <div class="success-message" id="success-message"></div>
         <div class="error-message" id="error-message"></div>
 
+        <!-- Download limit panel -->
+        <div style="background:#f0f4ff;border:1px solid #c0ceff;border-radius:10px;padding:18px 22px;margin-bottom:24px;">
+            <h3 style="margin:0 0 10px;color:#667eea;font-size:16px;">&#127760; Client Download Limit</h3>
+            <p style="margin:0 0 12px;font-size:13px;color:#555;">
+                Set how many photos this client is allowed to select as favorites and download.
+                Set to <strong>0</strong> to allow all photos.
+            </p>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                <input type="number" id="limit-input" min="0" placeholder="e.g. 20"
+                    style="width:110px;padding:9px 12px;border:2px solid #667eea;border-radius:8px;font-size:15px;">
+                <button onclick="saveLimit()" id="save-limit-btn"
+                    style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;border:none;
+                           padding:10px 22px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;">
+                    Save Limit
+                </button>
+                <span id="limit-status" style="font-size:13px;color:#555;"></span>
+            </div>
+        </div>
+
         <div class="drop-zone" id="drop-zone">
             <div class="drop-zone-icon">📁</div>
             <div class="drop-zone-text">Drag and drop photos here</div>
@@ -570,6 +589,37 @@
         // Expose functions to global scope for onclick handlers
         window.removeFile = removeFile;
         window.openPreview = openPreview;
+
+        // ── Download limit ──
+        async function saveLimit() {
+            const val = parseInt(document.getElementById('limit-input').value);
+            if (isNaN(val) || val < 0) {
+                document.getElementById('limit-status').textContent = '⚠ Enter a valid number (0 = no limit).';
+                return;
+            }
+            const btn = document.getElementById('save-limit-btn');
+            btn.disabled = true;
+            btn.textContent = 'Saving…';
+            try {
+                const res = await fetch(`/admin/booking/${bookingType}/${bookingID}/set-limit`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ limit: val })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('limit-status').textContent =
+                        val === 0 ? '✅ Limit cleared (client can download all).' : `✅ Limit set to ${val} photos.`;
+                } else {
+                    document.getElementById('limit-status').textContent = '❌ Failed to save.';
+                }
+            } catch {
+                document.getElementById('limit-status').textContent = '❌ Network error.';
+            }
+            btn.disabled = false;
+            btn.textContent = 'Save Limit';
+        }
+        window.saveLimit = saveLimit;
     </script>
 </body>
 </html>

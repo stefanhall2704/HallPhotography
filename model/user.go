@@ -58,6 +58,7 @@ type BookMinis struct {
 	PaidAmount           float64   `gorm:"default:0"` // Amount paid
 	PaymentDate          *time.Time // When payment was made
 	PhotosUploaded       bool      `gorm:"default:false"` // Track if photos are uploaded
+	DownloadLimit        int       `gorm:"default:0"` // How many photos the user can download (0 = all)
 	User                 User      `gorm:"foreignKey:UserID"`
 	Minis                Minis     `gorm:"foreignKey:MinisID"`
 	Messages             []BookingMessage `gorm:"foreignKey:BookingID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
@@ -108,6 +109,7 @@ type BookSession struct {
 	PaidAmount          float64 `gorm:"default:0"` // Amount paid
 	PaymentDate         *time.Time // When payment was made
 	PhotosUploaded      bool    `gorm:"default:false"` // Track if photos are uploaded
+	DownloadLimit       int     `gorm:"default:0"` // How many photos the user can download (0 = all)
 	User                User    `gorm:"foreignKey:UserID"`
 	Session             Session `gorm:"foreignKey:SessionID"`
 	Messages            []BookingMessage `gorm:"foreignKey:BookingID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
@@ -127,13 +129,15 @@ type BookingMessage struct {
 // SessionPhoto represents a photo uploaded by photographer for a booking
 type SessionPhoto struct {
 	gorm.Model
-	BookingID       uint   `gorm:"not null;index"`
-	BookingType     string `gorm:"not null"` // "minis" or "session"
-	FileName        string `gorm:"not null"`
-	FilePath        string `gorm:"not null"` // Path to file on disk
-	FileSize        int64  `gorm:"not null"` // Size in bytes
-	MimeType        string `gorm:"not null"` // image/jpeg, image/png, etc.
-	IsDownloaded    bool   `gorm:"default:false"` // Track if downloaded by user
+	BookingID       uint       `gorm:"not null;index"`
+	BookingType     string     `gorm:"not null"` // "minis" or "session"
+	FileName        string     `gorm:"not null"`
+	FilePath        string     `gorm:"not null"`  // Path to original file on disk
+	WatermarkedPath string     `gorm:"default:''"` // Path to watermarked version for viewing
+	FileSize        int64      `gorm:"not null"`  // Size in bytes
+	MimeType        string     `gorm:"not null"`  // image/jpeg, image/png, etc.
+	IsFavorite      bool       `gorm:"default:false"` // User marked as favorite for download
+	IsDownloaded    bool       `gorm:"default:false"` // Track if downloaded by user
 	DownloadedAt    *time.Time // When it was downloaded
 }
 

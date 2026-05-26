@@ -225,10 +225,25 @@
                             <span class="info-label">Payment</span>
                             <span class="info-value">${session.HasPaid ? '✅ Paid' : '⏳ Pending'}</span>
                         </div>
+                        <div class="info-item">
+                            <span class="info-label">Download Limit</span>
+                            <span class="info-value">${session.DownloadLimit > 0 ? session.DownloadLimit + ' photos' : 'Not set'}</span>
+                        </div>
                     </div>
-                    <a href="/admin/booking/session/${session.ID}/upload-photos-view" class="upload-btn">
-                        📤 Upload Photos
-                    </a>
+                    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:4px;">
+                        <a href="/admin/booking/session/${session.ID}/upload-photos-view" class="upload-btn">
+                            📤 Upload Photos
+                        </a>
+                        <input type="number" id="limit-session-${session.ID}" min="0"
+                            placeholder="Set limit (0=all)"
+                            value="${session.DownloadLimit || ''}"
+                            style="width:160px;padding:9px 12px;border:2px solid #667eea;border-radius:8px;font-size:13px;">
+                        <button onclick="saveLimit('session', ${session.ID})"
+                            style="background:#667eea;color:white;border:none;padding:9px 16px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">
+                            Save Limit
+                        </button>
+                        <span id="limit-status-session-${session.ID}" style="font-size:12px;color:#555;"></span>
+                    </div>
                 </div>
             `).join('');
         }
@@ -264,10 +279,25 @@
                             <span class="info-label">Payment</span>
                             <span class="info-value">${mini.HasPaid ? '✅ Paid' : '⏳ Pending'}</span>
                         </div>
+                        <div class="info-item">
+                            <span class="info-label">Download Limit</span>
+                            <span class="info-value">${mini.DownloadLimit > 0 ? mini.DownloadLimit + ' photos' : 'Not set'}</span>
+                        </div>
                     </div>
-                    <a href="/admin/booking/minis/${mini.ID}/upload-photos-view" class="upload-btn">
-                        📤 Upload Photos
-                    </a>
+                    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:4px;">
+                        <a href="/admin/booking/minis/${mini.ID}/upload-photos-view" class="upload-btn">
+                            📤 Upload Photos
+                        </a>
+                        <input type="number" id="limit-minis-${mini.ID}" min="0"
+                            placeholder="Set limit (0=all)"
+                            value="${mini.DownloadLimit || ''}"
+                            style="width:160px;padding:9px 12px;border:2px solid #667eea;border-radius:8px;font-size:13px;">
+                        <button onclick="saveLimit('minis', ${mini.ID})"
+                            style="background:#667eea;color:white;border:none;padding:9px 16px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">
+                            Save Limit
+                        </button>
+                        <span id="limit-status-minis-${mini.ID}" style="font-size:12px;color:#555;"></span>
+                    </div>
                 </div>
             `).join('');
         }
@@ -280,6 +310,31 @@
                 month: 'long', 
                 day: 'numeric' 
             });
+        }
+
+        async function saveLimit(bookingType, bookingId) {
+            const input  = document.getElementById(`limit-${bookingType}-${bookingId}`);
+            const status = document.getElementById(`limit-status-${bookingType}-${bookingId}`);
+            const val    = parseInt(input.value);
+            if (isNaN(val) || val < 0) {
+                status.textContent = '⚠ Enter a valid number.';
+                return;
+            }
+            status.textContent = 'Saving…';
+            try {
+                const res = await fetch(`/admin/booking/${bookingType}/${bookingId}/set-limit`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ limit: val })
+                });
+                const data = await res.json();
+                status.textContent = data.success
+                    ? (val === 0 ? '✅ No limit set.' : `✅ Limit: ${val} photos`)
+                    : '❌ Failed.';
+                setTimeout(() => { status.textContent = ''; }, 3000);
+            } catch {
+                status.textContent = '❌ Network error.';
+            }
         }
 
         // Load bookings on page load

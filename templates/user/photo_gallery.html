@@ -6,6 +6,8 @@
     <title>Photo Gallery - Hall's Photography</title>
     <link rel="stylesheet" href="/css/main.css">
     <style>
+        * { box-sizing: border-box; }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -26,22 +28,81 @@
         h1 {
             color: #333;
             text-align: center;
-            margin-bottom: 10px;
+            margin-bottom: 6px;
         }
 
         .subtitle {
             text-align: center;
             color: #666;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
         }
 
+        /* ── Favorites bar ── */
+        .favorites-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 16px 22px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .favorites-bar .fav-info {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        .fav-counter {
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .fav-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .progress-wrap {
+            flex: 1;
+            min-width: 160px;
+            max-width: 280px;
+        }
+
+        .progress-track {
+            background: rgba(255,255,255,0.25);
+            border-radius: 20px;
+            height: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: white;
+            border-radius: 20px;
+            transition: width 0.3s;
+        }
+
+        .progress-text {
+            font-size: 12px;
+            margin-top: 4px;
+            opacity: 0.85;
+            text-align: right;
+        }
+
+        /* ── Toolbar ── */
         .toolbar {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 30px;
+            margin-bottom: 24px;
             flex-wrap: wrap;
-            gap: 15px;
+            gap: 12px;
         }
 
         .back-btn {
@@ -53,172 +114,132 @@
             cursor: pointer;
             text-decoration: none;
             display: inline-block;
+            font-size: 14px;
         }
-
-        .back-btn:hover {
-            background: #5a6268;
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
+        .back-btn:hover { background: #5a6268; }
 
         .btn {
-            padding: 10px 20px;
+            padding: 10px 22px;
             border-radius: 8px;
             border: none;
             cursor: pointer;
             font-size: 14px;
             font-weight: 600;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: transform 0.15s, box-shadow 0.15s;
         }
+        .btn:hover:not(:disabled) { transform: translateY(-2px); }
+        .btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
-        .btn:hover:not(:disabled) {
-            transform: translateY(-2px);
-        }
-
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        .btn-download {
+            background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
             color: white;
         }
 
-        .btn-success {
-            background: #28a745;
-            color: white;
-        }
-
-        .btn-danger {
-            background: #dc3545;
-            color: white;
-        }
-
-        .select-mode-btn {
-            background: #17a2b8;
-            color: white;
-        }
-
+        /* ── Grid ── */
         .photo-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 18px;
             margin-bottom: 30px;
         }
 
         .photo-card {
             position: relative;
-            background: #f8f9fa;
+            background: #f1f3f5;
             border-radius: 10px;
             overflow: hidden;
             cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
+            border: 3px solid transparent;
         }
+        .photo-card:hover { transform: translateY(-4px); box-shadow: 0 8px 20px rgba(0,0,0,0.14); }
 
-        .photo-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
-        }
-
-        .photo-card.selected {
-            border: 4px solid #667eea;
-        }
+        .photo-card.favorited { border-color: #e83e8c; }
 
         .photo-img {
             width: 100%;
-            height: 250px;
+            height: 220px;
             object-fit: cover;
+            display: block;
         }
 
-        .photo-info {
-            padding: 15px;
-        }
-
-        .photo-name {
-            font-weight: 500;
-            color: #333;
-            margin-bottom: 5px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .photo-size {
-            font-size: 12px;
-            color: #666;
-        }
-
-        .checkbox-overlay {
+        /* Heart overlay */
+        .heart-btn {
             position: absolute;
-            top: 10px;
-            right: 10px;
-            width: 30px;
-            height: 30px;
-            background: white;
-            border: 2px solid #667eea;
+            top: 8px;
+            right: 8px;
+            width: 36px;
+            height: 36px;
+            background: rgba(255,255,255,0.88);
+            border: none;
             border-radius: 50%;
-            display: none;
+            display: flex;
             align-items: center;
             justify-content: center;
+            cursor: pointer;
             font-size: 18px;
+            transition: transform 0.15s, background 0.15s;
+            z-index: 2;
+            line-height: 1;
         }
+        .heart-btn:hover { transform: scale(1.15); background: white; }
+        .heart-btn.active { background: #e83e8c; color: white; }
 
-        .select-mode .checkbox-overlay {
-            display: flex;
-        }
-
-        .photo-card.selected .checkbox-overlay {
-            background: #667eea;
+        /* Favorite badge on bottom */
+        .fav-badge {
+            display: none;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(232,62,140,0.85));
             color: white;
-        }
-
-        .loading, .empty-state {
+            font-size: 12px;
+            font-weight: 600;
             text-align: center;
-            padding: 60px 20px;
-            color: #666;
+            padding: 10px 0 6px;
+            letter-spacing: 0.5px;
         }
+        .photo-card.favorited .fav-badge { display: block; }
 
-        .empty-state-icon {
-            font-size: 64px;
-            margin-bottom: 20px;
-            color: #ddd;
-        }
+        /* ── States ── */
+        .loading, .empty-state { text-align: center; padding: 60px 20px; color: #666; }
+        .empty-state-icon { font-size: 60px; margin-bottom: 16px; color: #ccc; }
 
         .payment-required {
             text-align: center;
-            padding: 60px 20px;
+            padding: 50px 20px;
             background: #fff3cd;
             border: 2px solid #ffc107;
             border-radius: 10px;
             color: #856404;
         }
+        .payment-required h2 { color: #856404; }
 
-        .payment-required h2 {
-            color: #856404;
+        /* ── Info banner ── */
+        .info-banner {
+            background: #e8f4fd;
+            border: 1px solid #bee5eb;
+            border-radius: 10px;
+            padding: 14px 20px;
+            margin-bottom: 20px;
+            color: #0c5460;
+            font-size: 14px;
+            line-height: 1.6;
         }
 
-        /* Modal styles */
+        /* ── Modal ── */
         .modal {
             display: none;
             position: fixed;
             z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.9);
+            left: 0; top: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.92);
             align-items: center;
             justify-content: center;
         }
-
-        .modal.active {
-            display: flex;
-        }
+        .modal.active { display: flex; }
 
         .modal-content {
             position: relative;
@@ -228,129 +249,127 @@
 
         .modal-img {
             max-width: 100%;
-            max-height: 90vh;
+            max-height: 88vh;
             object-fit: contain;
+            border-radius: 4px;
         }
 
         .modal-close {
-            position: absolute;
-            top: 20px;
-            right: 40px;
+            position: fixed;
+            top: 16px; right: 28px;
             color: white;
             font-size: 40px;
             font-weight: bold;
             cursor: pointer;
+            line-height: 1;
         }
 
         .modal-nav {
-            position: absolute;
+            position: fixed;
             top: 50%;
             transform: translateY(-50%);
-            background: rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.22);
             color: white;
-            font-size: 40px;
-            padding: 20px;
+            font-size: 36px;
+            padding: 18px 14px;
             cursor: pointer;
             border: none;
-            border-radius: 5px;
+            border-radius: 6px;
         }
+        .modal-nav:hover { background: rgba(255,255,255,0.4); }
+        .modal-prev { left: 16px; }
+        .modal-next { right: 16px; }
 
-        .modal-nav:hover {
-            background: rgba(255,255,255,0.5);
-        }
-
-        .modal-prev {
-            left: 20px;
-        }
-
-        .modal-next {
-            right: 20px;
-        }
-
-        .selection-count {
-            background: #667eea;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-weight: 600;
-        }
-
-        .warning-banner {
-            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 30px;
-            border: 3px solid #ff4757;
-            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
-        }
-
-        .warning-banner h3 {
-            margin: 0 0 10px 0;
+        .modal-footer {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
             display: flex;
             align-items: center;
-            gap: 10px;
-            font-size: 20px;
+            gap: 12px;
         }
 
-        .warning-banner p {
-            margin: 0;
-            font-size: 15px;
-            line-height: 1.6;
+        .modal-heart-btn {
+            background: rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.6);
+            color: white;
+            font-size: 22px;
+            padding: 8px 20px;
+            border-radius: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        .modal-heart-btn:hover { background: rgba(232,62,140,0.6); }
+        .modal-heart-btn.active { background: #e83e8c; border-color: #e83e8c; }
+
+        .modal-counter {
+            color: rgba(255,255,255,0.8);
+            font-size: 14px;
         }
 
-        .warning-icon {
-            font-size: 24px;
-            animation: pulse 2s infinite;
+        /* ── Limit reached banner ── */
+        .limit-banner {
+            display: none;
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            color: white;
+            padding: 14px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-weight: 600;
+            text-align: center;
         }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-        }
+        .limit-banner.show { display: block; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="toolbar">
-            <a href="/profile" class="back-btn">← Back to Profile</a>
-            <div class="action-buttons">
-                <span class="selection-count" id="selection-count" style="display: none;">0 selected</span>
-                <button class="btn select-mode-btn" id="select-mode-btn">Select Multiple</button>
-                <button class="btn btn-primary" id="download-selected-btn" style="display: none;" disabled>
-                    Download Selected
-                </button>
-                <button class="btn btn-success" id="download-all-btn">
-                    Download All
-                </button>
+            <a href="/profile" class="back-btn">&#8592; Back to Profile</a>
+            <button class="btn btn-download" id="download-btn" disabled>
+                &#8681; Download My Favorites
+            </button>
+        </div>
+
+        <h1>Your Photos</h1>
+        <p class="subtitle">{{.BookingType}} booking #{{.BookingID}}</p>
+
+        <!-- Favorites progress bar (shown after load) -->
+        <div class="favorites-bar" id="favorites-bar" style="display:none;">
+            <div class="fav-info">
+                <span class="fav-counter" id="fav-counter">0</span>
+                <span class="fav-label" id="fav-label">favorites selected</span>
+            </div>
+            <div class="progress-wrap" id="progress-wrap" style="display:none;">
+                <div class="progress-track">
+                    <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+                </div>
+                <div class="progress-text" id="progress-text"></div>
             </div>
         </div>
 
-        <h1>📸 Your Photos</h1>
-        <p class="subtitle">{{.BookingType}} booking #{{.BookingID}}</p>
+        <div class="limit-banner" id="limit-banner"></div>
 
-        <div class="warning-banner">
-            <h3><span class="warning-icon">⚠️</span> Important: One-Time Download Only!</h3>
-            <p>
-                <strong>Please read carefully:</strong> When you download your photos, they will be <strong>permanently deleted</strong> from our servers immediately after download. 
-                You will <strong>NOT be able to re-download them again</strong>. Please ensure you save the downloaded photos to a safe location (external drive, cloud storage, etc.) 
-                before closing or refreshing this page.
-            </p>
+        <div class="info-banner" id="info-banner" style="display:none;">
+            Photos are shown with a watermark for preview. When you download your favorites you will receive the full-quality originals from Hall's Photography.
         </div>
 
-        <div id="loading" class="loading">
-            <p>Loading photos...</p>
-        </div>
+        <!-- States -->
+        <div id="loading" class="loading"><p>Loading photos&#8230;</p></div>
 
-        <div id="payment-required" class="payment-required" style="display: none;">
-            <div class="empty-state-icon">💳</div>
+        <div id="payment-required" class="payment-required" style="display:none;">
+            <div class="empty-state-icon">&#128179;</div>
             <h2>Payment Required</h2>
             <p>Please complete payment to view and download your photos.</p>
             <p>Contact the photographer for payment details.</p>
         </div>
 
-        <div id="empty-state" class="empty-state" style="display: none;">
-            <div class="empty-state-icon">📷</div>
+        <div id="empty-state" class="empty-state" style="display:none;">
+            <div class="empty-state-icon">&#128247;</div>
             <h2>No Photos Yet</h2>
             <p>Your photos will appear here once the photographer uploads them.</p>
         </div>
@@ -358,302 +377,251 @@
         <div class="photo-grid" id="photo-grid"></div>
     </div>
 
-    <!-- Photo Modal -->
+    <!-- Lightbox Modal -->
     <div class="modal" id="photo-modal">
         <span class="modal-close" id="modal-close">&times;</span>
-        <button class="modal-nav modal-prev" id="modal-prev">‹</button>
+        <button class="modal-nav modal-prev" id="modal-prev">&#8249;</button>
         <div class="modal-content">
             <img class="modal-img" id="modal-img" src="" alt="Photo">
         </div>
-        <button class="modal-nav modal-next" id="modal-next">›</button>
+        <button class="modal-nav modal-next" id="modal-next">&#8250;</button>
+        <div class="modal-footer">
+            <button class="modal-heart-btn" id="modal-heart-btn">&#9825; Add to Favorites</button>
+            <span class="modal-counter" id="modal-counter"></span>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
-    
+
     <script>
         const bookingType = '{{.BookingType}}';
-        const bookingID = '{{.BookingID}}';
+        const bookingID   = '{{.BookingID}}';
+        const isAdmin     = {{.IsAdmin}};
 
         let photos = [];
-        let selectedPhotos = new Set();
-        let selectMode = false;
-        let currentModalIndex = 0;
+        let downloadLimit  = 0;
+        let favoritesCount = 0;
+        let currentIndex   = 0;
 
-        const photoGrid = document.getElementById('photo-grid');
-        const loading = document.getElementById('loading');
-        const emptyState = document.getElementById('empty-state');
-        const paymentRequired = document.getElementById('payment-required');
-        const selectModeBtn = document.getElementById('select-mode-btn');
-        const downloadSelectedBtn = document.getElementById('download-selected-btn');
-        const downloadAllBtn = document.getElementById('download-all-btn');
-        const selectionCount = document.getElementById('selection-count');
-        const modal = document.getElementById('photo-modal');
-        const modalImg = document.getElementById('modal-img');
-        const modalClose = document.getElementById('modal-close');
-        const modalPrev = document.getElementById('modal-prev');
-        const modalNext = document.getElementById('modal-next');
+        const photoGrid      = document.getElementById('photo-grid');
+        const loading        = document.getElementById('loading');
+        const emptyState     = document.getElementById('empty-state');
+        const paymentReq     = document.getElementById('payment-required');
+        const favoritesBar   = document.getElementById('favorites-bar');
+        const favCounter     = document.getElementById('fav-counter');
+        const favLabel       = document.getElementById('fav-label');
+        const progressWrap   = document.getElementById('progress-wrap');
+        const progressFill   = document.getElementById('progress-fill');
+        const progressText   = document.getElementById('progress-text');
+        const limitBanner    = document.getElementById('limit-banner');
+        const infoBanner     = document.getElementById('info-banner');
+        const downloadBtn    = document.getElementById('download-btn');
+        const modal          = document.getElementById('photo-modal');
+        const modalImg       = document.getElementById('modal-img');
+        const modalClose     = document.getElementById('modal-close');
+        const modalPrev      = document.getElementById('modal-prev');
+        const modalNext      = document.getElementById('modal-next');
+        const modalHeartBtn  = document.getElementById('modal-heart-btn');
+        const modalCounter   = document.getElementById('modal-counter');
 
-        // Toast notification function
-        function showToast(message, type = 'info') {
-            const colors = {
-                success: '#28a745',
-                error: '#dc3545',
-                warning: '#ffc107',
-                info: '#17a2b8'
-            };
-
-            Toastify({
-                text: message,
-                duration: 3000,
-                gravity: 'top',
-                position: 'right',
-                style: {
-                    background: colors[type] || colors.info,
-                },
-            }).showToast();
+        function toast(msg, type = 'info') {
+            const colors = { success: '#28a745', error: '#dc3545', warning: '#f7931e', info: '#17a2b8' };
+            Toastify({ text: msg, duration: 3000, gravity: 'top', position: 'right',
+                style: { background: colors[type] || colors.info } }).showToast();
         }
 
-        async function loadPhotos() {
+        async function loadGallery() {
             try {
-                const response = await fetch(`/booking/${bookingType}/${bookingID}/photos`);
-                
-                if (response.status === 402) {
+                const res = await fetch(`/booking/${bookingType}/${bookingID}/gallery`);
+                if (res.status === 402) {
                     loading.style.display = 'none';
-                    paymentRequired.style.display = 'block';
+                    paymentReq.style.display = 'block';
                     return;
                 }
+                if (!res.ok) throw new Error('Failed to load gallery');
 
-                if (!response.ok) throw new Error('Failed to fetch photos');
-                
-                photos = await response.json();
-                console.log('📸 Loaded photos:', photos);
-                
+                const data = await res.json();
+                photos         = data.photos || [];
+                downloadLimit  = data.download_limit || 0;
+                favoritesCount = data.favorites_count || 0;
+
                 loading.style.display = 'none';
-                
+
                 if (photos.length === 0) {
                     emptyState.style.display = 'block';
                     return;
                 }
 
-                renderPhotos();
-            } catch (error) {
-                console.error('Error loading photos:', error);
-                loading.innerHTML = '<p style="color: red;">Error loading photos. Please try again.</p>';
+                infoBanner.style.display = 'block';
+                favoritesBar.style.display = 'flex';
+                renderGrid();
+                updateFavUI();
+            } catch (e) {
+                loading.innerHTML = '<p style="color:red;">Error loading photos. Please refresh.</p>';
             }
         }
 
-        function renderPhotos() {
-            photoGrid.innerHTML = photos.map((photo, index) => `
-                <div class="photo-card" data-index="${index}" data-photo-id="${photo.ID}">
-                    <div class="checkbox-overlay">✓</div>
-                    <img class="photo-img" 
-                         src="/photo/${photo.ID}/view" 
-                         alt="${photo.FileName}"
-                         onerror="console.error('Failed to load photo:', this.src); this.style.border='2px solid red';">
-                    <div class="photo-info">
-                        <div class="photo-name">${photo.FileName}</div>
-                        <div class="photo-size">${formatFileSize(photo.FileSize)}</div>
-                    </div>
+        function renderGrid() {
+            photoGrid.innerHTML = photos.map((p, i) => `
+                <div class="photo-card${p.IsFavorite ? ' favorited' : ''}" data-index="${i}" id="card-${p.ID}">
+                    <img class="photo-img" src="/photo/${p.ID}/view" alt="${p.FileName}"
+                         onerror="this.style.opacity=0.3">
+                    <button class="heart-btn${p.IsFavorite ? ' active' : ''}"
+                            data-id="${p.ID}" onclick="handleHeart(event,${p.ID})"
+                            title="${p.IsFavorite ? 'Remove from favorites' : 'Add to favorites'}">
+                        ${p.IsFavorite ? '&#10084;' : '&#9825;'}
+                    </button>
+                    <div class="fav-badge">&#10084; Favorite</div>
                 </div>
             `).join('');
 
-            attachPhotoCardListeners();
-            console.log('📸 Rendered', photos.length, 'photo cards');
-        }
-
-        function attachPhotoCardListeners() {
-            document.querySelectorAll('.photo-card').forEach(card => {
-                card.addEventListener('click', (e) => {
-                    if (selectMode) {
-                        toggleSelection(card);
-                    } else {
-                        openModal(parseInt(card.dataset.index));
-                    }
+            photoGrid.querySelectorAll('.photo-card').forEach(card => {
+                card.addEventListener('click', e => {
+                    if (e.target.classList.contains('heart-btn')) return;
+                    openModal(parseInt(card.dataset.index));
                 });
             });
         }
 
-        function toggleSelection(card) {
-            const photoId = parseInt(card.dataset.photoId);
-            
-            if (selectedPhotos.has(photoId)) {
-                selectedPhotos.delete(photoId);
-                card.classList.remove('selected');
+        function updateFavUI() {
+            favCounter.textContent = favoritesCount;
+
+            if (downloadLimit > 0) {
+                favLabel.textContent = `of ${downloadLimit} favorites selected`;
+                progressWrap.style.display = 'block';
+                const pct = Math.min(100, Math.round((favoritesCount / downloadLimit) * 100));
+                progressFill.style.width = pct + '%';
+                progressText.textContent = `${favoritesCount} / ${downloadLimit} slots used`;
+
+                if (favoritesCount >= downloadLimit) {
+                    limitBanner.textContent =
+                        `You've selected all ${downloadLimit} photos. Want more? Contact Hall's Photography to upgrade your package.`;
+                    limitBanner.classList.add('show');
+                } else {
+                    limitBanner.classList.remove('show');
+                }
             } else {
-                selectedPhotos.add(photoId);
-                card.classList.add('selected');
+                favLabel.textContent = 'favorites selected (no limit set)';
+                progressWrap.style.display = 'none';
+                limitBanner.classList.remove('show');
             }
 
-            updateSelectionUI();
+            downloadBtn.disabled = favoritesCount === 0;
         }
 
-        function updateSelectionUI() {
-            const count = selectedPhotos.size;
-            selectionCount.textContent = `${count} selected`;
-            downloadSelectedBtn.disabled = count === 0;
+        async function handleHeart(event, photoId) {
+            event.stopPropagation();
+            const idx   = photos.findIndex(p => p.ID === photoId);
+            const photo = photos[idx];
+
+            if (!photo.IsFavorite && downloadLimit > 0 && favoritesCount >= downloadLimit) {
+                toast(`Limit reached (${downloadLimit}). Remove a favorite first, or contact Hall's Photography for more.`, 'warning');
+                return;
+            }
+
+            const res = await fetch(`/photo/${photoId}/favorite`, { method: 'POST' });
+            if (res.status === 409) {
+                toast(`Favorite limit reached (${downloadLimit}).`, 'warning');
+                return;
+            }
+            if (!res.ok) { toast('Error updating favorite', 'error'); return; }
+
+            const data = await res.json();
+            photo.IsFavorite   = data.is_favorite;
+            favoritesCount     = data.favorites_count;
+            downloadLimit      = data.download_limit;
+
+            // Update card
+            const card       = document.getElementById(`card-${photoId}`);
+            const heartBtn   = card.querySelector('.heart-btn');
+            card.classList.toggle('favorited', photo.IsFavorite);
+            heartBtn.classList.toggle('active', photo.IsFavorite);
+            heartBtn.innerHTML   = photo.IsFavorite ? '&#10084;' : '&#9825;';
+            heartBtn.title       = photo.IsFavorite ? 'Remove from favorites' : 'Add to favorites';
+
+            // Update modal if open
+            if (modal.classList.contains('active') && currentIndex === idx) {
+                updateModalHeart(photo.IsFavorite);
+            }
+
+            updateFavUI();
+            toast(photo.IsFavorite ? '&#10084; Added to favorites!' : 'Removed from favorites', photo.IsFavorite ? 'success' : 'info');
         }
 
-        selectModeBtn.addEventListener('click', () => {
-            selectMode = !selectMode;
-            
-            if (selectMode) {
-                document.body.classList.add('select-mode');
-                photoGrid.classList.add('select-mode');
-                selectModeBtn.textContent = 'Cancel';
-                downloadSelectedBtn.style.display = 'inline-block';
-                selectionCount.style.display = 'inline-block';
-            } else {
-                document.body.classList.remove('select-mode');
-                photoGrid.classList.remove('select-mode');
-                selectModeBtn.textContent = 'Select Multiple';
-                downloadSelectedBtn.style.display = 'none';
-                selectionCount.style.display = 'none';
-                selectedPhotos.clear();
-                document.querySelectorAll('.photo-card').forEach(card => {
-                    card.classList.remove('selected');
-                });
-            }
-        });
-
-        downloadSelectedBtn.addEventListener('click', async () => {
-            if (selectedPhotos.size === 0) return;
-
-            // Confirmation dialog
-            const confirmed = confirm(
-                `⚠️ IMPORTANT WARNING ⚠️\n\n` +
-                `You are about to download ${selectedPhotos.size} photo(s).\n\n` +
-                `Once downloaded, these photos will be PERMANENTLY DELETED from our servers and you will NOT be able to re-download them.\n\n` +
-                `Make sure you save them to a safe location!\n\n` +
-                `Do you want to proceed with the download?`
-            );
-
-            if (!confirmed) return;
-
-            try {
-                const response = await fetch('/booking/photos/download-multiple', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        photo_ids: Array.from(selectedPhotos)
-                    })
-                });
-
-                if (!response.ok) throw new Error('Download failed');
-
-                // Get the blob and trigger download
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `photos_${bookingType}_${bookingID}.zip`;
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                a.remove();
-
-                const count = selectedPhotos.size;
-                showToast(`✅ Downloaded ${count} photo${count > 1 ? 's' : ''} successfully!`, 'success');
-                
-                // Reload photos
-                selectedPhotos.clear();
-                selectMode = false;
-                selectModeBtn.click(); // Exit select mode
-                loadPhotos();
-            } catch (error) {
-                console.error('Download error:', error);
-                showToast('❌ Failed to download photos. Please try again.', 'error');
-            }
-        });
-
-        downloadAllBtn.addEventListener('click', async () => {
-            // Confirmation dialog
-            const confirmed = confirm(
-                `⚠️ IMPORTANT WARNING ⚠️\n\n` +
-                `You are about to download ALL photos from this booking.\n\n` +
-                `Once downloaded, these photos will be PERMANENTLY DELETED from our servers and you will NOT be able to re-download them.\n\n` +
-                `Make sure you save them to a safe location!\n\n` +
-                `Do you want to proceed with the download?`
-            );
-
-            if (!confirmed) return;
-
-            try {
-                const response = await fetch(`/booking/${bookingType}/${bookingID}/photos/download-all`);
-                
-                if (!response.ok) throw new Error('Download failed');
-
-                // Get the blob and trigger download
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `photos_${bookingType}_${bookingID}_all.zip`;
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                a.remove();
-
-                showToast(`✅ Downloaded all photos successfully!`, 'success');
-                
-                // Reload photos
-                loadPhotos();
-            } catch (error) {
-                console.error('Download error:', error);
-                showToast('❌ Failed to download photos. Please try again.', 'error');
-            }
-        });
-
-        function openModal(index) {
-            currentModalIndex = index;
-            const photo = photos[index];
+        // ── Modal ──
+        function openModal(idx) {
+            currentIndex = idx;
+            const photo = photos[idx];
             modalImg.src = `/photo/${photo.ID}/view`;
+            modalCounter.textContent = `${idx + 1} of ${photos.length}`;
+            updateModalHeart(photo.IsFavorite);
             modal.classList.add('active');
         }
 
-        function closeModal() {
-            modal.classList.remove('active');
+        function updateModalHeart(isFav) {
+            modalHeartBtn.classList.toggle('active', isFav);
+            modalHeartBtn.innerHTML = isFav ? '&#10084; Remove Favorite' : '&#9825; Add to Favorites';
         }
 
-        function nextPhoto() {
-            currentModalIndex = (currentModalIndex + 1) % photos.length;
-            openModal(currentModalIndex);
-        }
+        function closeModal() { modal.classList.remove('active'); }
 
-        function prevPhoto() {
-            currentModalIndex = (currentModalIndex - 1 + photos.length) % photos.length;
-            openModal(currentModalIndex);
-        }
+        function nextPhoto() { currentIndex = (currentIndex + 1) % photos.length; openModal(currentIndex); }
+        function prevPhoto() { currentIndex = (currentIndex - 1 + photos.length) % photos.length; openModal(currentIndex); }
 
         modalClose.addEventListener('click', closeModal);
         modalNext.addEventListener('click', nextPhoto);
         modalPrev.addEventListener('click', prevPhoto);
+        modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
 
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) closeModal();
+        modalHeartBtn.addEventListener('click', () => {
+            const photo = photos[currentIndex];
+            handleHeart(new MouseEvent('click'), photo.ID);
         });
 
-        document.addEventListener('keydown', (e) => {
+        document.addEventListener('keydown', e => {
             if (!modal.classList.contains('active')) return;
-            
-            if (e.key === 'Escape') closeModal();
+            if (e.key === 'Escape')      closeModal();
             if (e.key === 'ArrowRight') nextPhoto();
-            if (e.key === 'ArrowLeft') prevPhoto();
+            if (e.key === 'ArrowLeft')  prevPhoto();
         });
 
-        function formatFileSize(bytes) {
-            if (bytes === 0) return '0 Bytes';
-            const k = 1024;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
-        }
+        // ── Download favorites ──
+        downloadBtn.addEventListener('click', async () => {
+            const confirmed = confirm(
+                `Download ${favoritesCount} favorite photo${favoritesCount !== 1 ? 's' : ''}?\n\n` +
+                `These are your full-quality originals without watermarks.\n` +
+                `After downloading, save them somewhere safe — they will be removed from our servers.`
+            );
+            if (!confirmed) return;
 
-        // Load photos on page load
-        loadPhotos();
+            downloadBtn.disabled = true;
+            downloadBtn.textContent = 'Preparing download…';
+
+            try {
+                const res = await fetch(`/booking/${bookingType}/${bookingID}/download-favorites`);
+                if (!res.ok) throw new Error(await res.text());
+
+                const blob = await res.blob();
+                const url  = URL.createObjectURL(blob);
+                const a    = document.createElement('a');
+                a.href     = url;
+                a.download = `HallsPhotography_${bookingType}_${bookingID}_favorites.zip`;
+                document.body.appendChild(a);
+                a.click();
+                URL.revokeObjectURL(url);
+                a.remove();
+
+                toast(`Downloaded ${favoritesCount} photo${favoritesCount !== 1 ? 's' : ''}! Save them somewhere safe.`, 'success');
+                setTimeout(() => loadGallery(), 3000);
+            } catch (err) {
+                toast('Download failed. Please try again.', 'error');
+                downloadBtn.disabled = false;
+                downloadBtn.textContent = '&#8681; Download My Favorites';
+            }
+        });
+
+        loadGallery();
     </script>
 </body>
 </html>
-
