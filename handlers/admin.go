@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -14,9 +15,44 @@ import (
 
 	"github.com/gorilla/mux"
 
+	calendarreader "github.com/stefanhall2704/GoPhotography/calendar"
 	"github.com/stefanhall2704/GoPhotography/db"
 	"github.com/stefanhall2704/GoPhotography/model"
 )
+
+// postCalendarEvents creates Google Calendar events for all admin users with Google tokens
+// and optionally for the client (clientUserID > 0). Calendar failures are logged but never
+// propagate — they must not block the booking confirmation flow.
+func postCalendarEvents(ctx context.Context, clientUserID uint, summary, description string, start, end time.Time) {
+	database := db.ConnectDatabase()
+
+	// Create event for all admin users who authenticated via Google
+	var admins []model.User
+	database.Where("is_admin = ? AND google_refresh_token != ''", true).Find(&admins)
+	for _, admin := range admins {
+		expiry := time.Time{}
+		if admin.GoogleTokenExpiry != nil {
+			expiry = *admin.GoogleTokenExpiry
+		}
+		if err := calendarreader.CreateEventForTokens(ctx, admin.GoogleAccessToken, admin.GoogleRefreshToken, expiry, summary, description, start, end); err != nil {
+			log.Printf("Calendar: failed to create event for admin %d: %v", admin.ID, err)
+		}
+	}
+
+	// Create event for the client if they authenticated via Google
+	if clientUserID > 0 {
+		var client model.User
+		if err := database.First(&client, clientUserID).Error; err == nil && client.GoogleRefreshToken != "" {
+			expiry := time.Time{}
+			if client.GoogleTokenExpiry != nil {
+				expiry = *client.GoogleTokenExpiry
+			}
+			if err := calendarreader.CreateEventForTokens(ctx, client.GoogleAccessToken, client.GoogleRefreshToken, expiry, summary, description, start, end); err != nil {
+				log.Printf("Calendar: failed to create event for client %d: %v", clientUserID, err)
+			}
+		}
+	}
+}
 
 // GetAllBookings retrieves all bookings (admin only)
 func GetAllBookings(w http.ResponseWriter, r *http.Request) {
@@ -402,20 +438,22 @@ func GetPendingBookings(w http.ResponseWriter, r *http.Request) {
 // GetAllSessionsForAdmin retrieves all sessions with comprehensive status (admin only)
 func GetAllSessionsForAdmin(w http.ResponseWriter, r *http.Request) {
 	database := db.ConnectDatabase()
-	
-	// Get all regular session bookings with details
+
+	// Get all regular session bookings with details (LEFT JOIN users so offline bookings with user_id=0 are included)
 	var sessions []struct {
 		model.BookSession
 		SessionDate time.Time
 		UserName    string
 		SessionName string
+		IsOffline   bool
 	}
 
 	database.Table("book_sessions").
-		Select("book_sessions.*, session_days.start as session_date, users.first_name || ' ' || users.last_name as user_name, sessions.name as session_name").
-		Joins("JOIN session_days ON book_sessions.session_id = session_days.session_id").
-		Joins("JOIN users ON book_sessions.user_id = users.id").
+		Select("book_sessions.*, session_days.start as session_date, COALESCE(users.first_name || ' ' || users.last_name, '') as user_name, sessions.name as session_name, (book_sessions.user_id = 0) as is_offline").
+		Joins("LEFT JOIN session_days ON book_sessions.session_id = session_days.session_id").
+		Joins("LEFT JOIN users ON book_sessions.user_id = users.id AND book_sessions.user_id != 0").
 		Joins("JOIN sessions ON book_sessions.session_id = sessions.id").
+		Where("book_sessions.deleted_at IS NULL").
 		Order("session_days.start DESC").
 		Scan(&sessions)
 
@@ -425,15 +463,47 @@ func GetAllSessionsForAdmin(w http.ResponseWriter, r *http.Request) {
 		MinisDate time.Time
 		UserName  string
 		MinisName string
+		IsOffline bool
 	}
 
 	database.Table("book_minis").
-		Select("book_minis.*, minis_days.start as minis_date, users.first_name || ' ' || users.last_name as user_name, minis.name as minis_name").
-		Joins("JOIN minis_days ON book_minis.minis_id = minis_days.minis_id").
-		Joins("JOIN users ON book_minis.user_id = users.id").
+		Select("book_minis.*, minis_days.start as minis_date, COALESCE(users.first_name || ' ' || users.last_name, '') as user_name, minis.name as minis_name, (book_minis.user_id = 0) as is_offline").
+		Joins("LEFT JOIN minis_days ON book_minis.minis_id = minis_days.minis_id").
+		Joins("LEFT JOIN users ON book_minis.user_id = users.id AND book_minis.user_id != 0").
 		Joins("JOIN minis ON book_minis.minis_id = minis.id").
+		Where("book_minis.deleted_at IS NULL").
 		Order("minis_days.start DESC").
 		Scan(&minis)
+
+	// Enrich offline bookings with pending customer display names
+	var pendingCustomers []model.PendingCustomer
+	database.Where("is_claimed = ?", false).Find(&pendingCustomers)
+	pendingMap := make(map[string]*model.PendingCustomer)
+	for i := range pendingCustomers {
+		key := fmt.Sprintf("%s:%d", pendingCustomers[i].BookingType, pendingCustomers[i].BookingID)
+		pendingMap[key] = &pendingCustomers[i]
+	}
+
+	for i := range sessions {
+		if sessions[i].UserID == 0 {
+			key := fmt.Sprintf("session:%d", sessions[i].Model.ID)
+			if pc, ok := pendingMap[key]; ok {
+				sessions[i].UserName = fmt.Sprintf("[Unclaimed] %s %s (%s)", pc.FirstName, pc.LastName, pc.Email)
+			} else {
+				sessions[i].UserName = "[Unclaimed]"
+			}
+		}
+	}
+	for i := range minis {
+		if minis[i].UserID == 0 {
+			key := fmt.Sprintf("minis:%d", minis[i].Model.ID)
+			if pc, ok := pendingMap[key]; ok {
+				minis[i].UserName = fmt.Sprintf("[Unclaimed] %s %s (%s)", pc.FirstName, pc.LastName, pc.Email)
+			} else {
+				minis[i].UserName = "[Unclaimed]"
+			}
+		}
+	}
 
 	response := map[string]interface{}{
 		"sessions": sessions,
@@ -544,20 +614,33 @@ func ApprovePriceForSession(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Notify user
-		userMessage := fmt.Sprintf("Thank you! Your photography session is now confirmed for %s at $%.2f", 
+		userMessage := fmt.Sprintf("Thank you! Your photography session is now confirmed for %s at $%.2f",
 			booking.TimeSlot, booking.ProposedPrice)
 		if err := CreateNotification(database, booking.UserID, userMessage, "confirmed", booking.ID, "session"); err != nil {
 			log.Printf("Error creating user notification: %v", err)
 		}
 
+		// Post to Google Calendar (best-effort — never blocks the booking)
+		var sessionDay model.SessionDay
+		if err := database.Where("session_id = ?", booking.SessionID).First(&sessionDay).Error; err == nil {
+			eventEnd := sessionDay.End
+			if eventEnd.IsZero() {
+				eventEnd = sessionDay.Start.Add(time.Hour)
+			}
+			calSummary := "📷 Photography Session – Hall's Photography"
+			calDesc := fmt.Sprintf("Client: %s %s\nTime slot: %s\nPrice: $%.2f",
+				booking.User.FirstName, booking.User.LastName, booking.TimeSlot, booking.ProposedPrice)
+			go postCalendarEvents(context.Background(), booking.UserID, calSummary, calDesc, sessionDay.Start, eventEnd)
+		}
+
 	} else { // declined
 		booking.PriceApprovalStatus = "declined"
 		booking.Status = "pending" // Return to pending status
-		
+
 		log.Printf("❌ User %d declined price $%.2f for booking %d", currentUserID, booking.ProposedPrice, booking.ID)
 
 		// Notify admin
-		adminMessage := fmt.Sprintf("User %s %s has declined the proposed price of $%.2f for their photography session. Please review.", 
+		adminMessage := fmt.Sprintf("User %s %s has declined the proposed price of $%.2f for their photography session. Please review.",
 			booking.User.FirstName, booking.User.LastName, booking.ProposedPrice)
 		if err := CreateAdminNotification(database, adminMessage, "price_declined", booking.ID, "session"); err != nil {
 			log.Printf("Error creating admin notification: %v", err)
@@ -651,16 +734,29 @@ func ApprovePriceForMinis(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Notify user
-		userMessage := fmt.Sprintf("Thank you! Your mini session is now confirmed for %s at $%.2f", 
+		userMessage := fmt.Sprintf("Thank you! Your mini session is now confirmed for %s at $%.2f",
 			booking.TimeSlot, booking.ProposedPrice)
 		if err := CreateNotification(database, booking.UserID, userMessage, "confirmed", booking.ID, "minis"); err != nil {
 			log.Printf("Error creating user notification: %v", err)
 		}
 
+		// Post to Google Calendar (best-effort — never blocks the booking)
+		var minisDay model.MinisDay
+		if err := database.Where("minis_id = ?", booking.MinisID).First(&minisDay).Error; err == nil {
+			eventEnd := minisDay.End
+			if eventEnd.IsZero() {
+				eventEnd = minisDay.Start.Add(time.Hour)
+			}
+			calSummary := "📷 Mini Photography Session – Hall's Photography"
+			calDesc := fmt.Sprintf("Client: %s %s\nTime slot: %s\nPrice: $%.2f",
+				booking.User.FirstName, booking.User.LastName, booking.TimeSlot, booking.ProposedPrice)
+			go postCalendarEvents(context.Background(), booking.UserID, calSummary, calDesc, minisDay.Start, eventEnd)
+		}
+
 	} else { // declined
 		booking.PriceApprovalStatus = "declined"
 		booking.Status = "pending" // Return to pending status
-		
+
 		log.Printf("❌ User %d declined price $%.2f for minis booking %d", currentUserID, booking.ProposedPrice, booking.ID)
 
 		// Notify admin
@@ -1045,6 +1141,145 @@ func DeletePortfolioItem(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{
 		"status": "success",
 		"message": "Portfolio item deleted successfully",
+	})
+}
+
+// CreateOfflineCustomer creates a pre-registered offline booking for a customer who will claim it after registering
+func CreateOfflineCustomer(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "Error parsing form", http.StatusBadRequest)
+		return
+	}
+
+	firstName := r.FormValue("first_name")
+	lastName := r.FormValue("last_name")
+	email := r.FormValue("email")
+	sessionDateStr := r.FormValue("session_date") // YYYY-MM-DD
+	sessionType := r.FormValue("session_type")    // "minis" or "session"
+
+	if firstName == "" || lastName == "" || email == "" || sessionDateStr == "" || sessionType == "" {
+		http.Error(w, "All fields are required", http.StatusBadRequest)
+		return
+	}
+	if sessionType != "minis" && sessionType != "session" {
+		http.Error(w, "Invalid session type", http.StatusBadRequest)
+		return
+	}
+
+	sessionDate, err := time.Parse("2006-01-02", sessionDateStr)
+	if err != nil {
+		http.Error(w, "Invalid session date format (expected YYYY-MM-DD)", http.StatusBadRequest)
+		return
+	}
+
+	database := db.ConnectDatabase()
+	placeholderName := fmt.Sprintf("Offline – %s %s (%s)", firstName, lastName, sessionDateStr)
+
+	var bookingID uint
+
+	if sessionType == "session" {
+		placeholder := model.Session{
+			Name:             placeholderName,
+			Description:      "Offline session managed by photographer",
+			DurationInterval: "",
+			Price:            0,
+		}
+		if err := database.Create(&placeholder).Error; err != nil {
+			log.Printf("Error creating offline session placeholder: %v", err)
+			http.Error(w, "Error creating session", http.StatusInternalServerError)
+			return
+		}
+		day := model.SessionDay{
+			Start:     sessionDate,
+			End:       sessionDate,
+			SessionID: placeholder.Model.ID,
+		}
+		if err := database.Create(&day).Error; err != nil {
+			log.Printf("Error creating offline session day: %v", err)
+			http.Error(w, "Error creating session day", http.StatusInternalServerError)
+			return
+		}
+		booking := model.BookSession{
+			SessionID:           placeholder.Model.ID,
+			UserID:              0,
+			TimeSlot:            sessionDate.Format("Jan 2, 2006"),
+			Status:              "confirmed",
+			HasPaid:             true,
+			PriceApprovalStatus: "approved",
+		}
+		if err := database.Create(&booking).Error; err != nil {
+			log.Printf("Error creating offline booking: %v", err)
+			http.Error(w, "Error creating booking", http.StatusInternalServerError)
+			return
+		}
+		bookingID = booking.Model.ID
+	} else {
+		placeholder := model.Minis{
+			Name:             placeholderName,
+			Description:      "Offline mini session managed by photographer",
+			DurationInterval: "",
+		}
+		if err := database.Create(&placeholder).Error; err != nil {
+			log.Printf("Error creating offline minis placeholder: %v", err)
+			http.Error(w, "Error creating mini session", http.StatusInternalServerError)
+			return
+		}
+		day := model.MinisDay{
+			Start:   sessionDate,
+			End:     sessionDate,
+			MinisID: placeholder.Model.ID,
+		}
+		if err := database.Create(&day).Error; err != nil {
+			log.Printf("Error creating offline minis day: %v", err)
+			http.Error(w, "Error creating mini session day", http.StatusInternalServerError)
+			return
+		}
+		booking := model.BookMinis{
+			MinisID:             placeholder.Model.ID,
+			UserID:              0,
+			TimeSlot:            sessionDate.Format("Jan 2, 2006"),
+			Status:              "confirmed",
+			HasPaid:             true,
+			PriceApprovalStatus: "approved",
+		}
+		if err := database.Create(&booking).Error; err != nil {
+			log.Printf("Error creating offline minis booking: %v", err)
+			http.Error(w, "Error creating minis booking", http.StatusInternalServerError)
+			return
+		}
+		bookingID = booking.Model.ID
+	}
+
+	pending := model.PendingCustomer{
+		FirstName:   firstName,
+		LastName:    lastName,
+		Email:       email,
+		SessionDate: sessionDate,
+		BookingType: sessionType,
+		BookingID:   bookingID,
+	}
+	if err := database.Create(&pending).Error; err != nil {
+		log.Printf("Error creating pending customer: %v", err)
+		http.Error(w, "Error saving customer record", http.StatusInternalServerError)
+		return
+	}
+
+	// Post to Google Calendar for admin only (client hasn't registered yet)
+	sessionLabel := "Photography Session"
+	if sessionType == "minis" {
+		sessionLabel = "Mini Photography Session"
+	}
+	calSummary := fmt.Sprintf("📷 %s – Hall's Photography", sessionLabel)
+	calDesc := fmt.Sprintf("Client: %s %s (%s)\nOffline booking", firstName, lastName, email)
+	eventStart := sessionDate.Add(12 * time.Hour) // default noon for all-day offline bookings
+	go postCalendarEvents(r.Context(), 0, calSummary, calDesc, eventStart, eventStart.Add(time.Hour))
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"success":     true,
+		"bookingID":   bookingID,
+		"bookingType": sessionType,
+		"message":     fmt.Sprintf("Offline booking created for %s %s", firstName, lastName),
 	})
 }
 

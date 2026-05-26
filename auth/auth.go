@@ -115,6 +115,12 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var pending model.PendingCustomer
+	if err := database.Where("email = ? AND is_claimed = ?", user.Email, false).First(&pending).Error; err == nil {
+		http.Redirect(w, r, "/claim-photos", http.StatusFound)
+		return
+	}
+
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
@@ -151,6 +157,18 @@ func GoogleAuthCallbackHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Persist Google OAuth tokens so calendar events can be created after session expiry
+	updates := map[string]interface{}{
+		"google_access_token":  user.AccessToken,
+		"google_token_expiry":  user.ExpiresAt,
+	}
+	if user.RefreshToken != "" {
+		updates["google_refresh_token"] = user.RefreshToken
+	}
+	if err := database.Model(&dbUser).Updates(updates).Error; err != nil {
+		log.Printf("Warning: failed to persist Google tokens for user %d: %v", dbUser.ID, err)
+	}
+
 	session, err := store.Get(r, "session-name")
 	if err != nil {
 		log.Printf("Error getting session: %v", err)
@@ -181,6 +199,12 @@ func GoogleAuthCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	if err := session.Save(r, w); err != nil {
 		log.Printf("Error saving session: %v", err)
 		http.Error(w, "Error saving session", http.StatusInternalServerError)
+		return
+	}
+
+	var pendingOAuth model.PendingCustomer
+	if err := database.Where("email = ? AND is_claimed = ?", dbUser.Email, false).First(&pendingOAuth).Error; err == nil {
+		http.Redirect(w, r, "/claim-photos", http.StatusFound)
 		return
 	}
 
@@ -285,7 +309,7 @@ func Google_auth_consent() {
 				googleClientID,
 				googleClientSecret,
 				googleCallbackURL,
-				"email", "profile", "https://www.googleapis.com/auth/calendar.readonly",
+				"email", "profile", "https://www.googleapis.com/auth/calendar.events",
 			),
 		)
 		log.Println("Google OAuth provider registered")

@@ -107,6 +107,7 @@ func MigrateDatabase() error {
 		&model.BookingMessage{},
 		&model.SessionPhoto{},
 		&model.PortfolioItem{},
+		&model.PendingCustomer{},
 	)
 }
 

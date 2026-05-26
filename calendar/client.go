@@ -1,13 +1,12 @@
 package calendarreader
 
 import (
-	// "context"
+	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"time"
-	"log"
-	// "strconv"
 
 	"github.com/gorilla/sessions"
 
@@ -17,8 +16,19 @@ import (
 	"google.golang.org/api/option"
 )
 
+const calendarScope = "https://www.googleapis.com/auth/calendar.events"
 
-// CreateCalendarClient creates a Google Calendar client using the session tokens
+func oauthConfig() *oauth2.Config {
+	return &oauth2.Config{
+		ClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
+		ClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
+		Endpoint:     google.Endpoint,
+		RedirectURL:  os.Getenv("GOOGLE_CALLBACK_URL"),
+		Scopes:       []string{calendarScope},
+	}
+}
+
+// CreateCalendarClient creates a Google Calendar client using the session tokens (used for reading events)
 func CreateCalendarClient(r *http.Request) (*calendar.Service, error) {
 	var store = sessions.NewCookieStore([]byte("secret"))
 	session, err := store.Get(r, "session-name")
@@ -31,30 +41,57 @@ func CreateCalendarClient(r *http.Request) (*calendar.Service, error) {
 		return nil, fmt.Errorf("missing access_token in session")
 	}
 
-	token := &oauth2.Token{
-		AccessToken: accessToken,
-	}
+	token := &oauth2.Token{AccessToken: accessToken}
 
-	refreshToken, ok := session.Values["refresh_token"].(string)
-	if ok {
+	if refreshToken, ok := session.Values["refresh_token"].(string); ok {
 		token.RefreshToken = refreshToken
 	}
-
-	expiry, ok := session.Values["token_expiry"].(time.Time)
-	if ok {
+	if expiry, ok := session.Values["token_expiry"].(time.Time); ok {
 		token.Expiry = expiry
 	}
 
-	config := &oauth2.Config{
-		ClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
-		ClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
-		Endpoint:     google.Endpoint,
-		RedirectURL:  os.Getenv("GOOGLE_CALLBACK_URL"),
-		Scopes:       []string{"https://www.googleapis.com/auth/calendar.readonly"},
+	client := oauthConfig().Client(r.Context(), token)
+	return calendar.NewService(r.Context(), option.WithHTTPClient(client))
+}
+
+// CreateEventForTokens creates a Google Calendar event using explicit OAuth tokens.
+// Returns nil without error when accessToken is empty (user didn't authenticate via Google).
+func CreateEventForTokens(ctx context.Context, accessToken, refreshToken string, tokenExpiry time.Time, summary, description string, start, end time.Time) error {
+	if accessToken == "" && refreshToken == "" {
+		return nil
 	}
 
-	client := config.Client(r.Context(), token)
-	return calendar.NewService(r.Context(), option.WithHTTPClient(client))
+	token := &oauth2.Token{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		Expiry:       tokenExpiry,
+	}
+
+	client := oauthConfig().Client(ctx, token)
+	srv, err := calendar.NewService(ctx, option.WithHTTPClient(client))
+	if err != nil {
+		return fmt.Errorf("calendar service error: %v", err)
+	}
+
+	event := &calendar.Event{
+		Summary:     summary,
+		Description: description,
+		Start: &calendar.EventDateTime{
+			DateTime: start.UTC().Format(time.RFC3339),
+			TimeZone: "UTC",
+		},
+		End: &calendar.EventDateTime{
+			DateTime: end.UTC().Format(time.RFC3339),
+			TimeZone: "UTC",
+		},
+	}
+
+	created, err := srv.Events.Insert("primary", event).Do()
+	if err != nil {
+		return fmt.Errorf("insert event: %v", err)
+	}
+	log.Printf("Calendar event created: %s", created.HtmlLink)
+	return nil
 }
 
 type EventInfo struct {
@@ -75,7 +112,6 @@ func GetUpcomingEvents(r *http.Request) ([]EventInfo, error) {
 	}
 
 	startStr := r.URL.Query().Get("start")
-	
 	log.Printf("Start Time: %s", startStr)
 	endStr := r.URL.Query().Get("end")
 
@@ -84,7 +120,7 @@ func GetUpcomingEvents(r *http.Request) ([]EventInfo, error) {
 	if startStr != "" {
 		t, err := time.Parse(time.RFC3339, startStr)
 		if err == nil {
-			timeMin = t.AddDate(0, 0, 14) // Skip 2 weeks from start of visible range
+			timeMin = t.AddDate(0, 0, 14)
 		}
 	}
 	if endStr != "" {

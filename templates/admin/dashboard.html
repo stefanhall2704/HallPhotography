@@ -138,6 +138,17 @@
             color: #0c5460;
         }
 
+        .unclaimed-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+            background: #fff3cd;
+            color: #856404;
+            margin-left: 4px;
+        }
+
         .action-btn {
             padding: 6px 12px;
             border: none;
@@ -438,6 +449,9 @@
             <button class="filter-btn" data-filter="portfolio" onclick="showPortfolioManagement()" style="background: #28a745; color: white;">
                 <i class="fas fa-images"></i> Portfolio
             </button>
+            <button class="filter-btn" onclick="showOfflineCustomerModal()" style="background: #e67e22; color: white; border-color: #e67e22;">
+                + Offline Customer
+            </button>
         </div>
 
         <div id="loading" class="loading">
@@ -545,7 +559,7 @@
                         <tbody>
                             ${filteredSessions.map(s => `
                                 <tr>
-                                    <td>${s.UserName || 'Unknown'}</td>
+                                    <td>${s.IsOffline ? `<span class="unclaimed-badge">Unclaimed</span> ${s.UserName}` : (s.UserName || 'Unknown')}</td>
                                     <td>${s.SessionName || 'Session'}</td>
                                     <td>${formatDate(s.SessionDate)}</td>
                                     <td>${s.TimeSlot}</td>
@@ -601,7 +615,7 @@
                         <tbody>
                             ${filteredMinis.map(m => `
                                 <tr>
-                                    <td>${m.UserName || 'Unknown'}</td>
+                                    <td>${m.IsOffline ? `<span class="unclaimed-badge">Unclaimed</span> ${m.UserName}` : (m.UserName || 'Unknown')}</td>
                                     <td>${m.MinisName || 'Mini Session'}</td>
                                     <td>${formatDate(m.MinisDate)}</td>
                                     <td>${m.TimeSlot}</td>
@@ -1101,6 +1115,89 @@
                 modal.remove();
             });
         }
+
+        // Offline customer modal
+        window.showOfflineCustomerModal = function() {
+            const modal = document.createElement('div');
+            modal.className = 'confirmation-modal';
+            modal.innerHTML = `
+                <div class="confirmation-modal-overlay"></div>
+                <div class="confirmation-modal-content" style="max-width: 500px;">
+                    <h3 class="confirmation-modal-title">Add Offline Customer</h3>
+                    <p class="confirmation-modal-message">
+                        Create a booking for a customer you've already photographed in person.
+                        They'll verify their identity using this session date when they register.
+                    </p>
+                    <form id="offline-customer-form">
+                        <div class="price-input-group">
+                            <label class="price-input-label">First Name *</label>
+                            <input type="text" class="price-input-field" name="first_name" required placeholder="e.g. Jane">
+                        </div>
+                        <div class="price-input-group">
+                            <label class="price-input-label">Last Name *</label>
+                            <input type="text" class="price-input-field" name="last_name" required placeholder="e.g. Smith">
+                        </div>
+                        <div class="price-input-group">
+                            <label class="price-input-label">Customer Email *</label>
+                            <input type="email" class="price-input-field" name="email" required placeholder="e.g. jane@example.com">
+                        </div>
+                        <div class="price-input-group">
+                            <label class="price-input-label">Session Date *</label>
+                            <input type="date" class="price-input-field" name="session_date" required>
+                        </div>
+                        <div class="price-input-group">
+                            <label class="price-input-label">Session Type *</label>
+                            <select class="price-input-field" name="session_type" required>
+                                <option value="session">Regular Session</option>
+                                <option value="minis">Mini Session</option>
+                            </select>
+                        </div>
+                        <div class="confirmation-modal-actions">
+                            <button type="submit" class="btn btn-primary" style="background: #e67e22; color: white; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600;">
+                                Create Booking
+                            </button>
+                            <button type="button" onclick="this.closest('.confirmation-modal').remove()" style="background: #6c757d; color: white; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; margin-left: 10px;">
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+            setTimeout(() => modal.classList.add('show'), 10);
+
+            modal.querySelector('.confirmation-modal-overlay').addEventListener('click', () => {
+                modal.classList.remove('show');
+                setTimeout(() => modal.remove(), 300);
+            });
+
+            modal.querySelector('#offline-customer-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+
+                try {
+                    const response = await fetch('/admin/offline-customer', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!response.ok) {
+                        const text = await response.text();
+                        throw new Error(text);
+                    }
+
+                    const result = await response.json();
+                    modal.classList.remove('show');
+                    setTimeout(() => modal.remove(), 300);
+                    showToast(`Booking created! Now upload their photos: /admin/booking/${result.bookingType}/${result.bookingID}/upload-photos-view`, 'success');
+                    loadAllSessions();
+                } catch (error) {
+                    console.error('Error creating offline customer:', error);
+                    showToast('Failed to create booking: ' + error.message, 'error');
+                }
+            });
+        };
 
         // Load sessions on page load
         loadAllSessions();

@@ -96,6 +96,10 @@ func main() {
 	request.Handle("/notifications/{id}/mark_read", auth.AuthMiddleware(http.HandlerFunc(handlers.MarkNotificationAsRead))).Methods("POST")
 	request.Handle("/notifications/mark_all_read", auth.AuthMiddleware(http.HandlerFunc(handlers.MarkAllNotificationsAsRead))).Methods("POST")
 	
+	// Claim photos route (for offline customers)
+	request.Handle("/claim-photos", auth.AuthMiddleware(http.HandlerFunc(handlers.ClaimPhotosView))).Methods("GET")
+	request.Handle("/claim-photos", auth.AuthMiddleware(http.HandlerFunc(handlers.ClaimPhotos))).Methods("POST")
+
 	// Admin routes
 	request.Handle("/admin/dashboard", auth.AdminAuthMiddleware(http.HandlerFunc(handlers.AdminDashboardView))).Methods("GET")
 	request.Handle("/admin/bookings", auth.AdminAuthMiddleware(http.HandlerFunc(handlers.GetAllBookings))).Methods("GET")
@@ -143,6 +147,7 @@ func main() {
 	request.Handle("/admin/portfolio", auth.AdminAuthMiddleware(http.HandlerFunc(handlers.AddPortfolioItem))).Methods("POST")
 	request.Handle("/admin/portfolio/{id}", auth.AdminAuthMiddleware(http.HandlerFunc(handlers.UpdatePortfolioItem))).Methods("PUT")
 	request.Handle("/admin/portfolio/{id}", auth.AdminAuthMiddleware(http.HandlerFunc(handlers.DeletePortfolioItem))).Methods("DELETE")
+	request.Handle("/admin/offline-customer", auth.AdminAuthMiddleware(http.HandlerFunc(handlers.CreateOfflineCustomer))).Methods("POST")
 	
 	// Serve static files (CSS, JS, images)
 	request.PathPrefix("/css/").Handler(http.StripPrefix("/css/", http.FileServer(http.Dir("templates/css/"))))

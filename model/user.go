@@ -7,15 +7,18 @@ import (
 
 type User struct {
 	gorm.Model
-	FirstName       string `gorm:"not null"`
-	LastName        string `gorm:"not null"`
-	Username        string `gorm:"not null"`
-	PasswordHash    string `gorm:"not null"`
-	Email           string `gorm:"not null"`
-	PhoneNumber     string `gorm:"not null"`
-	IsAdmin         bool   `gorm:"default:false"`
-	ProfilePicture  string `gorm:"default:''"` // Path to profile picture
-	MinisSessions   string `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
+	FirstName          string     `gorm:"not null"`
+	LastName           string     `gorm:"not null"`
+	Username           string     `gorm:"not null"`
+	PasswordHash       string     `gorm:"not null"`
+	Email              string     `gorm:"not null"`
+	PhoneNumber        string     `gorm:"not null"`
+	IsAdmin            bool       `gorm:"default:false"`
+	ProfilePicture     string     `gorm:"default:''"` // Path to profile picture
+	MinisSessions      string     `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
+	GoogleAccessToken  string     `gorm:"default:''"` // Latest access token from Google OAuth
+	GoogleRefreshToken string     `gorm:"default:''"` // Refresh token — persists across sessions
+	GoogleTokenExpiry  *time.Time // Expiry of the access token
 }
 
 type Notification struct {
@@ -141,6 +144,20 @@ type SessionPhoto struct {
 	IsFavorite      bool       `gorm:"default:false"` // User marked as favorite for download
 	IsDownloaded    bool       `gorm:"default:false"` // Track if downloaded by user
 	DownloadedAt    *time.Time // When it was downloaded
+}
+
+// PendingCustomer represents an offline booking pre-registered by the admin for a customer who hasn't yet created an account
+type PendingCustomer struct {
+	gorm.Model
+	FirstName       string
+	LastName        string
+	Email           string    `gorm:"not null;index"`
+	SessionDate     time.Time // Date of their photography session — used as claim verification
+	BookingType     string    `gorm:"not null"` // "minis" or "session"
+	BookingID       uint      `gorm:"not null"`
+	IsClaimed       bool      `gorm:"default:false"`
+	ClaimedByUserID uint
+	ClaimedAt       *time.Time
 }
 
 // PortfolioItem represents a portfolio item for the homepage gallery
