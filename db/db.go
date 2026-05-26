@@ -93,7 +93,7 @@ func ConnectDatabase() *gorm.DB {
 // MigrateDatabase runs database migrations
 func MigrateDatabase() error {
 	database := GetDB()
-	return database.AutoMigrate(
+	if err := database.AutoMigrate(
 		&model.User{},
 		&model.Notification{},
 		&model.Minis{},
@@ -108,7 +108,16 @@ func MigrateDatabase() error {
 		&model.SessionPhoto{},
 		&model.PortfolioItem{},
 		&model.PendingCustomer{},
-	)
+	); err != nil {
+		return err
+	}
+
+	// Drop user FK constraints on booking tables so offline bookings (UserID=0, unclaimed)
+	// can be inserted without violating referential integrity. Ownership is enforced in handlers.
+	database.Exec("ALTER TABLE book_sessions DROP CONSTRAINT IF EXISTS fk_book_sessions_user")
+	database.Exec("ALTER TABLE book_minis DROP CONSTRAINT IF EXISTS fk_book_minis_user")
+
+	return nil
 }
 
 // CloseDatabase closes the database connection gracefully

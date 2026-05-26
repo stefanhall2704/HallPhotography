@@ -156,6 +156,19 @@ func main() {
 
 	loggedHandler := middleware.LoggingMiddleware(request)
 
+	// Plain HTTP listener on :8081 for health checks only.
+	// Keeps reverse-proxy and Docker health probes off the TLS port,
+	// eliminating the "TLS handshake error from [::1]:xxxxx: EOF" log noise.
+	healthMux := http.NewServeMux()
+	healthMux.HandleFunc("/health", handlers.HealthCheck)
+	healthMux.HandleFunc("/healthcheck", handlers.HealthCheck)
+	go func() {
+		log.Println("Starting health-check server on :8081 (plain HTTP)")
+		if err := http.ListenAndServe(":8081", healthMux); err != nil {
+			log.Printf("Health-check server error: %s", err)
+		}
+	}()
+
 	log.Println("Starting server on :8080")
 	if err := http.ListenAndServeTLS(":8080", "server.crt", "server.key", loggedHandler); err != nil {
 		log.Fatalf("could not start server: %s", err)
