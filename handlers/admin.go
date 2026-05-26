@@ -1146,9 +1146,11 @@ func DeletePortfolioItem(w http.ResponseWriter, r *http.Request) {
 
 // CreateOfflineCustomer creates a pre-registered offline booking for a customer who will claim it after registering
 func CreateOfflineCustomer(w http.ResponseWriter, r *http.Request) {
-	if err := r.ParseForm(); err != nil {
-		http.Error(w, "Error parsing form", http.StatusBadRequest)
-		return
+	if err := r.ParseMultipartForm(10 << 20); err != nil {
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, "Error parsing form", http.StatusBadRequest)
+			return
+		}
 	}
 
 	firstName := r.FormValue("first_name")
