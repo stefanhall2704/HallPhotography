@@ -1242,6 +1242,13 @@ func DownloadFavorites(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !isAdmin {
+		// Also queue non-favorited photos for deletion — user has made their pick
+		var remaining []model.SessionPhoto
+		database.Where("booking_id = ? AND booking_type = ? AND is_favorite = false", bookingID, bookingType).Find(&remaining)
+		for _, p := range remaining {
+			pathsToDelete = append(pathsToDelete, struct{ orig, wm string }{p.FilePath, p.WatermarkedPath})
+		}
+
 		go func() {
 			time.Sleep(5 * time.Second)
 			for _, p := range pathsToDelete {
