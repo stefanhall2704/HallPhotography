@@ -36,6 +36,8 @@ jobs:
     name: Build and push image
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
     steps:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -63,6 +65,7 @@ jobs:
             type=raw,value=${{ github.event.inputs.image_tag || 'latest' }},enable={{is_default_branch}}
 
       - name: Build and push image
+        id: build
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
         with:
           context: .
@@ -81,6 +84,7 @@ jobs:
     timeout-minutes: 20
     env:
       DRY_RUN: ${{ github.event.inputs.dry_run == 'true' && 'true' || 'false' }}
+      IMAGE_DIGEST: ${{ needs.build.outputs.digest }}
     steps:
       - name: Checkout (manifests only)
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -150,6 +154,10 @@ jobs:
           # imagePullPolicy is Always, so a restart pulls the freshly pushed :latest
           kubectl rollout restart deployment/photography -n "$NAMESPACE"
           kubectl rollout status deployment/photography -n "$NAMESPACE" --timeout=300s
+
+      - name: Verify the running pod is the image this commit built
+        if: env.DRY_RUN != 'true'
+        run: .github/scripts/verify-image.sh "$NAMESPACE" photography "$IMAGE_DIGEST"
 
       - name: Check the service
         if: env.DRY_RUN != 'true'
