@@ -1,100 +1,149 @@
-name: Deploy Photography App (SSH Method)
+name: Build & Deploy Photography (self-hosted runner)
+
+# Build + push run on GitHub's own runners (isolated). Only the deploy job runs on the homelab runner,
+# which talks to the cluster with a namespace-scoped ServiceAccount (see kubernetes/ci/README.md).
+# No SSH: nothing needs to reach into the machine from the internet.
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [main]
   workflow_dispatch:
     inputs:
       image_tag:
-        description: 'Image tag to deploy'
+        description: 'Extra image tag to push'
         required: false
         default: 'latest'
+      dry_run:
+        description: 'Deploy job only validates (server-side dry run); changes nothing'
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-${{ github.workflow }}
+  cancel-in-progress: false
 
 env:
   REGISTRY: docker.io
   IMAGE_NAME: stefanmhall/photography
   NAMESPACE: hallphotography
-  DEPLOYMENT_NAME: photography
 
 jobs:
-  build-and-deploy:
+  build:
+    name: Build and push image
     runs-on: ubuntu-latest
-    
+    timeout-minutes: 30
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
 
-    - name: Log in to Docker Hub
-      uses: docker/login-action@v3
-      with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Log in to Docker Hub
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-    - name: Extract metadata
-      id: meta
-      uses: docker/metadata-action@v5
-      with:
-        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-        tags: |
-          type=ref,event=branch
-          type=ref,event=pr
-          type=sha,prefix={{branch}}-
-          type=raw,value=latest,enable={{is_default_branch}}
-          type=raw,value=${{ github.event.inputs.image_tag || 'latest' }}
+      - name: Metadata
+        id: meta
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5.10.0
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=${{ github.event.inputs.image_tag || 'latest' }},enable={{is_default_branch}}
 
-    - name: Build and push Docker image
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        platforms: linux/amd64
-        push: true
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
+      - name: Build and push image
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
 
-    - name: Deploy via SSH
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: ${{ secrets.SSH_HOST }}
-        username: ${{ secrets.SSH_USERNAME }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        script: |
-          #!/bin/bash
-          set -e
-          
-          cd /home/stefan/Documents/Personal/HallPhotography
-          
-          # Pull latest changes
-          git pull origin main
-          
-          # Set environment variables for the secrets script
-          export SESSION_SECRET="${{ secrets.SESSION_SECRET }}"
-          export GOOGLE_CLIENT_ID="${{ secrets.GOOGLE_CLIENT_ID }}"
-          export GOOGLE_CLIENT_SECRET="${{ secrets.GOOGLE_CLIENT_SECRET }}"
-          export GOOGLE_CALLBACK_URL="${{ secrets.GOOGLE_CALLBACK_URL }}"
-          export DB_USER="${{ secrets.DB_USER }}"
-          export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
-          export DB_NAME="${{ secrets.DB_NAME }}"
-          export SERVER_CERT="${{ secrets.SERVER_CERT }}"
-          export SERVER_KEY="${{ secrets.SERVER_KEY }}"
-          
-          # Setup secrets using dedicated script
-          chmod +x k8s/setup-secrets-from-github.sh
-          ./k8s/setup-secrets-from-github.sh
-          
-          # Deploy using the organized k8s structure with Cloudflare update
-          chmod +x k8s/deploy-photography-with-cloudflare.sh
-          ./k8s/deploy-photography-with-cloudflare.sh
-          
-          # Verify deployment
-          echo "✅ Photography app deployed successfully!"
-          echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
-          kubectl get pods -n ${{ env.NAMESPACE }} -l app=photography
+  deploy:
+    name: Deploy to the homelab cluster
+    needs: build
+    # main only (the `homelab` environment enforces this too); a dry run may also come from the migration branch
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, linux, x64, homelab]
+    environment: homelab
+    timeout-minutes: 20
+    env:
+      DRY_RUN: ${{ github.event.inputs.dry_run == 'true' && 'true' || 'false' }}
+    steps:
+      - name: Checkout (manifests only)
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
-    - name: Verify deployment
-      run: |
-        echo "✅ Photography app deployment completed!"
-        echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
-        echo "Namespace: ${{ env.NAMESPACE }}"
+      - name: Who am I / what can I do
+        run: |
+          kubectl auth whoami 2>/dev/null || true
+          kubectl get deploy photography -n "$NAMESPACE" -o name
+
+      # GitHub secrets stay the source of truth for these two cluster secrets (as before), but they are now
+      # applied in place (server-side apply, no delete/recreate window) and passed via 0600 temp files rather
+      # than command-line arguments.
+      - name: Sync app secrets
+        env:
+          SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GOOGLE_CALLBACK_URL: ${{ secrets.GOOGLE_CALLBACK_URL }}
+          SERVER_CERT: ${{ secrets.SERVER_CERT }}
+          SERVER_KEY: ${{ secrets.SERVER_KEY }}
+        run: |
+          set -euo pipefail
+          umask 077
+          d=$(mktemp -d "${RUNNER_TEMP:-/tmp}/secrets.XXXXXX"); trap 'rm -rf "$d"' EXIT
+          for v in SESSION_SECRET GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET GOOGLE_CALLBACK_URL; do
+            [ -n "${!v}" ] || { echo "GitHub secret $v is empty"; exit 1; }
+            printf '%s' "${!v}" > "$d/$v"
+          done
+          printf '%s' "$SERVER_CERT" > "$d/server.crt"; printf '%s' "$SERVER_KEY" > "$d/server.key"
+          [ -s "$d/server.crt" ] && [ -s "$d/server.key" ] || { echo "TLS cert/key secrets are empty"; exit 1; }
+          mode=""; [ "$DRY_RUN" = true ] && mode="--dry-run=server"
+          kubectl create secret generic photography-secrets -n "$NAMESPACE" \
+            --from-file=SESSION_SECRET="$d/SESSION_SECRET" --from-file=GOOGLE_CLIENT_ID="$d/GOOGLE_CLIENT_ID" \
+            --from-file=GOOGLE_CLIENT_SECRET="$d/GOOGLE_CLIENT_SECRET" --from-file=GOOGLE_CALLBACK_URL="$d/GOOGLE_CALLBACK_URL" \
+            --dry-run=client -o yaml \
+            | kubectl apply --server-side --force-conflicts --field-manager=ci-homelab $mode -f -
+          kubectl create secret generic tls-certs -n "$NAMESPACE" \
+            --from-file=server.crt="$d/server.crt" --from-file=server.key="$d/server.key" \
+            --dry-run=client -o yaml \
+            | kubectl apply --server-side --force-conflicts --field-manager=ci-homelab $mode -f -
+
+      - name: Apply manifests
+        run: |
+          set -euo pipefail
+          mode=""; [ "$DRY_RUN" = true ] && mode="--dry-run=server"
+          kubectl apply $mode -k k8s/photography/
+
+      - name: Roll out the new image
+        if: env.DRY_RUN != 'true'
+        run: |
+          set -euo pipefail
+          # imagePullPolicy is Always, so a restart pulls the freshly pushed :latest
+          kubectl rollout restart deployment/photography -n "$NAMESPACE"
+          kubectl rollout status deployment/photography -n "$NAMESPACE" --timeout=300s
+
+      - name: Check the service
+        if: env.DRY_RUN != 'true'
+        run: |
+          set -euo pipefail
+          np=$(kubectl get svc photography -n "$NAMESPACE" -o jsonpath='{.spec.ports[0].nodePort}')
+          [ "$np" = 31055 ] || { echo "photography NodePort is $np, expected 31055"; exit 1; }
+          # the app serves TLS on the NodePort; the runner is on the same host
+          curl -fsSk --retry 6 --retry-delay 5 --retry-connrefused -o /dev/null https://127.0.0.1:31055/health
+          echo "photography is serving"
