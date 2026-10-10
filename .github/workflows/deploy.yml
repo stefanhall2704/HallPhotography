@@ -128,7 +128,11 @@ jobs:
         run: |
           set -euo pipefail
           mode=""; [ "$DRY_RUN" = true ] && mode="--dry-run=server"
-          kubectl apply $mode -k k8s/photography/
+          # photography-ingress.yaml is intentionally NOT applied: that ingress is not live (the site is reached
+          # through the Cloudflare tunnel -> NodePort 31055), and this pipeline deploys what is running today.
+          kubectl apply $mode -f k8s/photography/photography-pvc.yaml \
+                              -f k8s/photography/photography-deployment.yaml \
+                              -f k8s/photography/photography-service.yaml
 
       - name: Roll out the new image
         if: env.DRY_RUN != 'true'
