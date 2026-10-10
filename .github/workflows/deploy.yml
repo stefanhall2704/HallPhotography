@@ -113,6 +113,15 @@ jobs:
           done
           printf '%s' "$SERVER_CERT" > "$d/server.crt"; printf '%s' "$SERVER_KEY" > "$d/server.key"
           [ -s "$d/server.crt" ] && [ -s "$d/server.key" ] || { echo "TLS cert/key secrets are empty"; exit 1; }
+          # Read-only comparison: does GitHub's value equal what the cluster holds? Prints only same / DIFFERS.
+          cmp_key() { # <secret> <data-key> <file>
+            cur=$(kubectl get secret "$1" -n "$NAMESPACE" -o go-template="{{index .data \"$2\"}}" 2>/dev/null | base64 -d | sha256sum)
+            new=$(sha256sum < "$3")
+            [ "$cur" = "$new" ] && echo "  $1/$2: same as cluster" || echo "  $1/$2: DIFFERS from cluster (will be overwritten)"
+          }
+          echo "Comparing GitHub secrets with the cluster:"
+          for k in SESSION_SECRET GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET GOOGLE_CALLBACK_URL; do cmp_key photography-secrets "$k" "$d/$k"; done
+          cmp_key tls-certs server.crt "$d/server.crt"; cmp_key tls-certs server.key "$d/server.key"
           mode=""; [ "$DRY_RUN" = true ] && mode="--dry-run=server"
           kubectl create secret generic photography-secrets -n "$NAMESPACE" \
             --from-file=SESSION_SECRET="$d/SESSION_SECRET" --from-file=GOOGLE_CLIENT_ID="$d/GOOGLE_CLIENT_ID" \
